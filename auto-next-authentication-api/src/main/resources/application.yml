@@ -1,0 +1,2 @@
+spring.application.name=auto-next-authentication-api
+jwt.secret= = aa8c572cd111626310a5fe513742c4561c66957a97afacddc36eed6553ad9a8c
