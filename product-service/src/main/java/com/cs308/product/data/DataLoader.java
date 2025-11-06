@@ -20,14 +20,50 @@ public class DataLoader implements CommandLineRunner {
     public void run(String... args) {
         if (!repo.isEmpty()) return;
         repo.saveAll(List.of(
-                Product.builder().id(1L).name("iPhone 14").description("128GB Midnight").priceCents(499900L)
-                        .currency("TRY").stock(12).category("electronics").imageUrl(null).rating(4.7).build(),
-                Product.builder().id(2L).name("Samsung Galaxy S23").description("256GB Phantom Black").priceCents(429900L)
-                        .currency("TRY").stock(18).category("electronics").imageUrl(null).rating(4.6).build(),
-                Product.builder().id(3L).name("MacBook Air M2").description("8GB 256GB").priceCents(799900L)
-                        .currency("TRY").stock(7).category("computers").imageUrl(null).rating(4.8).build(),
-                Product.builder().id(4L).name("AirPods Pro").description("2nd Gen").priceCents(99900L)
-                        .currency("TRY").stock(30).category("electronics").imageUrl(null).rating(4.5).build()
-        ));
+    Product.builder()
+            .id(1L)
+            .name("2018 BMW 320i")
+            .description("62.000 km • Otomatik • Benzin • İstanbul")
+            .priceCents(1250000L)
+            .currency("TRY")
+            .stock(1)
+            .category("cars")
+            .imageUrl(null)
+            .rating(4.7)
+            .build(),
+    Product.builder()
+            .id(2L)
+            .name("2020 Toyota Corolla 1.5 Vision")
+            .description("45.500 km • Manuel • Benzin • Ankara")
+            .priceCents(850000L)
+            .currency("TRY")
+            .stock(1)
+            .category("cars")
+            .imageUrl(null)
+            .rating(4.6)
+            .build(),
+    Product.builder()
+            .id(3L)
+            .name("2019 Volkswagen Golf 1.4 TSI")
+            .description("78.000 km • Otomatik • Benzin • İzmir")
+            .priceCents(980000L)
+            .currency("TRY")
+            .stock(1)
+            .category("cars")
+            .imageUrl(null)
+            .rating(4.5)
+            .build(),
+    Product.builder()
+            .id(4L)
+            .name("2021 Renault Clio 1.0 TCe")
+            .description("32.000 km • Manuel • Benzin • Bursa")
+            .priceCents(690000L)
+            .currency("TRY")
+            .stock(1)
+            .category("cars")
+            .imageUrl(null)
+            .rating(4.4)
+            .build()
+));
     }
 }
