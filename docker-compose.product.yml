@@ -1,0 +1,19 @@
+version: '3.9'
+services:
+  products:
+    build:
+      context: product-service
+    container_name: cs308-products
+    ports:
+    - 9001:9001
+  gateway:
+    build:
+      context: gateway-api
+    container_name: cs308-gateway
+    ports:
+    - 8080:8080
+    environment:
+      FRONTEND_ORIGINS: http://localhost:3000
+      PRODUCT_SERVICE_URI: http://products:9001
+    depends_on:
+    - products
