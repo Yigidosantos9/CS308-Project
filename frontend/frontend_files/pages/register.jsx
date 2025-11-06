@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 
 // Header Component (styled with inline styles to match)
-// This is the same header from LoginPage.jsx for consistency.
 const Header = () => {
   const styles = {
     nav: {
@@ -60,40 +59,69 @@ const RegisterPage = () => {
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  // --- New fields required by your backend ---
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [birthDate, setBirthDate] = useState(''); // Backend expects a Date, but string is fine
+  // New state for handling success/error messages from the backend
+  const [message, setMessage] = useState('');
 
   // Handle form submission
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setMessage(''); // Clear previous messages
+
     // This is where you'll send data to your Spring Boot backend
     console.log('Register submitted with:', {
       firstName,
       lastName,
       email,
       password,
+      phoneNumber,
+      birthDate,
     });
-    // Example API call (uncomment and adjust later)
-    /*
-    fetch('http://localhost:8080/api/auth/register', { // Make sure this matches your backend endpoint
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ firstName, lastName, email, password }),
-    })
-    .then(response => response.json())
-    .then(data => {
-      console.log('Success:', data);
-      // Redirect to login page
-    })
-    .catch((error) => {
-      console.error('Error:', error);
-      // Show error message to user
-    });
-    */
+
+    // --- API IMPLEMENTATION ---
+    // Make sure your backend controller is running at this URL
+    // and the endpoint is POST /api/auth/register
+    // NOTE: Your backend team MUST enable CORS for 'http://localhost:3000'
+    const api_url = 'http://localhost:8080/api/auth/register'; // Or /api/auth/signup
+
+    try {
+      const response = await fetch(api_url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          firstName,
+          lastName, // Your backend service calls this 'surname'
+          email,
+          password,
+          phoneNumber,
+          birthDate,
+        }),
+      });
+
+      // Get the response as plain text (since your backend service returns a string)
+      const responseText = await response.text();
+      console.log('Backend Response:', responseText);
+      if (response.ok) {
+        // "User signed up successfully."
+        setMessage(responseText);
+        // TODO: Redirect to login page after a few seconds
+      } else {
+        // "User already exists..."
+        // The error message from your backend will be in responseText
+        setMessage(`Error: ${responseText}`);
+      }
+    } catch (error) {
+      console.error('Network error:', error);
+      setMessage('Network error. Is the backend server running?');
+    }
+    // --- END OF API IMPLEMENTATION ---
   };
 
   // Styles object for the Register Page
-  // These are crafted to match the aesthetic of the LoginPage
   const styles = {
     page: {
       position: 'relative',
@@ -147,6 +175,13 @@ const RegisterPage = () => {
       textAlign: 'left', // Aligned left in your design
       textTransform: 'uppercase',
       letterSpacing: '0.05em',
+    },
+    // New style for the message display
+    message: {
+      color: 'white',
+      textAlign: 'center',
+      marginTop: '1rem',
+      fontSize: '0.9rem',
     },
     input: {
       width: '100%',
@@ -214,6 +249,29 @@ const RegisterPage = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
+            
+            {/* --- New Fields Added Here --- */}
+            <input
+              type="tel"
+              placeholder="Phone Number (e.g., +15551234)"
+              required
+              style={styles.input}
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
+            />
+            <input
+              type="text" // Using text for simplicity, use date if you want a date picker
+              placeholder="Birth Date (e.g., YYYY-MM-DD)"
+              onFocus={(e) => (e.target.type = 'date')} // Changes to date picker on click
+              onBlur={(e) => {
+                if (!e.target.value) { e.target.type = 'text'; }
+              }} // Reverts if empty
+              required
+              style={styles.input}
+              value={birthDate}
+              onChange={(e) => setBirthDate(e.target.value)}
+            />
+            {/* ----------------------------- */}
 
             {/* Container for First and Last Name */}
             <div style={styles.nameFieldsContainer}>
@@ -243,6 +301,14 @@ const RegisterPage = () => {
               Sign Up
             </button>
           </form>
+          
+          {/* This part displays the success or error message */}
+          {message && (
+            <p style={styles.message}>
+              {message}
+            </p>
+          )}
+
         </div>
       </div>
     </div>
@@ -250,3 +316,4 @@ const RegisterPage = () => {
 };
 
 export default RegisterPage;
+

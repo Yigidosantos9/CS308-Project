@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
 
 // Header Component (styled with inline styles to match)
 const Header = () => {
@@ -57,45 +58,68 @@ const LoginPage = () => {
   // State for the form inputs
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  // New state for handling success/error messages from the backend
+  const [message, setMessage] = useState('');
+  const navigate = useNavigate();
 
   // Handle form submission
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setMessage(''); // Clear previous messages
+
     // This is where you'll send data to your Spring Boot backend
     console.log('Login submitted with:', {
       email,
       password,
     });
-    // Example API call (uncomment and adjust later)
-    /*
-    fetch('http://localhost:8080/api/auth/login', { // Make sure this matches your backend endpoint
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ email, password }),
-    })
-    .then(response => response.json())
-    .then(data => {
-      console.log('Success:', data);
-      // Save token, redirect to dashboard, etc.
-    })
-    .catch((error) => {
-      console.error('Error:', error);
-      // Show error message to user
-    });
-    */
+
+    // --- API IMPLEMENTATION ---
+    // Make sure your backend controller is running at this URL
+    // and the endpoint is POST /api/auth/login
+    // NOTE: Your backend team MUST enable CORS for 'http://localhost:3000'
+    const api_url = 'http://localhost:8080/api/auth/login';
+
+    try {
+      const response = await fetch(api_url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      // Get the response as plain text (since your backend service returns a string)
+      const responseText = await response.text();
+      console.log('Backend Response:', responseText);
+
+      if (response.ok) {
+        // "Login successful."
+        setMessage(responseText);
+        // TODO: Save the token (if backend sends one) and redirect
+        // Example: window.location.href = '/dashboard';
+      } else {
+        // "Invalid credentials provided." or "No user found..."
+        // The error message from your backend will be in responseText
+        setMessage(`Error: ${responseText}`);
+      }
+    } catch (error) {
+      console.error('Network error:', error);
+      setMessage('Network error. Is the backend server running?');
+    }
+    // --- END OF API IMPLEMENTATION ---
+  };
+  const handleNavigateToRegister = () => {
+    navigate('/register'); // Use navigate to change page
   };
 
   // Styles object for the Login Page
-  // These are crafted to match the aesthetic of the RegisterPage
   const styles = {
     page: {
       position: 'relative',
       height: '100vh',
       width: '100vw',
       overflow: 'hidden',
-      fontFamily: 'Inter, Arial, sans-serif', // Added Inter as preferred font
+      fontFamily: 'Inter, Arial, sans-serif',
     },
     bgImage: {
       position: 'absolute',
@@ -105,7 +129,7 @@ const LoginPage = () => {
       backgroundSize: 'cover',
       backgroundPosition: 'center',
       backgroundImage:
-        "url('https://images.unsplash.com/photo-1520697833088-61819f794e61?auto=format&fit=crop&w=1920&q=80')",
+        "url('https://images.unsplash.com/photo-1520697833088-61819f794e61?auto-format&fit=crop&w=1920&q=80')",
     },
     bgOverlay: {
       position: 'absolute',
@@ -121,55 +145,62 @@ const LoginPage = () => {
       width: '100%',
       display: 'flex',
       alignItems: 'center',
-      justifyContent: 'center', // Centered the login form
+      justifyContent: 'center',
       padding: '1rem',
     },
     formCard: {
-      backgroundColor: 'rgba(31, 41, 55, 0.9)', // Dark card bg
-      padding: '2.5rem', // 40px
-      borderRadius: '0.5rem', // 8px
+      backgroundColor: 'rgba(31, 41, 55, 0.9)',
+      padding: '2.5rem',
+      borderRadius: '0.5rem',
       boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
       width: '100%',
-      maxWidth: '28rem', // 448px
+      maxWidth: '28rem',
       boxSizing: 'border-box',
     },
     title: {
       color: 'white',
-      fontSize: '1.875rem', // 30px
+      fontSize: '1.875rem',
       fontWeight: 'bold',
-      marginBottom: '2rem', // 32px
+      marginBottom: '2rem',
       textAlign: 'center',
       textTransform: 'uppercase',
       letterSpacing: '0.05em',
     },
+    // New style for the message display
+    message: {
+      color: 'white',
+      textAlign: 'center',
+      marginTop: '1rem',
+      fontSize: '0.9rem',
+    },
     input: {
       width: '100%',
-      padding: '1rem', // 16px
-      margin: '0.75rem 0', // 12px
+      padding: '1rem',
+      margin: '0.75rem 0',
       backgroundColor: 'rgb(75, 85, 99)',
       color: 'white',
-      borderRadius: '0.375rem', // 6px
+      borderRadius: '0.375rem',
       border: 'none',
-      boxSizing: 'border-box', // Ensures padding doesn't affect width
+      boxSizing: 'border-box',
     },
     actions: {
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',
-      marginTop: '1.25rem', // 20px
-      marginBottom: '1.5rem', // 24px
+      marginTop: '1.25rem',
+      marginBottom: '1.5rem',
     },
     forgotLink: {
-      fontSize: '0.875rem', // 14px
+      fontSize: '0.875rem',
       color: 'rgb(209, 213, 219)',
       textDecoration: 'none',
     },
     loginButton: {
-      backgroundColor: 'rgb(6, 182, 212)', // Cyan button
+      backgroundColor: 'rgb(6, 182, 212)',
       color: 'white',
       border: 'none',
-      padding: '0.75rem 1.5rem', // 12px 24px
-      borderRadius: '0.375rem', // 6px
+      padding: '0.75rem 1.5rem',
+      borderRadius: '0.375rem',
       cursor: 'pointer',
       fontWeight: 'bold',
       textTransform: 'uppercase',
@@ -178,7 +209,7 @@ const LoginPage = () => {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      margin: '1.5rem 0', // 24px
+      margin: '1.5rem 0',
       color: 'rgb(156, 163, 175)',
     },
     dividerLine: {
@@ -192,10 +223,10 @@ const LoginPage = () => {
       backgroundColor: 'transparent',
       color: 'rgb(6, 182, 212)',
       border: '2px solid rgb(6, 182, 212)',
-      padding: '1rem', // 16px
-      borderRadius: '0.375rem', // 6px
+      padding: '1rem',
+      borderRadius: '0.375rem',
       fontWeight: 'bold',
-      fontSize: '1rem', // 16px
+      fontSize: '1rem',
       textTransform: 'uppercase',
       cursor: 'pointer',
     },
@@ -245,6 +276,13 @@ const LoginPage = () => {
             </div>
           </form>
 
+          {/* This part displays the success or error message */}
+          {message && (
+            <p style={styles.message}>
+              {message}
+            </p>
+          )}
+
           <div style={styles.dividerContainer}>
             <div style={styles.dividerLine}></div>
             <span style={{ margin: '0 0.5rem' }}>Or</span>
@@ -252,8 +290,11 @@ const LoginPage = () => {
           </div>
 
           {/* This button is for navigating to the register page */}
-          <button style={styles.createAccountButton}>
+          <button style={styles.createAccountButton}
+          onClick={handleNavigateToRegister}
+          >
             Create an Account
+            
           </button>
         </div>
       </div>
@@ -262,3 +303,4 @@ const LoginPage = () => {
 };
 
 export default LoginPage;
+
