@@ -3,9 +3,13 @@ package com.codingapp.autonextauthenticationapi.service;
 import com.codingapp.autonextauthenticationapi.domain.User;
 import com.codingapp.autonextauthenticationapi.model.response.LoginResponse;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
 
@@ -13,7 +17,16 @@ import java.util.Date;
 @RequiredArgsConstructor
 public class TokenService {
 
+
     private Key secretKey;
+
+    @Value("${jwt.secret}")
+    private String secret;
+
+    @PostConstruct
+    void initKey() {
+        this.secretKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+    }
 
     public LoginResponse createToken(User user) {
         Date now = new Date();
