@@ -3,29 +3,36 @@ package com.cs308.product.web;
 import com.cs308.product.model.Product;
 import com.cs308.product.service.ProductService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.MediaType;
-import org.springframework.validation.annotation.Validated;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping(path = "/products", produces = MediaType.APPLICATION_JSON_VALUE)
+@RequestMapping("/products")
 @RequiredArgsConstructor
-@Validated
 public class ProductController {
 
     private final ProductService service;
 
-    // GET /products?q=phone
+    // Liste + filtre + sort
     @GetMapping
-    public List<Product> getProducts(@RequestParam(name = "q", required = false) String query) {
-        return service.getAll(query);
+    public List<Product> listProducts(
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) String gender,
+            @RequestParam(required = false) String color,
+            @RequestParam(required = false, defaultValue = "relevance") String sort
+    ) {
+        // service -> repo -> search zinciri
+        return service.search(q, category, gender, color, sort);
     }
 
-    // GET /products/{id}
+    // Detay
     @GetMapping("/{id}")
-    public Product getProduct(@PathVariable("id") Long id) {
-        return service.getById(id);
+    public ResponseEntity<Product> getProduct(@PathVariable Long id) {
+        return service.getById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 }

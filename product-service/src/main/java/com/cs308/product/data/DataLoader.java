@@ -11,59 +11,95 @@ import java.util.List;
 
 @Component
 @RequiredArgsConstructor
-@Profile("!test")
+@Profile("!test")   // test ortamında çalışmasın
 public class DataLoader implements CommandLineRunner {
 
     private final ProductRepository repo;
 
     @Override
     public void run(String... args) {
-        if (!repo.isEmpty()) return;
-        repo.saveAll(List.of(
-    Product.builder()
-            .id(1L)
-            .name("2018 BMW 320i")
-            .description("62.000 km • Otomatik • Benzin • İstanbul")
-            .priceCents(1250000L)
-            .currency("TRY")
-            .stock(1)
-            .category("cars")
-            .imageUrl(null)
-            .rating(4.7)
-            .build(),
-    Product.builder()
-            .id(2L)
-            .name("2020 Toyota Corolla 1.5 Vision")
-            .description("45.500 km • Manuel • Benzin • Ankara")
-            .priceCents(850000L)
-            .currency("TRY")
-            .stock(1)
-            .category("cars")
-            .imageUrl(null)
-            .rating(4.6)
-            .build(),
-    Product.builder()
-            .id(3L)
-            .name("2019 Volkswagen Golf 1.4 TSI")
-            .description("78.000 km • Otomatik • Benzin • İzmir")
-            .priceCents(980000L)
-            .currency("TRY")
-            .stock(1)
-            .category("cars")
-            .imageUrl(null)
-            .rating(4.5)
-            .build(),
-    Product.builder()
-            .id(4L)
-            .name("2021 Renault Clio 1.0 TCe")
-            .description("32.000 km • Manuel • Benzin • Bursa")
-            .priceCents(690000L)
-            .currency("TRY")
-            .stock(1)
-            .category("cars")
-            .imageUrl(null)
-            .rating(4.4)
-            .build()
-));
+        // Eğer zaten ürün varsa seed etme
+        if (!repo.isEmpty()) {
+            return;
+        }
+
+        List<Product> products = List.of(
+                Product.builder()
+                        .id(1L)
+                        .name("Oversize Basic T-Shirt")
+                        .description("Unisex • %100 pamuk • Beyaz")
+                        .priceCents(24900L)        // 249,00 TL
+                        .currency("TRY")
+                        .stock(50)
+                        .category("tops")
+                        .brand("BasicLab")
+                        .color("white")
+                        .gender("unisex")
+                        .rating(4.7)
+                        .imageUrl(null)
+                        .build(),
+
+                Product.builder()
+                        .id(2L)
+                        .name("High-Waist Straight Jean")
+                        .description("Kadın • Mavi • Yüksek bel")
+                        .priceCents(45900L)
+                        .currency("TRY")
+                        .stock(35)
+                        .category("pants")
+                        .brand("Denim&Co")
+                        .color("blue")
+                        .gender("women")
+                        .rating(4.6)
+                        .imageUrl(null)
+                        .build(),
+
+                Product.builder()
+                        .id(3L)
+                        .name("Hoodie Sweatshirt")
+                        .description("Unisex • Kapüşonlu • Siyah")
+                        .priceCents(39900L)
+                        .currency("TRY")
+                        .stock(40)
+                        .category("hoodies")
+                        .brand("UrbanWear")
+                        .color("black")
+                        .gender("unisex")
+                        .rating(4.5)
+                        .imageUrl(null)
+                        .build(),
+
+                Product.builder()
+                        .id(4L)
+                        .name("Chunky Sneakers")
+                        .description("Unisex • Beyaz • Kalın taban")
+                        .priceCents(69900L)
+                        .currency("TRY")
+                        .stock(25)
+                        .category("shoes")
+                        .brand("StreetStep")
+                        .color("white")
+                        .gender("unisex")
+                        .rating(4.8)
+                        .imageUrl(null)
+                        .build(),
+
+                Product.builder()
+                        .id(5L)
+                        .name("Basic Crew Socks (3'lü Paket)")
+                        .description("Pamuk karışımlı • Günlük kullanım")
+                        .priceCents(9900L)
+                        .currency("TRY")
+                        .stock(100)
+                        .category("accessories")
+                        .brand("SoftFeet")
+                        .color("white")
+                        .gender("unisex")
+                        .rating(4.4)
+                        .imageUrl(null)
+                        .build()
+        );
+
+        repo.saveAll(products);
     }
 }

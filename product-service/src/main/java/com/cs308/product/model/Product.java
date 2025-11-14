@@ -1,38 +1,37 @@
 package com.cs308.product.model;
 
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Data
+@Data                   // getter + setter + toString + equals/hashCode
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@Builder                // Product.builder() için
 public class Product {
-    @NotNull
+
     private Long id;
 
-    @NotBlank
     private String name;
 
     private String description;
 
-    @NotNull @Min(0)
+    // 24900 = 249,00 TL
     private Long priceCents;
 
-    @NotBlank
-    private String currency; // e.g., "TRY", "USD"
+    private String currency;   // "TRY"
 
-    @NotNull @Min(0)
     private Integer stock;
 
-    @NotBlank
-    private String category;
+    private String category;   // "tops", "pants", "shoes" ...
+
+    // Opsiyonel ama e-ticaret için mantıklı alanlar:
+    private String brand;      // "Nike", "Pull&Bear" ...
+    private String color;      // "black", "white"
+    private String gender;     // "women", "men", "unisex"
+
+    private Double rating;
 
     private String imageUrl;
-    private Double rating; // average rating 0..5
 }
