@@ -2,6 +2,7 @@ package com.codingapp.autonextauthenticationapi.domain;
 
 import com.codingapp.autonextauthenticationapi.domain.enums.Color;
 import com.codingapp.autonextauthenticationapi.domain.enums.Size;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
@@ -39,6 +40,7 @@ public class ProductVariant {
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", nullable = false)
     @ToString.Exclude
+    @JsonIgnore   // JSON infinite recursion'ı engelliyor
     private Product product;
 
     // Operational key
