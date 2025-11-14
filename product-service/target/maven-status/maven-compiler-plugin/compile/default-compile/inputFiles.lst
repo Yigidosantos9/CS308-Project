@@ -1,0 +1,8 @@
+/Users/ardayigit/Documents/GitHub/CS308-Project/product-service/src/main/java/com/cs308/product/ProductServiceApplication.java
+/Users/ardayigit/Documents/GitHub/CS308-Project/product-service/src/main/java/com/cs308/product/data/DataLoader.java
+/Users/ardayigit/Documents/GitHub/CS308-Project/product-service/src/main/java/com/cs308/product/model/Product.java
+/Users/ardayigit/Documents/GitHub/CS308-Project/product-service/src/main/java/com/cs308/product/repo/ProductRepository.java
+/Users/ardayigit/Documents/GitHub/CS308-Project/product-service/src/main/java/com/cs308/product/service/ProductNotFoundException.java
+/Users/ardayigit/Documents/GitHub/CS308-Project/product-service/src/main/java/com/cs308/product/service/ProductService.java
+/Users/ardayigit/Documents/GitHub/CS308-Project/product-service/src/main/java/com/cs308/product/web/GlobalExceptionHandler.java
+/Users/ardayigit/Documents/GitHub/CS308-Project/product-service/src/main/java/com/cs308/product/web/ProductController.java

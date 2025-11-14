@@ -1,0 +1,12 @@
+server:
+  port: ${PRODUCT_SERVICE_PORT:9001}
+
+spring:
+  application:
+    name: product-service
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

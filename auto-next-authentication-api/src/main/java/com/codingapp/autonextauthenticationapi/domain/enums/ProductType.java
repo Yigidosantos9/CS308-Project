@@ -1,0 +1,5 @@
+package com.codingapp.autonextauthenticationapi.domain.enums;
+
+public enum ProductType {
+    TSHIRT, SHIRT, SWEATER, HOODIE, JACKET, COAT, PANTS, JEANS, SKIRT, DRESS, SHORTS, UNDERWEAR, ACCESSORY
+}
