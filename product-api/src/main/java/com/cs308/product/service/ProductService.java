@@ -58,4 +58,11 @@ public class ProductService {
 
         return search(filter);
     }
+
+    public void delete(Long id) {
+        boolean removed = productRepository.deleteById(id);
+        if (!removed) {
+            throw new ProductNotFoundException(id);
+        }
+    }
 }

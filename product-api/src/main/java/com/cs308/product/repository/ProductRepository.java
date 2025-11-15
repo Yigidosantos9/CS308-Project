@@ -30,6 +30,10 @@ public class ProductRepository {
         return store.isEmpty();
     }
 
+    public boolean deleteById(Long id) {
+        return store.remove(id) != null;
+    }
+
     /**
      * Basit arama + filtre + sıralama
      */
