@@ -2,7 +2,7 @@ version: '3.9'
 services:
   products:
     build:
-      context: product-service
+      context: product-api
     container_name: cs308-products
     ports:
     - 9001:9001

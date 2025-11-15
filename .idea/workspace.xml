@@ -5,14 +5,27 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="48988dbd-5f9b-421e-8d07-4e29e82832ae" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/auto-next-authentication-api/src/main/java/com/codingapp/autonextauthenticationapi/domain/Product.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/auto-next-authentication-api/src/main/java/com/codingapp/autonextauthenticationapi/domain/ProductVariant.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/auto-next-authentication-api/src/main/java/com/codingapp/autonextauthenticationapi/domain/enums/Color.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/auto-next-authentication-api/src/main/java/com/codingapp/autonextauthenticationapi/domain/enums/Fit.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/auto-next-authentication-api/src/main/java/com/codingapp/autonextauthenticationapi/domain/enums/ProductType.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/auto-next-authentication-api/src/main/java/com/codingapp/autonextauthenticationapi/domain/enums/Size.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/auto-next-authentication-api/src/main/java/com/codingapp/autonextauthenticationapi/domain/enums/TargetAudience.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/auto-next-authentication-api/src/main/java/com/codingapp/autonextauthenticationapi/domain/enums/WarrantyStatus.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/product-api/src/main/java/com/cs308/product/model/ProductFilterRequest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/product-api/src/main/java/com/cs308/product/service/ProductService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docker-compose.product.yml" beforeDir="false" afterPath="$PROJECT_DIR$/docker-compose.product.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/gateway-api/README.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/product-service/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/product-api/Dockerfile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/product-service/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/product-api/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/product-service/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/product-api/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/product-service/src/main/java/com/cs308/product/ProductServiceApplication.java" beforeDir="false" afterPath="$PROJECT_DIR$/product-api/src/main/java/com/cs308/product/ProductServiceApplication.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/product-service/src/main/java/com/cs308/product/data/DataLoader.java" beforeDir="false" afterPath="$PROJECT_DIR$/product-api/src/main/java/com/cs308/product/data/DataLoader.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/product-service/src/main/java/com/cs308/product/model/Product.java" beforeDir="false" afterPath="$PROJECT_DIR$/product-api/src/main/java/com/cs308/product/model/Product.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/product-service/src/main/java/com/cs308/product/repo/ProductRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/product-api/src/main/java/com/cs308/product/repository/ProductRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/product-service/src/main/java/com/cs308/product/service/ProductNotFoundException.java" beforeDir="false" afterPath="$PROJECT_DIR$/product-api/src/main/java/com/cs308/product/service/ProductNotFoundException.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/product-service/src/main/java/com/cs308/product/service/ProductService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/product-service/src/main/java/com/cs308/product/web/GlobalExceptionHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/product-api/src/main/java/com/cs308/product/web/GlobalExceptionHandler.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/product-service/src/main/java/com/cs308/product/web/ProductController.java" beforeDir="false" afterPath="$PROJECT_DIR$/product-api/src/main/java/com/cs308/product/controller/ProductController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/product-service/src/main/resources/application.yml" beforeDir="false" afterPath="$PROJECT_DIR$/product-api/src/main/resources/application.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/product-service/target/classes/application.yml" beforeDir="false" afterPath="$PROJECT_DIR$/product-api/target/classes/application.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/product-service/target/classes/com/cs308/product/ProductServiceApplication.class" beforeDir="false" afterPath="$PROJECT_DIR$/product-api/target/classes/com/cs308/product/ProductServiceApplication.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/product-service/target/maven-status/maven-compiler-plugin/compile/default-compile/createdFiles.lst" beforeDir="false" afterPath="$PROJECT_DIR$/product-api/target/maven-status/maven-compiler-plugin/compile/default-compile/createdFiles.lst" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/product-service/target/maven-status/maven-compiler-plugin/compile/default-compile/inputFiles.lst" beforeDir="false" afterPath="$PROJECT_DIR$/product-api/target/maven-status/maven-compiler-plugin/compile/default-compile/inputFiles.lst" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -22,15 +35,23 @@
   <component name="Git.Settings">
     <option name="RECENT_BRANCH_BY_REPOSITORY">
       <map>
-        <entry key="$PROJECT_DIR$" value="scrum-23-product-domain" />
+        <entry key="$PROJECT_DIR$" value="scrum25-product-api" />
       </map>
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="KubernetesApiPersistence">{}</component>
-  <component name="KubernetesApiProvider">{
-  &quot;isMigrated&quot;: true
-}</component>
+  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
+  "lastFilter": {
+    "state": "OPEN",
+    "assignee": "ardagokmenyigit"
+  }
+}]]></component>
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/Yigidosantos9/CS308-Project.git",
+    "accountId": "d962a553-c84a-45b4-8d7d-6d4feeffcd18"
+  }
+}]]></component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 4
 }</component>
@@ -39,26 +60,30 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;Docker.docker-compose.yml: Compose Deployment.executor&quot;: &quot;Run&quot;,
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;scrum-23&quot;,
-    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Application.ProductServiceApplication.executor": "Run",
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "git-widget-placeholder": "main",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "/Users/ardayigit/Documents/GitHub/CS308-Project/product-service/src/main/java/com/cs308/product/controller",
+    "nodejs_package_manager_path": "npm",
+    "project.structure.last.edited": "Project",
+    "project.structure.proportion": "0.0",
+    "project.structure.side.proportion": "0.0",
+    "settings.editor.selected.configurable": "project.propCompiler",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
-  <component name="SharedIndexes">
-    <attachedChunks>
-      <set>
-        <option value="bundled-jdk-9823dce3aa75-bf35d07a577b-intellij.indexing.shared.core-IU-252.26199.169" />
-        <option value="bundled-js-predefined-d6986cc7102b-9c94529fcfe0-JavaScript-IU-252.26199.169" />
-      </set>
-    </attachedChunks>
+}]]></component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/product-service/src/main/java/com/cs308/product/controller" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/gateway-api" />
+    </key>
   </component>
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
@@ -73,5 +98,16 @@
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
   </component>
 </project>
