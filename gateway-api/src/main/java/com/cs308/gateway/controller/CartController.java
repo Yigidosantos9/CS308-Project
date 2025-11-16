@@ -1,0 +1,73 @@
+package com.cs308.gateway.controller;
+
+import com.cs308.gateway.model.product.Cart;
+import com.cs308.gateway.security.SecurityContext;
+import com.cs308.gateway.service.ProductService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+@Slf4j
+@RestController
+@RequestMapping("/api/cart")
+@RequiredArgsConstructor
+public class CartController {
+
+    private final ProductService productService;
+
+    // Customers can add to cart (guests can also add, but we'll use authenticated user's ID if available)
+    @PostMapping("/add")
+    public ResponseEntity<Cart> addToCart(
+            @RequestParam(required = false) Long userId,
+            @RequestParam Long productId,
+            @RequestParam(defaultValue = "1") Integer quantity) {
+        log.info("BFF: Add to cart request received - userId: {}, productId: {}, quantity: {}",
+                userId, productId, quantity);
+
+        try {
+            // If user is authenticated, use their ID; otherwise use provided userId (for guests)
+            Long actualUserId = SecurityContext.isAuthenticated()
+                    ? SecurityContext.getContext().getUserId()
+                    : userId;
+
+            if (actualUserId == null) {
+                return ResponseEntity.badRequest().build();
+            }
+
+            Cart cart = productService.addToCart(actualUserId, productId, quantity);
+            return ResponseEntity.ok(cart);
+        } catch (RuntimeException e) {
+            log.error("Error processing add to cart request", e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    // Customers can view their cart
+    @GetMapping
+    public ResponseEntity<Cart> getCart(@RequestParam(required = false) Long userId) {
+        log.info("BFF: Get cart request received for userId: {}", userId);
+
+        try {
+            // If user is authenticated, use their ID; otherwise use provided userId (for guests)
+            Long actualUserId = SecurityContext.isAuthenticated()
+                    ? SecurityContext.getContext().getUserId()
+                    : userId;
+
+            if (actualUserId == null) {
+                return ResponseEntity.badRequest().build();
+            }
+
+            Cart cart = productService.getCart(actualUserId);
+            return ResponseEntity.ok(cart);
+        } catch (RuntimeException e) {
+            log.error("Error processing get cart request", e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+}
+
