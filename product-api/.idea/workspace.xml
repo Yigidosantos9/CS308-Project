@@ -4,7 +4,11 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="654f1a8e-c5fd-4cb5-929e-c485d23f36cf" name="Changes" comment="" />
+    <list default="true" id="654f1a8e-c5fd-4cb5-929e-c485d23f36cf" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/../gateway-api/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../gateway-api/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/product-api.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/product-api.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -21,9 +25,9 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
   </component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "associatedIndex": 5
-}]]></component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 5
+}</component>
   <component name="ProjectId" id="35YS8qo8QTI3MFJQmWRSbar8NlN" />
   <component name="ProjectLevelVcsManager">
     <ConfirmationsSetting value="2" id="Add" />
@@ -49,6 +53,9 @@
     "node.js.selected.package.eslint": "(autodetect)",
     "node.js.selected.package.tslint": "(autodetect)",
     "nodejs_package_manager_path": "npm",
+    "project.structure.last.edited": "Modules",
+    "project.structure.proportion": "0.0",
+    "project.structure.side.proportion": "0.0",
     "settings.editor.selected.configurable": "preferences.pluginManager",
     "vue.rearranger.settings.migration": "true"
   }
@@ -62,7 +69,7 @@
       <recent name="com.cs308.product.service" />
     </key>
   </component>
-  <component name="RunManager" selected="JUnit.CartServiceTest">
+  <component name="RunManager" selected="Spring Boot.ProductServiceApplication">
     <configuration name="CartServiceTest" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
       <module name="product-api" />
       <extension name="coverage">
@@ -124,6 +131,7 @@
       <option name="presentableId" value="Default" />
       <updated>1763285355569</updated>
       <workItem from="1763285358765" duration="5085000" />
+      <workItem from="1763300204139" duration="859000" />
     </task>
     <servers />
   </component>
