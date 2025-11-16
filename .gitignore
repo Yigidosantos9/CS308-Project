@@ -1,0 +1,57 @@
+### IntelliJ IDEA ###
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# User-specific files
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/dictionaries
+.idea/vcs.xml
+.idea/jsLibraryMappings.xml
+.idea/gradle.xml
+.idea/assetWizardSettings.xml
+.idea/libraries/
+
+# SonarLint
+.idea/sonarlint/
+
+# IntelliJ cache files
+.idea/caches
+.idea/shelf/
+
+### MacOS ###
+.DS_Store
+.AppleDouble
+.LSOverride
+
+### Java ###
+*.class
+*.log
+
+### Maven ###
+target/
+!.mvn/wrapper/maven-wrapper.jar
+
+### Gradle ###
+.gradle/
+build/
+
+### Logs ###
+*.log
+logs/
+log/
+
+### Temporary files ###
+*.tmp
+*.temp
+*.swp
+*.swo
+
+### Other ###
+*.bak
+*.orig
+
+# Ignore local environment variables
+.env
