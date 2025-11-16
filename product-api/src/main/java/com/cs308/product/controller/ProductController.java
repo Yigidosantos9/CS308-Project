@@ -1,6 +1,6 @@
-package com.cs308.product.web;
+package com.cs308.product.controller;
 
-import com.cs308.product.model.Product;
+import com.cs308.product.domain.Product;
 import com.cs308.product.model.ProductFilterRequest;
 import com.cs308.product.service.ProductService;
 import lombok.RequiredArgsConstructor;

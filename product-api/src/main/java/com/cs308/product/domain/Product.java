@@ -1,9 +1,28 @@
 package com.cs308.product.domain;
 
-import com.codingapp.autonextauthenticationapi.domain.enums.*;
-import jakarta.persistence.*;
+import com.cs308.product.domain.enums.Fit;
+import com.cs308.product.domain.enums.ProductType;
+import com.cs308.product.domain.enums.Season;
+import com.cs308.product.domain.enums.TargetAudience;
+import com.cs308.product.domain.enums.WarrantyStatus;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -35,6 +54,14 @@ public class Product {
     @NotBlank
     @Column(nullable = false, length = 200)
     private String name;
+
+    @NotBlank
+    @Column(nullable = false)
+    private Double price;
+
+    @NotBlank
+    @Column(nullable = false)
+    private Integer stock;
 
     @NotBlank
     @Column(nullable = false, length = 100)

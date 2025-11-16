@@ -1,6 +1,6 @@
-package com.cs308.product.repo;
+package com.cs308.product.repository;
 
-import com.cs308.product.model.Product;
+import com.cs308.product.domain.Product;
 import org.springframework.stereotype.Repository;
 
 import java.util.*;
@@ -48,29 +48,21 @@ public class ProductRepository {
                             || (p.getDescription() != null && p.getDescription().toLowerCase().contains(s))
                             || (p.getBrand() != null && p.getBrand().toLowerCase().contains(s));
                 })
-                .filter(p -> category == null || category.isBlank()
-                        || (p.getCategory() != null && p.getCategory().equalsIgnoreCase(category)))
-                .filter(p -> gender == null || gender.isBlank()
-                        || (p.getGender() != null && p.getGender().equalsIgnoreCase(gender)))
-                .filter(p -> color == null || color.isBlank()
-                        || (p.getColor() != null && p.getColor().equalsIgnoreCase(color)))
+                .filter(p -> category == null || category.isBlank())
+                .filter(p -> gender == null || gender.isBlank())
+                .filter(p -> color == null || color.isBlank())
                 .sorted(getComparator(sort))
                 .collect(Collectors.toList());
     }
 
     private Comparator<Product> getComparator(String sort) {
         if ("priceAsc".equalsIgnoreCase(sort)) {
-            return Comparator.comparing(Product::getPriceCents,
-                    Comparator.nullsLast(Long::compareTo));
+            return Comparator.comparing(Product::getPrice,
+                    Comparator.nullsLast(Double::compareTo));
         } else if ("priceDesc".equalsIgnoreCase(sort)) {
-            return Comparator.comparing(Product::getPriceCents,
-                    Comparator.nullsLast(Long::compareTo)).reversed();
-        } else if ("ratingDesc".equalsIgnoreCase(sort)) {
-            return Comparator.comparingDouble(
-                    p -> Optional.ofNullable(p.getRating()).orElse(0.0)
-            ).reversed();
+            return Comparator.comparing(Product::getPrice,
+                    Comparator.nullsLast(Double::compareTo)).reversed();
         }
-        // default: sıralama yok (orijinal sırayı koru)
         return (p1, p2) -> 0;
     }
 }

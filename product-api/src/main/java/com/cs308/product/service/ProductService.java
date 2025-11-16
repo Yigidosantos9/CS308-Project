@@ -1,8 +1,8 @@
 package com.cs308.product.service;
 
-import com.cs308.product.model.Product;
+import com.cs308.product.domain.Product;
 import com.cs308.product.model.ProductFilterRequest;
-import com.cs308.product.repo.ProductRepository;
+import com.cs308.product.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -13,27 +13,27 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class ProductService {
 
-    private final ProductRepository repo;
+    private final ProductRepository productRepository;
 
     public List<Product> getAll() {
-        return repo.findAll();
+        return productRepository.findAll();
     }
 
     public Optional<Product> getById(Long id) {
-        return repo.findById(id);
+        return productRepository.findById(id);
     }
 
 
     public List<Product> search(ProductFilterRequest filter) {
         if (filter == null) {
-            return repo.findAll();
+            return productRepository.findAll();
         }
 
         String sort = (filter.getSort() == null || filter.getSort().isBlank())
                 ? "relevance"
                 : filter.getSort();
 
-        return repo.search(
+        return productRepository.search(
                 filter.getQ(),
                 filter.getCategory(),
                 filter.getGender(),
