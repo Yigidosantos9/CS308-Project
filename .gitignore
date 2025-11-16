@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 ### IntelliJ IDEA ###
 .idea/
 *.iws
@@ -55,3 +56,9 @@ log/
 
 # Ignore local environment variables
 .env
+
+# Module build outputs
+*/target/
+
+# VS Code workspace
+.vscode/
