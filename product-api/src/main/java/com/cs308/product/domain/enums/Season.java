@@ -1,4 +1,4 @@
-package com.codingapp.autonextauthenticationapi.domain.enums;
+package com.cs308.product.domain.enums;
 
 public enum Season {
     SPRING,

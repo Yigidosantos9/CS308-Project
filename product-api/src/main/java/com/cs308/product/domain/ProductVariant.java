@@ -1,4 +1,4 @@
-package com.codingapp.autonextauthenticationapi.domain;
+package com.cs308.product.domain;
 
 import com.codingapp.autonextauthenticationapi.domain.enums.Color;
 import com.codingapp.autonextauthenticationapi.domain.enums.Size;
