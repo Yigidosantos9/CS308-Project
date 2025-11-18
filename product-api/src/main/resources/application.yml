@@ -8,7 +8,7 @@ spring:
   datasource:
     url: jdbc:postgresql://cs308-postgres.postgres.database.azure.com:5432/postgres?sslmode=require
     username: cs308user@cs308-postgres
-    password: YOUR_PASSWORD_HERE
+    password: 'SvO93?2+djYd/mFy2(R7#0z'
     driver-class-name: org.postgresql.Driver
 
   jpa:
