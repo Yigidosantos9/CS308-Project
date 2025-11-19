@@ -1,31 +1,28 @@
+server:
+  port: 8000
+
 spring:
   application:
     name: auto-next-authentication-api
 
+  datasource:
+    url: jdbc:postgresql://cs308-postgres.postgres.database.azure.com:5432/postgres?sslmode=require
+    username: cs308user
+    password: Sv9Und7nkd91
+    driver-class-name: org.postgresql.Driver
 
-  spring:
-    datasource:
-      url: jdbc:postgresql://cs308-postgres.postgres.database.azure.com:5432/postgres?sslmode=require
-      username: cs308user
-      password: Sv9Und7nkd91
-
-      driver-class-name: org.postgresql.Driver
-
-    jpa:
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
       hibernate:
-        ddl-auto: update   # ders projesi için tabloyu otomatik oluştur/güncelle
-      show-sql: true
-      properties:
-        hibernate:
-          dialect: org.hibernate.dialect.PostgreSQLDialect
+        dialect: org.hibernate.dialect.PostgreSQLDialect
 
   flyway:
     enabled: true
     locations: classpath:db/migration
     validate-on-migrate: true
-
-server:
-  port: 8000
 
 jwt:
   secret: aa8c572cd111626310a5fe513742c4561c66957a97afacddc36eed6553ad9a8c
