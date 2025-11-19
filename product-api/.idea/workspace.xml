@@ -46,6 +46,7 @@
     "RequestMappingsPanelWidth0": "75",
     "RequestMappingsPanelWidth1": "75",
     "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
     "RunOnceActivity.git.unshallow": "true",
     "Spring Boot.ProductServiceApplication.executor": "Run",
     "com.intellij.testIntegration.createTest.CreateTestDialog.defaultLibrary": "JUnit5",
@@ -138,7 +139,7 @@
       <workItem from="1763285358765" duration="5085000" />
       <workItem from="1763300204139" duration="859000" />
       <workItem from="1763303616890" duration="1054000" />
-      <workItem from="1763568717556" duration="1277000" />
+      <workItem from="1763568717556" duration="2283000" />
     </task>
     <servers />
   </component>

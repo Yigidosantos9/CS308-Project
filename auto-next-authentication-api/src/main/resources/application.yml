@@ -7,7 +7,7 @@ spring:
     datasource:
       url: jdbc:postgresql://cs308-postgres.postgres.database.azure.com:5432/postgres?sslmode=require
       username: cs308user@cs308-postgres
-      password: SvO93?2+djYd/mFy2(R7
+      password: Sv9Und7nkd91
 
       driver-class-name: org.postgresql.Driver
 
