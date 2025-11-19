@@ -4,11 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="654f1a8e-c5fd-4cb5-929e-c485d23f36cf" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/../auto-next-authentication-api/src/main/resources/application.yml" beforeDir="false" afterPath="$PROJECT_DIR$/../auto-next-authentication-api/src/main/resources/application.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/application.yml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/application.yml" afterDir="false" />
-    </list>
+    <list default="true" id="654f1a8e-c5fd-4cb5-929e-c485d23f36cf" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -139,7 +135,7 @@
       <workItem from="1763285358765" duration="5085000" />
       <workItem from="1763300204139" duration="859000" />
       <workItem from="1763303616890" duration="1054000" />
-      <workItem from="1763568717556" duration="2283000" />
+      <workItem from="1763568717556" duration="2623000" />
     </task>
     <servers />
   </component>
