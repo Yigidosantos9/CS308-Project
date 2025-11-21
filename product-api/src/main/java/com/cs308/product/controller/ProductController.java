@@ -4,6 +4,7 @@ import com.cs308.product.domain.Product;
 import com.cs308.product.model.ProductFilterRequest;
 import com.cs308.product.service.ProductService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,6 +16,12 @@ import java.util.List;
 public class ProductController {
 
     private final ProductService service;
+
+    @PostMapping
+    public ResponseEntity<Product> addProduct(@RequestBody Product product) {
+        Product created = service.addProduct(product);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+    }
 
 
     @GetMapping

@@ -5,12 +5,14 @@ import org.springframework.stereotype.Repository;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 @Repository
 public class ProductRepository {
 
     private final Map<Long, Product> store = new ConcurrentHashMap<>();
+    private final AtomicLong idGenerator = new AtomicLong(0);
 
     public Optional<Product> findById(Long id) {
         return Optional.ofNullable(store.get(id));
@@ -20,9 +22,20 @@ public class ProductRepository {
         return new ArrayList<>(store.values());
     }
 
+    public Product save(Product product) {
+        if (product.getId() == null) {
+            product.setId(idGenerator.incrementAndGet());
+        } else {
+            idGenerator.accumulateAndGet(product.getId(), Math::max);
+        }
+
+        store.put(product.getId(), product);
+        return product;
+    }
+
     public void saveAll(Collection<Product> products) {
         for (Product p : products) {
-            store.put(p.getId(), p);
+            save(p);
         }
     }
 
