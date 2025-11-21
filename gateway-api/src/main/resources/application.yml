@@ -8,10 +8,6 @@ spring:
     web-application-type: reactive
   cloud:
     gateway:
-      default-filters:
-        - RemoveHopByHopHeaders=connection,keep-alive,transfer-encoding,te,trailer,proxy-authorization,proxy-authenticate,upgrade
-        - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
-        - AddResponseHeader=X-Request-Id, #{T(java.util.UUID).randomUUID().toString()}
       routes:
         - id: auth-service
           uri: ${AUTH_SERVICE_URI:http://localhost:8000}
@@ -74,7 +70,7 @@ management:
 
 gateway:
   cors:
-    allowed-origins: ${FRONTEND_ORIGINS:http://localhost:3000}
+    allowed-origins: ${FRONTEND_ORIGINS:http://localhost:3000,http://localhost:5173,http://localhost:5174}
     allowed-methods: GET,POST,PUT,PATCH,DELETE,OPTIONS
     allowed-headers: "*"
     exposed-headers: "X-Request-Id"

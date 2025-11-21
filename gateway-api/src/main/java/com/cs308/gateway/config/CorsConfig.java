@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.reactive.CorsConfigurationSource;
+import org.springframework.web.cors.reactive.CorsWebFilter;
 import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
@@ -15,7 +16,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @ConfigurationProperties(prefix = "gateway.cors")
 public class CorsConfig {
-    private List<String> allowedOrigins = List.of("http://localhost:3000");
+    private List<String> allowedOrigins = List.of("http://localhost:3000", "http://localhost:5173", "http://localhost:5174");
     private List<String> allowedMethods = Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS");
     private String allowedHeaders = "*";
     private String exposedHeaders = "X-Request-Id";
@@ -33,6 +34,11 @@ public class CorsConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return source;
+    }
+
+    @Bean
+    public CorsWebFilter corsWebFilter(CorsConfigurationSource corsConfigurationSource) {
+        return new CorsWebFilter(corsConfigurationSource);
     }
 
     public void setAllowedOrigins(List<String> allowedOrigins) { this.allowedOrigins = allowedOrigins; }
