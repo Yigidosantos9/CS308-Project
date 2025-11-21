@@ -31,7 +31,6 @@ public class ProductController {
         return ResponseEntity.ok(updated);
     }
 
-
     @GetMapping
     public List<Product> listProducts(@ModelAttribute ProductFilterRequest filter) {
         return service.search(filter);
