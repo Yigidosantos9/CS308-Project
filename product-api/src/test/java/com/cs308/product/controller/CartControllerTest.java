@@ -100,5 +100,19 @@ class CartControllerTest {
                 .removeFromCart(userId, productId);
     }
 
+    @Test
+    void clearCart_shouldCallServiceAndReturnOk() throws Exception {
+        Long userId = 10L;
+        Cart cart = buildCart(userId);
+
+        when(cartService.clearCart(eq(userId))).thenReturn(cart);
+
+        mockMvc.perform(delete("/cart/clear")
+                        .param("userId", String.valueOf(userId)))
+                .andExpect(status().isOk());
+
+        Mockito.verify(cartService, times(1)).clearCart(userId);
+    }
+
 
 }
