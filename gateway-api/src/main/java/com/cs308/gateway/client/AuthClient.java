@@ -62,9 +62,10 @@ public class AuthClient {
                     String.class
             );
             return response.getBody();
-        } catch (HttpClientErrorException e) {
-            log.error("HTTP error calling auth service sign-up: {}", e.getStatusCode(), e);
-            throw new RuntimeException("Registration failed: " + e.getMessage(), e);
+        } catch (HttpClientErrorException | org.springframework.web.client.HttpServerErrorException e) {
+            log.error("HTTP error calling auth service sign-up: {} - {}", e.getStatusCode(), e.getResponseBodyAsString(), e);
+            String errorBody = e.getResponseBodyAsString();
+            throw new RuntimeException("Registration failed: " + (errorBody != null ? errorBody : e.getMessage()), e);
         } catch (RestClientException e) {
             log.error("Error calling auth service sign-up", e);
             throw new RuntimeException("Failed to connect to auth service", e);
