@@ -115,5 +115,27 @@ public class ProductClient {
             throw new RuntimeException("Failed to fetch cart", e);
         }
     }
-}
 
+    public Cart removeFromCart(Long userId, Long productId) {
+        log.debug("Calling product service: DELETE /cart/remove - userId: {}, productId: {}",
+                userId, productId);
+
+        try {
+            String uri = UriComponentsBuilder.fromPath("/cart/remove")
+                    .queryParam("userId", userId)
+                    .queryParam("productId", productId)
+                    .toUriString();
+
+            ResponseEntity<Cart> response = restTemplate.exchange(
+                    uri,
+                    HttpMethod.DELETE,
+                    null,
+                    Cart.class);
+
+            return response.getBody();
+        } catch (RestClientException e) {
+            log.error("Error calling product service for remove from cart", e);
+            throw new RuntimeException("Failed to remove item from cart", e);
+        }
+    }
+}

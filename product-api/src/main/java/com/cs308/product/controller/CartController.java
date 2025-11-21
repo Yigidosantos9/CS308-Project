@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -27,6 +28,12 @@ public class CartController {
     @GetMapping
     public ResponseEntity<Cart> getCart(@RequestParam Long userId) {
         return ResponseEntity.ok(cartService.getCart(userId));
+    }
+
+    @DeleteMapping("/remove")
+    public ResponseEntity<Cart> removeFromCart(@RequestParam Long userId,
+                                               @RequestParam Long productId) {
+        return ResponseEntity.ok(cartService.removeFromCart(userId, productId));
     }
 
 }

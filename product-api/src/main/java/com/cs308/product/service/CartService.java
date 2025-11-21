@@ -63,6 +63,21 @@ public class CartService {
                 .orElseThrow(() -> new RuntimeException("Cart not found"));
     }
 
+    @Transactional
+    public Cart removeFromCart(Long userId, Long productId) {
+        Cart cart = cartRepository.findByUserId(userId)
+                .orElseThrow(() -> new RuntimeException("Cart not found"));
+
+        CartItem item = cart.getItems().stream()
+                .filter(i -> i.getProduct().getId().equals(productId))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Product not in cart"));
+
+        cart.removeItem(item);
+        recalcTotals(cart);
+        return cartRepository.save(cart);
+    }
+
     private void recalcTotals(Cart cart) {
         double totalPrice = 0;
         int totalQty = 0;

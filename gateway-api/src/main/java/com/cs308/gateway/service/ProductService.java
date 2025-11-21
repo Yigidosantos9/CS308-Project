@@ -37,5 +37,9 @@ public class ProductService {
         log.info("Processing get cart request for userId: {}", userId);
         return productClient.getCart(userId);
     }
-}
 
+    public Cart removeFromCart(Long userId, Long productId) {
+        log.info("Processing remove from cart request - userId: {}, productId: {}", userId, productId);
+        return productClient.removeFromCart(userId, productId);
+    }
+}
