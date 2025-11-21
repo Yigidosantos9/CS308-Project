@@ -78,6 +78,16 @@ public class CartService {
         return cartRepository.save(cart);
     }
 
+    @Transactional
+    public Cart clearCart(Long userId) {
+        Cart cart = cartRepository.findByUserId(userId)
+                .orElseThrow(() -> new RuntimeException("Cart not found"));
+
+        cart.getItems().clear();
+        recalcTotals(cart);
+        return cartRepository.save(cart);
+    }
+
     private void recalcTotals(Cart cart) {
         double totalPrice = 0;
         int totalQty = 0;

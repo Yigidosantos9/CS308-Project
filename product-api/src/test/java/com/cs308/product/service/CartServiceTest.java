@@ -267,4 +267,28 @@ class CartServiceTest {
         assertTrue(ex.getMessage().toLowerCase().contains("product"));
         verify(cartRepository).findByUserId(userId);
     }
+
+    @Test
+    void clearCart_shouldRemoveAllItemsAndResetTotals() {
+        Long userId = 10L;
+        Product product = buildProduct(5L, 50.0, 10);
+
+        Cart cart = buildEmptyCart(userId);
+        CartItem item = buildCartItem(cart, product, 2);
+        cart.setItems(new ArrayList<>(List.of(item)));
+        cart.setTotalPrice(100.0);
+        cart.setTotalQuantity(2);
+
+        when(cartRepository.findByUserId(userId)).thenReturn(Optional.of(cart));
+        when(cartRepository.save(any(Cart.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Cart result = cartService.clearCart(userId);
+
+        assertTrue(result.getItems().isEmpty());
+        assertEquals(0.0, result.getTotalPrice());
+        assertEquals(0, result.getTotalQuantity());
+
+        verify(cartRepository).findByUserId(userId);
+        verify(cartRepository).save(cart);
+    }
 }
