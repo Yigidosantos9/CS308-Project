@@ -6,9 +6,9 @@ const ShopContext = createContext();
 
 export const ShopProvider = ({ children }) => {
   const [cart, setCart] = useState([]);
-  const [user, setUser] = useState({ id: 1, name: "Test User" }); // Temporary Mock User for API testing
+  // Defaulting to User ID 1 as per your DataLoader example
+  const [user, setUser] = useState({ id: 1, name: "Test User" }); 
 
-  // Load Cart from Backend on Mount
   useEffect(() => {
     if (user?.id) {
       loadCart(user.id);
@@ -18,15 +18,12 @@ export const ShopProvider = ({ children }) => {
   const loadCart = async (userId) => {
     try {
       const cartData = await cartService.getCart(userId);
-      // Backend returns { items: [...] }, we map it to our frontend structure if needed
-      // Assuming backend CartItem has { product: {...}, quantity: ... }
       if (cartData && cartData.items) {
-        // Flatten structure for easier UI usage if necessary, or keep as is. 
-        // Here we adapt backend "items" to our simple UI list
         const formattedCart = cartData.items.map(item => ({
           ...item.product,
           quantity: item.quantity,
-          selectedSize: "M" // Backend cart snippet didn't show size support yet, defaulting to M
+          // Backend CartItem doesn't have size, so we default to M for display
+          selectedSize: "M" 
         }));
         setCart(formattedCart);
       }
@@ -37,29 +34,30 @@ export const ShopProvider = ({ children }) => {
 
   const addToCart = async (product) => {
     try {
-      // Optimistic UI Update (Show it immediately)
+      // 1. Optimistic Update
       setCart((prev) => [...prev, { ...product, quantity: 1 }]);
 
-      // Call Backend
+      // 2. Call Backend
       await cartService.addToCart(user.id, product.id, 1);
       
-      // Reload to ensure sync
+      // 3. Sync
       await loadCart(user.id);
     } catch (err) {
       console.error("Failed to add to cart API:", err);
-      // Revert if failed (optional implementation)
+      
+      // 4. Error Handling
+      // If backend says "Not enough stock" (usually 500 in your current code)
+      alert("Failed to add to cart. Item might be out of stock.");
+      
+      // Revert optimistic update
+      await loadCart(user.id);
     }
   };
 
   const removeFromCart = async (productId) => {
     try {
-      // Optimistic UI Update
       setCart((prev) => prev.filter((item) => item.id !== productId));
-
-      // Call Backend
       await cartService.removeFromCart(user.id, productId);
-      
-      // Reload sync
       await loadCart(user.id);
     } catch (err) {
       console.error("Failed to remove from cart API:", err);
