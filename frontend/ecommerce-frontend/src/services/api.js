@@ -1,6 +1,5 @@
 import axios from 'axios';
 
-// Ensure this matches your Spring Boot port (default is usually 8080)
 const API_BASE_URL = 'http://localhost:8080/api';
 
 const api = axios.create({
@@ -10,7 +9,6 @@ const api = axios.create({
   },
 });
 
-// Product Endpoints
 export const productService = {
   // Matches ProductController.java: @GetMapping("/{id}")
   getProductById: async (id) => {
@@ -23,10 +21,16 @@ export const productService = {
     }
   },
 
-  // Matches ProductController.java: @GetMapping
+  // Matches ProductController.java: @GetMapping with ProductFilterRequest
+  // Supported params: q, category, gender, color, sort
   getProducts: async (filter = {}) => {
     try {
-      const response = await api.get('/products', { params: filter });
+      // Remove undefined/null keys to keep URL clean
+      const params = Object.fromEntries(
+        Object.entries(filter).filter(([_, v]) => v != null && v !== '')
+      );
+      
+      const response = await api.get('/products', { params });
       return response.data;
     } catch (error) {
       console.error("Error fetching products:", error);
@@ -35,21 +39,30 @@ export const productService = {
   },
 };
 
-// Cart Endpoints
-// Note: You provided ProductService.addToCart, but the Controller snippet 
-// didn't show a mapping for it. I am adding this anticipated endpoint based on standard patterns.
-export const cartService = {
-  addToCart: async (userId, productId, quantity) => {
+// New: Matches ReviewController.java
+export const reviewService = {
+  // @GetMapping("/product/{productId}")
+  getProductReviews: async (productId) => {
     try {
-      // Assuming a CartController exists or will exist at /cart/add
-      const response = await api.post(`/cart/add`, null, {
-        params: { userId, productId, quantity }
-      });
+      const response = await api.get(`/reviews/product/${productId}`);
       return response.data;
     } catch (error) {
-      console.error("Error adding to cart:", error);
-      throw error;
+      console.error(`Error fetching reviews for product ${productId}:`, error);
+      return []; // Return empty array on error to prevent UI crash
     }
+  },
+
+  // @PostMapping
+  addReview: async (reviewData) => {
+    return await api.post('/reviews', reviewData);
+  }
+};
+
+export const cartService = {
+  addToCart: async (userId, productId, quantity) => {
+    return await api.post(`/cart/add`, null, {
+      params: { userId, productId, quantity }
+    });
   }
 };
 
