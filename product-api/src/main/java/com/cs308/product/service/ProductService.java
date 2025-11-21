@@ -2,6 +2,7 @@ package com.cs308.product.service;
 
 import com.cs308.product.domain.Product;
 import com.cs308.product.model.ProductFilterRequest;
+import com.cs308.product.model.ProductUpdateRequest;
 import com.cs308.product.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -17,6 +18,65 @@ public class ProductService {
 
     public Product addProduct(Product product) {
         return productRepository.save(product);
+    }
+
+    public Product updateProduct(Long id, ProductUpdateRequest request) {
+        Product existing = productRepository.findById(id)
+                .orElseThrow(() -> new ProductNotFoundException(id));
+
+        applyUpdates(existing, request);
+        return productRepository.save(existing);
+    }
+
+    private void applyUpdates(Product target, ProductUpdateRequest request) {
+        if (request.getName() != null) {
+            target.setName(request.getName());
+        }
+        if (request.getPrice() != null) {
+            target.setPrice(request.getPrice());
+        }
+        if (request.getStock() != null) {
+            target.setStock(request.getStock());
+        }
+        if (request.getModel() != null) {
+            target.setModel(request.getModel());
+        }
+        if (request.getSerialNumber() != null) {
+            target.setSerialNumber(request.getSerialNumber());
+        }
+        if (request.getDescription() != null) {
+            target.setDescription(request.getDescription());
+        }
+        if (request.getBrand() != null) {
+            target.setBrand(request.getBrand());
+        }
+        if (request.getProductType() != null) {
+            target.setProductType(request.getProductType());
+        }
+        if (request.getTargetAudience() != null) {
+            target.setTargetAudience(request.getTargetAudience());
+        }
+        if (request.getWarrantyStatus() != null) {
+            target.setWarrantyStatus(request.getWarrantyStatus());
+        }
+        if (request.getDistributorInfo() != null) {
+            target.setDistributorInfo(request.getDistributorInfo());
+        }
+        if (request.getSeason() != null) {
+            target.setSeason(request.getSeason());
+        }
+        if (request.getFit() != null) {
+            target.setFit(request.getFit());
+        }
+        if (request.getMaterial() != null) {
+            target.setMaterial(request.getMaterial());
+        }
+        if (request.getCareInstructions() != null) {
+            target.setCareInstructions(request.getCareInstructions());
+        }
+        if (request.getActive() != null) {
+            target.setActive(request.getActive());
+        }
     }
 
     public List<Product> getAll() {

@@ -2,6 +2,7 @@ package com.cs308.product.controller;
 
 import com.cs308.product.domain.Product;
 import com.cs308.product.model.ProductFilterRequest;
+import com.cs308.product.model.ProductUpdateRequest;
 import com.cs308.product.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -23,6 +24,12 @@ public class ProductController {
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<Product> updateProduct(@PathVariable Long id,
+                                                 @RequestBody ProductUpdateRequest request) {
+        Product updated = service.updateProduct(id, request);
+        return ResponseEntity.ok(updated);
+    }
 
     @GetMapping
     public List<Product> listProducts(@ModelAttribute ProductFilterRequest filter) {
