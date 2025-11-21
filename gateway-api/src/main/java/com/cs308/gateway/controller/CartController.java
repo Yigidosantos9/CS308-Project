@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -69,5 +70,27 @@ public class CartController {
             return ResponseEntity.internalServerError().build();
         }
     }
-}
 
+    @DeleteMapping("/remove")
+    public ResponseEntity<Cart> removeFromCart(
+            @RequestParam(required = false) Long userId,
+            @RequestParam Long productId) {
+        log.info("BFF: Remove from cart request received - userId: {}, productId: {}", userId, productId);
+
+        try {
+            Long actualUserId = SecurityContext.isAuthenticated()
+                    ? SecurityContext.getContext().getUserId()
+                    : userId;
+
+            if (actualUserId == null) {
+                return ResponseEntity.badRequest().build();
+            }
+
+            Cart cart = productService.removeFromCart(actualUserId, productId);
+            return ResponseEntity.ok(cart);
+        } catch (RuntimeException e) {
+            log.error("Error processing remove from cart request", e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+}

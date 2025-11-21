@@ -207,4 +207,64 @@ class CartServiceTest {
         assertTrue(ex.getMessage().toLowerCase().contains("cart"));
         verify(cartRepository).findByUserId(userId);
     }
+
+    @Test
+    void removeFromCart_shouldRemoveItemAndRecalculateTotals() {
+        // GIVEN
+        Long userId = 10L;
+        Long productId = 5L;
+
+        Product productToRemove = buildProduct(productId, 50.0, 10);
+        Product remainingProduct = buildProduct(6L, 20.0, 5);
+
+        Cart cart = buildEmptyCart(userId);
+        CartItem itemToRemove = buildCartItem(cart, productToRemove, 2);
+        CartItem otherItem = buildCartItem(cart, remainingProduct, 1);
+        cart.setItems(new ArrayList<>(List.of(itemToRemove, otherItem)));
+        cart.setTotalPrice(120.0);
+        cart.setTotalQuantity(3);
+
+        when(cartRepository.findByUserId(userId)).thenReturn(Optional.of(cart));
+        when(cartRepository.save(any(Cart.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // WHEN
+        Cart result = cartService.removeFromCart(userId, productId);
+
+        // THEN
+        assertEquals(1, result.getItems().size());
+        assertEquals(remainingProduct.getId(), result.getItems().get(0).getProduct().getId());
+        assertEquals(20.0, result.getTotalPrice());
+        assertEquals(1, result.getTotalQuantity());
+
+        verify(cartRepository).findByUserId(userId);
+    }
+
+    @Test
+    void removeFromCart_shouldThrow_whenCartDoesNotExist() {
+        // GIVEN
+        Long userId = 10L;
+        when(cartRepository.findByUserId(userId)).thenReturn(Optional.empty());
+
+        // WHEN - THEN
+        RuntimeException ex = assertThrows(RuntimeException.class,
+                () -> cartService.removeFromCart(userId, 1L));
+
+        assertTrue(ex.getMessage().toLowerCase().contains("cart"));
+        verify(cartRepository).findByUserId(userId);
+    }
+
+    @Test
+    void removeFromCart_shouldThrow_whenItemNotInCart() {
+        // GIVEN
+        Long userId = 10L;
+        Cart cart = buildEmptyCart(userId);
+        when(cartRepository.findByUserId(userId)).thenReturn(Optional.of(cart));
+
+        // WHEN - THEN
+        RuntimeException ex = assertThrows(RuntimeException.class,
+                () -> cartService.removeFromCart(userId, 99L));
+
+        assertTrue(ex.getMessage().toLowerCase().contains("product"));
+        verify(cartRepository).findByUserId(userId);
+    }
 }

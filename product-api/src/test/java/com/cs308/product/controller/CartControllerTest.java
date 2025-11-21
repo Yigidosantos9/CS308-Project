@@ -18,6 +18,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @ExtendWith(SpringExtension.class)
@@ -53,10 +54,10 @@ class CartControllerTest {
                 .thenReturn(cart);
 
         // WHEN - THEN
-        mockMvc.perform(post("/api/cart/add")
+        mockMvc.perform(post("/cart/add")
                         .param("userId", String.valueOf(userId))
                         .param("productId", String.valueOf(productId))
-                        .param("qty", String.valueOf(qty)))
+                        .param("quantity", String.valueOf(qty)))
                 .andExpect(status().isOk());
 
         Mockito.verify(cartService, times(1))
@@ -72,12 +73,31 @@ class CartControllerTest {
         when(cartService.getCart(eq(userId))).thenReturn(cart);
 
         // WHEN - THEN
-        mockMvc.perform(get("/api/cart")
+        mockMvc.perform(get("/cart")
                         .param("userId", String.valueOf(userId)))
                 .andExpect(status().isOk());
 
         Mockito.verify(cartService, times(1))
                 .getCart(userId);
+    }
+
+    @Test
+    void removeFromCart_shouldCallServiceAndReturnOk() throws Exception {
+        // GIVEN
+        Long userId = 10L;
+        Long productId = 5L;
+        Cart cart = buildCart(userId);
+
+        when(cartService.removeFromCart(eq(userId), eq(productId))).thenReturn(cart);
+
+        // WHEN - THEN
+        mockMvc.perform(delete("/cart/remove")
+                        .param("userId", String.valueOf(userId))
+                        .param("productId", String.valueOf(productId)))
+                .andExpect(status().isOk());
+
+        Mockito.verify(cartService, times(1))
+                .removeFromCart(userId, productId);
     }
 
 
