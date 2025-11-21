@@ -10,7 +10,6 @@ const api = axios.create({
 });
 
 export const productService = {
-  // Matches ProductController.java: @GetMapping("/{id}")
   getProductById: async (id) => {
     try {
       const response = await api.get(`/products/${id}`);
@@ -21,15 +20,11 @@ export const productService = {
     }
   },
 
-  // Matches ProductController.java: @GetMapping with ProductFilterRequest
-  // Supported params: q, category, gender, color, sort
   getProducts: async (filter = {}) => {
     try {
-      // Remove undefined/null keys to keep URL clean
       const params = Object.fromEntries(
         Object.entries(filter).filter(([_, v]) => v != null && v !== '')
       );
-      
       const response = await api.get('/products', { params });
       return response.data;
     } catch (error) {
@@ -39,29 +34,42 @@ export const productService = {
   },
 };
 
-// New: Matches ReviewController.java
 export const reviewService = {
-  // @GetMapping("/product/{productId}")
   getProductReviews: async (productId) => {
     try {
       const response = await api.get(`/reviews/product/${productId}`);
       return response.data;
     } catch (error) {
       console.error(`Error fetching reviews for product ${productId}:`, error);
-      return []; // Return empty array on error to prevent UI crash
+      return [];
     }
   },
-
-  // @PostMapping
   addReview: async (reviewData) => {
     return await api.post('/reviews', reviewData);
   }
 };
 
+// UPDATED: Matches CartController.java exactly
 export const cartService = {
+  // POST /cart/add?userId=...&productId=...&quantity=...
   addToCart: async (userId, productId, quantity) => {
     return await api.post(`/cart/add`, null, {
       params: { userId, productId, quantity }
+    });
+  },
+
+  // GET /cart?userId=...
+  getCart: async (userId) => {
+    const response = await api.get(`/cart`, {
+      params: { userId }
+    });
+    return response.data;
+  },
+
+  // DELETE /cart/remove?userId=...&productId=...
+  removeFromCart: async (userId, productId) => {
+    return await api.delete(`/cart/remove`, {
+      params: { userId, productId }
     });
   }
 };
