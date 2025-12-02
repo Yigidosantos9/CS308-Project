@@ -2,10 +2,18 @@ package com.cs308.gateway.controller;
 
 import com.cs308.gateway.model.auth.enums.UserType;
 import com.cs308.gateway.security.RequiresRole;
+import com.cs308.gateway.model.invoice.InvoiceRequest;
+import com.cs308.gateway.service.InvoicePdfService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import jakarta.validation.Valid;
 
 @Slf4j
 @RestController
@@ -13,6 +21,8 @@ import org.springframework.web.bind.annotation.*;
 @RequiresRole({UserType.SALES_MANAGER}) // All endpoints require Sales Manager role
 @RequiredArgsConstructor
 public class SalesManagerController {
+
+    private final InvoicePdfService invoicePdfService;
 
     // Sales Manager can set product prices
     @PutMapping("/products/{productId}/price")
@@ -44,6 +54,27 @@ public class SalesManagerController {
         return ResponseEntity.ok().build();
     }
 
+    // Generate invoice PDF on demand
+    @PostMapping(value = "/invoices/pdf", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<ByteArrayResource> generateInvoicePdf(@Valid @RequestBody InvoiceRequest request) {
+        log.info("BFF: Generate invoice PDF - invoiceNumber: {}", request.getInvoiceNumber());
+        byte[] pdfBytes = invoicePdfService.generateInvoicePdf(request);
+
+        String filename = "invoice-" + request.getInvoiceNumber() + ".pdf";
+        ContentDisposition contentDisposition = ContentDisposition.attachment()
+                .filename(filename)
+                .build();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentDisposition(contentDisposition);
+
+        return ResponseEntity.ok()
+                .headers(headers)
+                .contentLength(pdfBytes.length)
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(new ByteArrayResource(pdfBytes));
+    }
+
     // Sales Manager can calculate revenue and profit
     @GetMapping("/revenue")
     public ResponseEntity<?> calculateRevenue(
@@ -69,4 +100,3 @@ public class SalesManagerController {
         return ResponseEntity.ok().build();
     }
 }
-
