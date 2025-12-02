@@ -69,6 +69,14 @@ const Navbar = () => {
               {link.name}
             </Link>
           ))}
+          <Link
+            to="/profile"
+            onClick={() => setIsMenuOpen(false)}
+            className="flex items-center gap-2 text-lg font-semibold text-black"
+          >
+            <User className="w-5 h-5" />
+            Profile
+          </Link>
         </div>
       )}
     </nav>
