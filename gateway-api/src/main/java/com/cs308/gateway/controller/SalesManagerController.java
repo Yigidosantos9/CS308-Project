@@ -4,6 +4,9 @@ import com.cs308.gateway.model.auth.enums.UserType;
 import com.cs308.gateway.security.RequiresRole;
 import com.cs308.gateway.model.invoice.InvoiceRequest;
 import com.cs308.gateway.service.InvoicePdfService;
+import com.cs308.gateway.service.ProductService;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.ByteArrayResource;
@@ -13,8 +16,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import jakarta.validation.Valid;
-
 @Slf4j
 @RestController
 @RequestMapping("/api/sales")
@@ -23,15 +24,15 @@ import jakarta.validation.Valid;
 public class SalesManagerController {
 
     private final InvoicePdfService invoicePdfService;
+    private final ProductService productService;
 
     // Sales Manager can set product prices
     @PutMapping("/products/{productId}/price")
     public ResponseEntity<?> setProductPrice(
             @PathVariable Long productId, 
-            @RequestParam Double price) {
+            @RequestParam @PositiveOrZero Double price) {
         log.info("BFF: Set product price request - productId: {}, price: {}", productId, price);
-        // TODO: Implement set price
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(productService.setProductPrice(productId, price));
     }
 
     // Sales Manager can set discounts

@@ -42,4 +42,12 @@ public class ProductService {
         log.info("Processing remove from cart request - userId: {}, productId: {}", userId, productId);
         return productClient.removeFromCart(userId, productId);
     }
+
+    public Product setProductPrice(Long productId, Double price) {
+        log.info("Processing set product price - productId: {}, price: {}", productId, price);
+        if (price == null || price < 0) {
+            throw new IllegalArgumentException("Price must be non-negative");
+        }
+        return productClient.setProductPrice(productId, price);
+    }
 }

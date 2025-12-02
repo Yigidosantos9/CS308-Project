@@ -3,6 +3,7 @@ package com.cs308.gateway.client;
 import com.cs308.gateway.model.product.Cart;
 import com.cs308.gateway.model.product.Product;
 import com.cs308.gateway.model.product.ProductFilterRequest;
+import com.cs308.gateway.model.product.ProductPriceUpdateRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -136,6 +137,29 @@ public class ProductClient {
         } catch (RestClientException e) {
             log.error("Error calling product service for remove from cart", e);
             throw new RuntimeException("Failed to remove item from cart", e);
+        }
+    }
+
+    public Product setProductPrice(Long productId, Double price) {
+        log.debug("Calling product service: PUT /products/{} with price {}", productId, price);
+
+        try {
+            ProductPriceUpdateRequest body = ProductPriceUpdateRequest.builder()
+                    .price(price)
+                    .build();
+
+            ResponseEntity<Product> response = restTemplate.exchange(
+                    "/products/{id}",
+                    HttpMethod.PUT,
+                    new org.springframework.http.HttpEntity<>(body),
+                    Product.class,
+                    productId
+            );
+
+            return response.getBody();
+        } catch (RestClientException e) {
+            log.error("Error calling product service to set price for id: {}", productId, e);
+            throw new RuntimeException("Failed to set product price", e);
         }
     }
 }
