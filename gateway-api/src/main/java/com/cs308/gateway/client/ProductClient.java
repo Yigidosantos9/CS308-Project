@@ -1,10 +1,10 @@
 package com.cs308.gateway.client;
 
 import com.cs308.gateway.model.product.Cart;
+import com.cs308.gateway.model.product.Order;
 import com.cs308.gateway.model.product.Product;
 import com.cs308.gateway.model.product.ProductFilterRequest;
 import com.cs308.gateway.model.product.ProductPriceUpdateRequest;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.ParameterizedTypeReference;
@@ -140,6 +140,48 @@ public class ProductClient {
         }
     }
 
+    public Cart updateCartItemQuantity(Long userId, Long productId, Integer quantity) {
+        log.debug("Calling product service: PUT /cart/update - userId: {}, productId: {}, quantity: {}",
+                userId, productId, quantity);
+
+        try {
+            String uri = UriComponentsBuilder.fromPath("/cart/update")
+                    .queryParam("userId", userId)
+                    .queryParam("productId", productId)
+                    .queryParam("quantity", quantity)
+                    .toUriString();
+
+            ResponseEntity<Cart> response = restTemplate.exchange(
+                    uri,
+                    HttpMethod.PUT,
+                    null,
+                    Cart.class);
+
+            return response.getBody();
+        } catch (RestClientException e) {
+            log.error("Error calling product service for update cart item quantity", e);
+            throw new RuntimeException("Failed to update cart item quantity", e);
+        }
+    }
+
+    public Cart mergeCarts(Long guestUserId, Long userId) {
+        log.debug("Calling product service: POST /cart/merge - guestUserId: {}, userId: {}",
+                guestUserId, userId);
+
+        try {
+            String uri = UriComponentsBuilder.fromPath("/cart/merge")
+                    .queryParam("guestUserId", guestUserId)
+                    .queryParam("userId", userId)
+                    .toUriString();
+
+            Cart cart = restTemplate.postForObject(uri, null, Cart.class);
+            return cart;
+        } catch (RestClientException e) {
+            log.error("Error calling product service for merge carts", e);
+            throw new RuntimeException("Failed to merge carts", e);
+        }
+    }
+
     public Product setProductPrice(Long productId, Double price) {
         log.debug("Calling product service: PUT /products/{} with price {}", productId, price);
 
@@ -160,6 +202,60 @@ public class ProductClient {
         } catch (RestClientException e) {
             log.error("Error calling product service to set price for id: {}", productId, e);
             throw new RuntimeException("Failed to set product price", e);
+        }
+    }
+
+    public Order createOrder(Long userId) {
+        log.debug("Calling product service: POST /orders - userId: {}", userId);
+
+        try {
+            String uri = UriComponentsBuilder.fromPath("/orders")
+                    .queryParam("userId", userId)
+                    .toUriString();
+
+            Order order = restTemplate.postForObject(uri, null, Order.class);
+            return order;
+        } catch (RestClientException e) {
+            log.error("Error calling product service for create order", e);
+            throw new RuntimeException("Failed to create order", e);
+        }
+    }
+
+    public Order getOrder(Long orderId, Long userId) {
+        log.debug("Calling product service: GET /orders/{} - userId: {}", orderId, userId);
+
+        try {
+            String uri = UriComponentsBuilder.fromPath("/orders/{orderId}")
+                    .queryParam("userId", userId)
+                    .toUriString();
+
+            Order order = restTemplate.getForObject(uri, Order.class, orderId);
+            return order;
+        } catch (RestClientException e) {
+            log.error("Error calling product service for get order", e);
+            throw new RuntimeException("Failed to get order", e);
+        }
+    }
+
+    public List<Order> getUserOrders(Long userId) {
+        log.debug("Calling product service: GET /orders - userId: {}", userId);
+
+        try {
+            String uri = UriComponentsBuilder.fromPath("/orders")
+                    .queryParam("userId", userId)
+                    .toUriString();
+
+            ResponseEntity<List<Order>> response = restTemplate.exchange(
+                    uri,
+                    HttpMethod.GET,
+                    null,
+                    new ParameterizedTypeReference<List<Order>>() {}
+            );
+
+            return response.getBody();
+        } catch (RestClientException e) {
+            log.error("Error calling product service for get user orders", e);
+            throw new RuntimeException("Failed to get user orders", e);
         }
     }
 }

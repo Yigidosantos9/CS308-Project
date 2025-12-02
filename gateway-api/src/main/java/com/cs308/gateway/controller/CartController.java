@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -90,6 +91,31 @@ public class CartController {
             return ResponseEntity.ok(cart);
         } catch (RuntimeException e) {
             log.error("Error processing remove from cart request", e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @PutMapping("/update")
+    public ResponseEntity<Cart> updateCartItemQuantity(
+            @RequestParam(required = false) Long userId,
+            @RequestParam Long productId,
+            @RequestParam Integer quantity) {
+        log.info("BFF: Update cart item quantity request received - userId: {}, productId: {}, quantity: {}",
+                userId, productId, quantity);
+
+        try {
+            Long actualUserId = SecurityContext.isAuthenticated()
+                    ? SecurityContext.getContext().getUserId()
+                    : userId;
+
+            if (actualUserId == null) {
+                return ResponseEntity.badRequest().build();
+            }
+
+            Cart cart = productService.updateCartItemQuantity(actualUserId, productId, quantity);
+            return ResponseEntity.ok(cart);
+        } catch (RuntimeException e) {
+            log.error("Error processing update cart item quantity request", e);
             return ResponseEntity.internalServerError().build();
         }
     }
