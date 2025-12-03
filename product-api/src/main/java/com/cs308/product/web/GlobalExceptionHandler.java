@@ -1,5 +1,6 @@
 package com.cs308.product.web;
 
+import com.cs308.product.service.OutOfStockException;
 import com.cs308.product.service.ProductNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,5 +15,11 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, Object>> handle(ProductNotFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(Map.of("error", "not_found", "message", ex.getMessage()));
+    }
+
+    @ExceptionHandler(OutOfStockException.class)
+    public ResponseEntity<Map<String, Object>> handle(OutOfStockException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("error", "out_of_stock", "message", ex.getMessage()));
     }
 }

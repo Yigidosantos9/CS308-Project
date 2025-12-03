@@ -7,6 +7,7 @@ import com.cs308.product.domain.enums.Season;
 import com.cs308.product.domain.enums.TargetAudience;
 import com.cs308.product.domain.enums.WarrantyStatus;
 import com.cs308.product.model.ProductUpdateRequest;
+import com.cs308.product.model.StockRestoreRequest;
 import com.cs308.product.repository.ProductRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,6 +42,22 @@ class ProductServiceTest {
     @Test
     void deleteThrowsWhenProductMissing() {
         assertThrows(ProductNotFoundException.class, () -> service.delete(99L));
+    }
+
+    @Test
+    void restoreStockIncreasesQuantity() {
+        Product product = sampleProduct(10L);
+        product.setStock(5);
+        repository.saveAll(List.of(product));
+
+        StockRestoreRequest request = StockRestoreRequest.builder()
+                .productId(10L)
+                .quantity(3)
+                .build();
+
+        Product updated = service.restoreStock(request);
+
+        assertEquals(8, updated.getStock());
     }
 
     @Test

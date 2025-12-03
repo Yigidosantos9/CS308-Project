@@ -4,7 +4,7 @@ import com.cs308.gateway.model.product.Cart;
 import com.cs308.gateway.model.product.Product;
 import com.cs308.gateway.model.product.ProductFilterRequest;
 import com.cs308.gateway.model.product.ProductPriceUpdateRequest;
-import lombok.RequiredArgsConstructor;
+import com.cs308.gateway.model.product.StockRestoreRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.ParameterizedTypeReference;
@@ -160,6 +160,22 @@ public class ProductClient {
         } catch (RestClientException e) {
             log.error("Error calling product service to set price for id: {}", productId, e);
             throw new RuntimeException("Failed to set product price", e);
+        }
+    }
+
+    public Product restoreStock(StockRestoreRequest request) {
+        log.debug("Calling product service: POST /products/restore-stock with body {}", request);
+
+        try {
+            ResponseEntity<Product> response = restTemplate.postForEntity(
+                    "/products/restore-stock",
+                    request,
+                    Product.class
+            );
+            return response.getBody();
+        } catch (RestClientException e) {
+            log.error("Error calling product service to restore stock", e);
+            throw new RuntimeException("Failed to restore product stock", e);
         }
     }
 }

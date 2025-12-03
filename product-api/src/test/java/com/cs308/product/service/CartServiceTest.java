@@ -130,6 +130,25 @@ class CartServiceTest {
     }
 
     @Test
+    void addToCart_shouldThrowOutOfStock_whenStockIsZero() {
+        Long userId = 10L;
+        Long productId = 5L;
+
+        Product product = buildProduct(productId, 50.0, 0);
+
+        when(productRepository.findById(productId)).thenReturn(Optional.of(product));
+        when(cartRepository.findByUserId(userId)).thenReturn(Optional.empty());
+
+        OutOfStockException ex = assertThrows(OutOfStockException.class,
+                () -> cartService.addToCart(userId, productId, 1));
+
+        assertTrue(ex.getMessage().toLowerCase().contains("out of stock"));
+
+        verify(productRepository).findById(productId);
+        verify(cartRepository).findByUserId(userId);
+    }
+
+    @Test
     void addToCart_shouldThrowException_whenStockIsNotEnoughForNewItem() {
         // GIVEN
         Long userId = 10L;
@@ -141,7 +160,7 @@ class CartServiceTest {
         when(cartRepository.findByUserId(userId)).thenReturn(Optional.empty());
 
         // WHEN - THEN
-        RuntimeException ex = assertThrows(RuntimeException.class,
+        OutOfStockException ex = assertThrows(OutOfStockException.class,
                 () -> cartService.addToCart(userId, productId, 3)); // 3 > stock
 
         assertTrue(ex.getMessage().toLowerCase().contains("stock")
@@ -167,7 +186,7 @@ class CartServiceTest {
         when(cartRepository.findByUserId(userId)).thenReturn(Optional.of(cart));
 
         // WHEN - THEN
-        RuntimeException ex = assertThrows(RuntimeException.class,
+        OutOfStockException ex = assertThrows(OutOfStockException.class,
                 () -> cartService.addToCart(userId, productId, 2)); // 3 + 2 = 5 > 4
 
         assertTrue(ex.getMessage().toLowerCase().contains("stock")

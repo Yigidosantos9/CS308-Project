@@ -33,23 +33,26 @@ export const ShopProvider = ({ children }) => {
   };
 
   const addToCart = async (product) => {
-    try {
-      // 1. Optimistic Update
-      setCart((prev) => [...prev, { ...product, quantity: 1 }]);
+    // Frontend guard: do not even attempt to add out-of-stock items
+    if (product.stock === 0) {
+      alert("This product is out of stock and cannot be added to the cart.");
+      return;
+    }
 
-      // 2. Call Backend
+    try {
+      // Call backend first; rely on cart snapshot from server
       await cartService.addToCart(user.id, product.id, 1);
-      
-      // 3. Sync
       await loadCart(user.id);
     } catch (err) {
       console.error("Failed to add to cart API:", err);
-      
-      // 4. Error Handling
-      // If backend says "Not enough stock" (usually 500 in your current code)
-      alert("Failed to add to cart. Item might be out of stock.");
-      
-      // Revert optimistic update
+
+      const apiError = err?.response?.data;
+      if (apiError?.error === "out_of_stock") {
+        alert("This product is out of stock and cannot be added to the cart.");
+      } else {
+        alert("Failed to add to cart. Please try again.");
+      }
+
       await loadCart(user.id);
     }
   };
