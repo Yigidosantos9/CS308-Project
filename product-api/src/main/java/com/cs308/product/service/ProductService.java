@@ -111,41 +111,59 @@ public class ProductService {
             return productRepository.findAll();
         }
 
-        String sort = (filter.getSort() == null || filter.getSort().isBlank())
+        String sortParam = (filter.getSort() == null || filter.getSort().isBlank())
                 ? "relevance"
                 : filter.getSort();
 
+        org.springframework.data.domain.Sort sort = org.springframework.data.domain.Sort.unsorted();
+        if ("priceAsc".equalsIgnoreCase(sortParam)) {
+            sort = org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.ASC, "price");
+        } else if ("priceDesc".equalsIgnoreCase(sortParam)) {
+            sort = org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC,
+                    "price");
+        } else if ("newest".equalsIgnoreCase(sortParam)) {
+            sort = org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC,
+                    "createdAt");
+        }
+
+        com.cs308.product.domain.enums.ProductType productType = null;
+        if (filter.getCategory() != null && !filter.getCategory().isBlank()) {
+            try {
+                productType = com.cs308.product.domain.enums.ProductType.valueOf(filter.getCategory().toUpperCase());
+            } catch (IllegalArgumentException e) {
+                return List.of();
+            }
+        }
+
+        com.cs308.product.domain.enums.TargetAudience targetAudience = null;
+        if (filter.getGender() != null && !filter.getGender().isBlank()) {
+            try {
+                targetAudience = com.cs308.product.domain.enums.TargetAudience
+                        .valueOf(filter.getGender().toUpperCase());
+            } catch (IllegalArgumentException e) {
+                return List.of();
+            }
+        }
+
+        com.cs308.product.domain.enums.Color color = null;
+        if (filter.getColor() != null && !filter.getColor().isBlank()) {
+            try {
+                color = com.cs308.product.domain.enums.Color.valueOf(filter.getColor().toUpperCase());
+            } catch (IllegalArgumentException e) {
+                return List.of();
+            }
+        }
+
         return productRepository.search(
                 filter.getQ(),
-                filter.getCategory(),
-                filter.getGender(),
-                filter.getColor(),
+                productType,
+                targetAudience,
+                color,
                 filter.getDescription(),
                 sort);
     }
 
-    public List<Product> search(String q,
-            String category,
-            String gender,
-            String color,
-            String description,
-            String sort) {
-
-        ProductFilterRequest filter = new ProductFilterRequest();
-        filter.setQ(q);
-        filter.setCategory(category);
-        filter.setGender(gender);
-        filter.setColor(color);
-        filter.setDescription(description);
-        filter.setSort(sort);
-
-        return search(filter);
-    }
-
     public void delete(Long id) {
-        boolean removed = productRepository.deleteById(id);
-        if (!removed) {
-            throw new ProductNotFoundException(id);
-        }
+        productRepository.deleteById(id);
     }
 }

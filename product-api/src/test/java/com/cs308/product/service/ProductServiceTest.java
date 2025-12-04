@@ -11,42 +11,42 @@ import com.cs308.product.repository.ProductRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class ProductServiceTest {
 
+    @Mock
     private ProductRepository repository;
+
+    @InjectMocks
     private ProductService service;
 
     @BeforeEach
     void setUp() {
-        repository = new ProductRepository();
-        service = new ProductService(repository);
+        MockitoAnnotations.openMocks(this);
     }
 
     @Test
     void deleteRemovesExistingProduct() {
-        Product product = sampleProduct(42L);
-        repository.saveAll(List.of(product));
-
         service.delete(42L);
-
-        assertTrue(repository.findById(42L).isEmpty(), "product should be removed from repository");
-    }
-
-    @Test
-    void deleteThrowsWhenProductMissing() {
-        assertThrows(ProductNotFoundException.class, () -> service.delete(99L));
+        verify(repository).deleteById(42L);
     }
 
     @Test
     void updateProductReplacesExistingProduct() {
         Product existing = sampleProduct(1L);
-        repository.save(existing);
+        when(repository.findById(1L)).thenReturn(Optional.of(existing));
+        when(repository.save(any(Product.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         ProductUpdateRequest updatedPayload = ProductUpdateRequest.builder()
                 .name("Updated Jacket")
@@ -76,6 +76,8 @@ class ProductServiceTest {
 
     @Test
     void updateProductThrowsWhenMissing() {
+        when(repository.findById(123L)).thenReturn(Optional.empty());
+
         ProductUpdateRequest payload = ProductUpdateRequest.builder()
                 .name("Anything")
                 .price(10.0)

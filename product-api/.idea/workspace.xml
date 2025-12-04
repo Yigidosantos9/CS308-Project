@@ -5,35 +5,18 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="654f1a8e-c5fd-4cb5-929e-c485d23f36cf" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/../auto-next-authentication-api/src/main/java/com/codingapp/autonextauthenticationapi/controller/AuthenticationController.java" beforeDir="false" afterPath="$PROJECT_DIR$/../auto-next-authentication-api/src/main/java/com/codingapp/autonextauthenticationapi/controller/AuthenticationController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../auto-next-authentication-api/src/main/java/com/codingapp/autonextauthenticationapi/model/response/UserDetails.java" beforeDir="false" afterPath="$PROJECT_DIR$/../auto-next-authentication-api/src/main/java/com/codingapp/autonextauthenticationapi/model/response/UserDetails.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../auto-next-authentication-api/src/main/java/com/codingapp/autonextauthenticationapi/service/AuthenticationService.java" beforeDir="false" afterPath="$PROJECT_DIR$/../auto-next-authentication-api/src/main/java/com/codingapp/autonextauthenticationapi/service/AuthenticationService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/ecommerce-frontend/src/App.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/ecommerce-frontend/src/App.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/ecommerce-frontend/src/components/layout/Navbar.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/ecommerce-frontend/src/components/layout/Navbar.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/ecommerce-frontend/src/context/ShopContext.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/ecommerce-frontend/src/context/ShopContext.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/ecommerce-frontend/src/pages/auth/Login.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/ecommerce-frontend/src/pages/auth/Login.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/ecommerce-frontend/src/pages/profile/Profile.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/ecommerce-frontend/src/pages/profile/Profile.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/ecommerce-frontend/src/services/api.js" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/ecommerce-frontend/src/services/api.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/client/AuthClient.java" beforeDir="false" afterPath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/client/AuthClient.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/client/OrderClient.java" beforeDir="false" afterPath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/client/OrderClient.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/config/SecurityConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/config/SecurityConfig.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/controller/AuthController.java" beforeDir="false" afterPath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/controller/AuthController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/controller/OrderController.java" beforeDir="false" afterPath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/controller/OrderController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/model/auth/response/UserDetails.java" beforeDir="false" afterPath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/model/auth/response/UserDetails.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../order-api/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../order-api/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../order-api/src/main/java/com/cs308/order/controller/InvoiceController.java" beforeDir="false" afterPath="$PROJECT_DIR$/../order-api/src/main/java/com/cs308/order/controller/InvoiceController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../order-api/src/main/java/com/cs308/order/model/InvoiceItem.java" beforeDir="false" afterPath="$PROJECT_DIR$/../order-api/src/main/java/com/cs308/order/model/InvoiceItem.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../order-api/src/main/java/com/cs308/order/model/InvoiceRequest.java" beforeDir="false" afterPath="$PROJECT_DIR$/../order-api/src/main/java/com/cs308/order/model/InvoiceRequest.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../order-api/src/main/java/com/cs308/order/service/InvoicePdfService.java" beforeDir="false" afterPath="$PROJECT_DIR$/../order-api/src/main/java/com/cs308/order/service/InvoicePdfService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../order-api/src/test/java/com/cs308/order/service/InvoicePdfServiceTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/../order-api/src/test/java/com/cs308/order/service/InvoicePdfServiceTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/client/ProductClient.java" beforeDir="false" afterPath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/client/ProductClient.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/security/JwtAuthFilter.java" beforeDir="false" afterPath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/security/JwtAuthFilter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/security/SecurityContext.java" beforeDir="false" afterPath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/security/SecurityContext.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/service/OrderService.java" beforeDir="false" afterPath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/service/OrderService.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/cs308/product/controller/ProductController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cs308/product/controller/ProductController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/cs308/product/data/DataLoader.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cs308/product/data/DataLoader.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/cs308/product/domain/enums/Fit.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cs308/product/domain/enums/Fit.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/cs308/product/domain/enums/ProductType.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cs308/product/domain/enums/ProductType.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/cs308/product/domain/enums/WarrantyStatus.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cs308/product/domain/enums/WarrantyStatus.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/cs308/product/domain/Product.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cs308/product/domain/Product.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/cs308/product/repository/ProductRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cs308/product/repository/ProductRepository.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/cs308/product/service/ProductService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cs308/product/service/ProductService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/com/cs308/product/controller/ProductControllerTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/com/cs308/product/controller/ProductControllerTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/com/cs308/product/service/ProductServiceTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/com/cs308/product/service/ProductServiceTest.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -168,7 +151,7 @@
       <workItem from="1763568717556" duration="2623000" />
       <workItem from="1764829278430" duration="198000" />
       <workItem from="1764834855970" duration="804000" />
-      <workItem from="1764861267800" duration="6494000" />
+      <workItem from="1764861267800" duration="8480000" />
     </task>
     <servers />
   </component>
