@@ -25,7 +25,6 @@ public class AuthenticationService {
     private final TokenService tokenService;
     private Key secretKey;
 
-
     public String signUp(CreateUserRequest createUserRequest) {
 
         userRepository.findByEmail(createUserRequest.getEmail())
@@ -52,7 +51,8 @@ public class AuthenticationService {
     public LoginResponse login(LoginRequest loginRequest) {
 
         User user = userRepository.findByEmail(loginRequest.getEmail())
-                .orElseThrow(() -> new IllegalArgumentException("No user found with email: " + loginRequest.getEmail()));
+                .orElseThrow(
+                        () -> new IllegalArgumentException("No user found with email: " + loginRequest.getEmail()));
 
         if (!user.getPassword().equals(loginRequest.getPassword())) {
             throw new IllegalArgumentException("Invalid credentials provided.");
@@ -75,12 +75,19 @@ public class AuthenticationService {
                     .getBody();
 
             String userId = claims.getSubject();
-            String email = claims.get("email", String.class);
-            String roleString = claims.get("role", String.class);
 
-            UserType role = UserType.valueOf(roleString);
+            User user = userRepository.findById(Long.parseLong(userId))
+                    .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
 
-            return new UserDetails(userId, email, role);
+            return UserDetails.builder()
+                    .userId(String.valueOf(user.getId()))
+                    .email(user.getEmail())
+                    .userType(user.getUserType())
+                    .firstName(user.getFirstName())
+                    .lastName(user.getSurname())
+                    .phoneNumber(user.getPhoneNumber())
+                    .birthDate(user.getBirthDate())
+                    .build();
 
         } catch (ExpiredJwtException ex) {
             throw new RuntimeException("Token is expired", ex);
@@ -89,7 +96,6 @@ public class AuthenticationService {
         } catch (IllegalArgumentException ex) {
             throw new RuntimeException("JWT Claims are null", ex);
         }
-
 
     }
 }

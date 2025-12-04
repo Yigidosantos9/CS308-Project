@@ -17,6 +17,9 @@ public class RestTemplateConfig {
     @Value("${PRODUCT_SERVICE_URI:http://localhost:9001}")
     private String productServiceUri;
 
+    @Value("${ORDER_SERVICE_URI:http://localhost:9002}")
+    private String orderServiceUri;
+
     @Bean
     public RestTemplateBuilder restTemplateBuilder() {
         return new RestTemplateBuilder();
@@ -39,5 +42,13 @@ public class RestTemplateConfig {
                 .requestFactory(() -> factory)
                 .build();
     }
-}
 
+    @Bean(name = "orderRestTemplate")
+    public RestTemplate orderRestTemplate(RestTemplateBuilder builder) {
+        ClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        return builder
+                .rootUri(orderServiceUri)
+                .requestFactory(() -> factory)
+                .build();
+    }
+}

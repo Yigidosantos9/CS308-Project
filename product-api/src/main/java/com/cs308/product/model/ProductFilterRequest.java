@@ -17,6 +17,9 @@ public class ProductFilterRequest {
     // ?color=...
     private String color;
 
+    // ?description=...
+    private String description;
+
     // ?sort=priceAsc vs. — default: relevance
     private String sort = "relevance";
 }

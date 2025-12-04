@@ -1,6 +1,7 @@
 package com.cs308.product.controller;
 
 import com.cs308.product.domain.Product;
+import com.cs308.product.model.CreateProductRequest;
 import com.cs308.product.model.ProductFilterRequest;
 import com.cs308.product.model.ProductUpdateRequest;
 import com.cs308.product.service.ProductService;
@@ -19,14 +20,14 @@ public class ProductController {
     private final ProductService service;
 
     @PostMapping
-    public ResponseEntity<Product> addProduct(@RequestBody Product product) {
-        Product created = service.addProduct(product);
+    public ResponseEntity<Product> addProduct(@RequestBody CreateProductRequest request) {
+        Product created = service.addProduct(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<Product> updateProduct(@PathVariable Long id,
-                                                 @RequestBody ProductUpdateRequest request) {
+            @RequestBody ProductUpdateRequest request) {
         Product updated = service.updateProduct(id, request);
         return ResponseEntity.ok(updated);
     }

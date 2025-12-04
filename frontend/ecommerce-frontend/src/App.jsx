@@ -3,6 +3,7 @@ import { ShopProvider } from './context/ShopContext';
 
 // Layout
 import MainLayout from './components/layout/MainLayout';
+import PrivateRoute from './components/auth/PrivateRoute';
 
 // Pages
 import Home from './pages/Home';
@@ -25,7 +26,11 @@ function App() {
             <Route path="cart" element={<Cart />} />
             <Route path="login" element={<Login />} />
             <Route path="register" element={<Register />} />
-            <Route path="profile" element={<Profile />} />
+            <Route path="profile" element={
+              <PrivateRoute>
+                <Profile />
+              </PrivateRoute>
+            } />
           </Route>
         </Routes>
       </Router>

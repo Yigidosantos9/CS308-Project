@@ -3,7 +3,7 @@ package com.cs308.gateway.controller;
 import com.cs308.gateway.model.auth.enums.UserType;
 import com.cs308.gateway.security.RequiresRole;
 import com.cs308.gateway.model.invoice.InvoiceRequest;
-import com.cs308.gateway.service.InvoicePdfService;
+import com.cs308.gateway.service.OrderService;
 import com.cs308.gateway.service.ProductService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.PositiveOrZero;
@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class SalesManagerController {
 
-    private final InvoicePdfService invoicePdfService;
+    private final OrderService orderService;
     private final ProductService productService;
 
     // Sales Manager can set product prices
@@ -55,11 +55,11 @@ public class SalesManagerController {
         return ResponseEntity.ok().build();
     }
 
-    // Generate invoice PDF on demand
+    // Generate invoice PDF on demand (proxied to Order API)
     @PostMapping(value = "/invoices/pdf", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<ByteArrayResource> generateInvoicePdf(@Valid @RequestBody InvoiceRequest request) {
         log.info("BFF: Generate invoice PDF - invoiceNumber: {}", request.getInvoiceNumber());
-        byte[] pdfBytes = invoicePdfService.generateInvoicePdf(request);
+        byte[] pdfBytes = orderService.generateInvoicePdf(request);
 
         String filename = "invoice-" + request.getInvoiceNumber() + ".pdf";
         ContentDisposition contentDisposition = ContentDisposition.attachment()
@@ -71,9 +71,9 @@ public class SalesManagerController {
 
         return ResponseEntity.ok()
                 .headers(headers)
-                .contentLength(pdfBytes.length)
+                .contentLength(pdfBytes != null ? pdfBytes.length : 0)
                 .contentType(MediaType.APPLICATION_PDF)
-                .body(new ByteArrayResource(pdfBytes));
+                .body(new ByteArrayResource(pdfBytes != null ? pdfBytes : new byte[0]));
     }
 
     // Sales Manager can calculate revenue and profit

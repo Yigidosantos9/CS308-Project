@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   MapPin,
   ShieldCheck,
@@ -15,6 +15,7 @@ import {
   BadgeCheck,
 } from 'lucide-react';
 import { useShop } from '../../context/ShopContext';
+import { orderService } from '../../services/api';
 
 const tabs = [
   'Profile',
@@ -29,14 +30,28 @@ const Profile = () => {
   const { user } = useShop();
   const [activeTab, setActiveTab] = useState('Profile');
   const [formState, setFormState] = useState({
-    firstName: user?.name?.split(' ')[0] || 'Test',
-    lastName: user?.name?.split(' ')[1] || 'User',
-    email: user?.email || 'test.user@example.com',
-    phone: user?.phone || '+90 555 123 45 67',
-    birthDate: user?.birthDate || '1998-05-20',
+    firstName: user?.firstName || '',
+    lastName: user?.lastName || '',
+    email: user?.email || '',
+    phone: user?.phoneNumber || '',
+    birthDate: user?.birthDate || '',
     city: user?.city || 'Istanbul',
     country: user?.country || 'Turkey',
   });
+
+  useEffect(() => {
+    if (user) {
+      setFormState(prev => ({
+        ...prev,
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        email: user.email || '',
+        phone: user.phoneNumber || '',
+        birthDate: user.birthDate || '',
+      }));
+    }
+  }, [user]);
+
   const [saved, setSaved] = useState(false);
 
   const stats = [
@@ -46,24 +61,36 @@ const Profile = () => {
     { label: 'Wishlist Items', value: '7' },
   ];
 
-  const orders = [
-    {
-      id: 'RC-1048',
-      date: '02 Jan 2025',
-      total: '$189.90',
-      status: 'Shipped',
-      items: 3,
-      eta: 'Delivery ETA: Jan 07',
-    },
-    {
-      id: 'RC-1047',
-      date: '15 Dec 2024',
-      total: '$89.00',
-      status: 'Delivered',
-      items: 1,
-      eta: 'Delivered Dec 20',
-    },
-  ];
+  // ...
+
+  const [orders, setOrders] = useState([]);
+
+  useEffect(() => {
+    if (activeTab === 'Orders' && user?.id) {
+      fetchOrders();
+    }
+  }, [activeTab, user]);
+
+  const fetchOrders = async () => {
+    try {
+      const data = await orderService.getOrders();
+      // Transform data to match UI if needed
+      // Backend returns: { id, orderDate, status, totalAmount, items: [...] }
+      // UI expects: { id, date, total, status, items: count, eta }
+
+      const formattedOrders = data.map(order => ({
+        id: `RC-${order.id}`,
+        date: new Date(order.orderDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+        total: `$${order.totalAmount.toFixed(2)}`,
+        status: order.status,
+        items: order.items.length,
+        eta: order.status === 'DELIVERED' ? 'Delivered' : 'Processing'
+      }));
+      setOrders(formattedOrders);
+    } catch (err) {
+      console.error("Failed to fetch orders", err);
+    }
+  };
 
   const addresses = [
     {
@@ -403,11 +430,10 @@ const Profile = () => {
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
-                    className={`flex items-center justify-between rounded-xl px-3 py-2 text-sm font-semibold transition ${
-                      activeTab === tab
-                        ? 'bg-black text-white shadow'
-                        : 'text-gray-700 hover:bg-gray-100'
-                    }`}
+                    className={`flex items-center justify-between rounded-xl px-3 py-2 text-sm font-semibold transition ${activeTab === tab
+                      ? 'bg-black text-white shadow'
+                      : 'text-gray-700 hover:bg-gray-100'
+                      }`}
                   >
                     <span>{tab}</span>
                     {activeTab === tab && <span className="h-1.5 w-1.5 rounded-full bg-white" />}
