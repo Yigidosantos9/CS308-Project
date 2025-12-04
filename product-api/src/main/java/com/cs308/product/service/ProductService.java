@@ -87,7 +87,6 @@ public class ProductService {
         return productRepository.findById(id);
     }
 
-
     public List<Product> search(ProductFilterRequest filter) {
         if (filter == null) {
             return productRepository.findAll();
@@ -102,22 +101,23 @@ public class ProductService {
                 filter.getCategory(),
                 filter.getGender(),
                 filter.getColor(),
-                sort
-        );
+                filter.getDescription(),
+                sort);
     }
 
-
     public List<Product> search(String q,
-                                String category,
-                                String gender,
-                                String color,
-                                String sort) {
+            String category,
+            String gender,
+            String color,
+            String description,
+            String sort) {
 
         ProductFilterRequest filter = new ProductFilterRequest();
         filter.setQ(q);
         filter.setCategory(category);
         filter.setGender(gender);
         filter.setColor(color);
+        filter.setDescription(description);
         filter.setSort(sort);
 
         return search(filter);

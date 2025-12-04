@@ -5,14 +5,20 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="654f1a8e-c5fd-4cb5-929e-c485d23f36cf" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/../auto-next-authentication-api/src/main/java/com/codingapp/autonextauthenticationapi/configuration/SecurityConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/../auto-next-authentication-api/src/main/java/com/codingapp/autonextauthenticationapi/configuration/SecurityConfig.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/ecommerce-frontend/src/pages/auth/Login.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/ecommerce-frontend/src/pages/auth/Login.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/ecommerce-frontend/src/pages/auth/Register.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/ecommerce-frontend/src/pages/auth/Register.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/ecommerce-frontend/src/services/api.js" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/ecommerce-frontend/src/services/api.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/config/CorsConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/config/CorsConfig.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/config/SecurityConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/config/SecurityConfig.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../gateway-api/src/main/resources/application.yml" beforeDir="false" afterPath="$PROJECT_DIR$/../gateway-api/src/main/resources/application.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/config/SecurityWebConfig.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/controller/CartController.java" beforeDir="false" afterPath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/controller/CartController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/controller/OrderController.java" beforeDir="false" afterPath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/controller/OrderController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/controller/ReviewController.java" beforeDir="false" afterPath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/controller/ReviewController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/controller/SalesManagerController.java" beforeDir="false" afterPath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/controller/SalesManagerController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/controller/SupportController.java" beforeDir="false" afterPath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/controller/SupportController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/security/RoleAuthorizationInterceptor.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/security/SecurityContext.java" beforeDir="false" afterPath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/security/SecurityContext.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/security/SecurityFilter.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/service/InvoicePdfService.java" beforeDir="false" afterPath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/service/InvoicePdfService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/cs308/product/model/ProductFilterRequest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cs308/product/model/ProductFilterRequest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/cs308/product/repository/ProductRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cs308/product/repository/ProductRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/cs308/product/service/ProductService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cs308/product/service/ProductService.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -58,7 +64,7 @@
     "com.intellij.testIntegration.createTest.CreateTestDialog.defaultLibrarySuperClass.JUnit5": "",
     "git-widget-placeholder": "main",
     "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "/Users/cemozbas/IdeaProjects/CS308-Project/product-api",
+    "last_opened_file_path": "/Users/masthub/Documents/GitHub/CS308-Project/product-api",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
@@ -129,8 +135,8 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-jdk-9823dce3aa75-bf35d07a577b-intellij.indexing.shared.core-IU-252.27397.103" />
-        <option value="bundled-js-predefined-d6986cc7102b-3aa1da707db6-JavaScript-IU-252.27397.103" />
+        <option value="bundled-jdk-9823dce3aa75-bf35d07a577b-intellij.indexing.shared.core-IU-252.26199.169" />
+        <option value="bundled-js-predefined-d6986cc7102b-9c94529fcfe0-JavaScript-IU-252.26199.169" />
       </set>
     </attachedChunks>
   </component>
@@ -145,6 +151,7 @@
       <workItem from="1763300204139" duration="859000" />
       <workItem from="1763303616890" duration="1054000" />
       <workItem from="1763568717556" duration="2623000" />
+      <workItem from="1764829278430" duration="198000" />
     </task>
     <servers />
   </component>

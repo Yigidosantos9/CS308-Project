@@ -3,7 +3,7 @@ package com.cs308.gateway.controller;
 import com.cs308.gateway.model.auth.enums.UserType;
 import com.cs308.gateway.security.RequiresRole;
 import com.cs308.gateway.model.invoice.InvoiceRequest;
-import com.cs308.gateway.service.InvoicePdfService;
+//import com.cs308.gateway.service.InvoicePdfService;
 import com.cs308.gateway.service.ProductService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.PositiveOrZero;
@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class SalesManagerController {
 
-    private final InvoicePdfService invoicePdfService;
+//    private final InvoicePdfService invoicePdfService;
     private final ProductService productService;
 
     // Sales Manager can set product prices
@@ -56,25 +56,25 @@ public class SalesManagerController {
     }
 
     // Generate invoice PDF on demand
-    @PostMapping(value = "/invoices/pdf", produces = MediaType.APPLICATION_PDF_VALUE)
-    public ResponseEntity<ByteArrayResource> generateInvoicePdf(@Valid @RequestBody InvoiceRequest request) {
-        log.info("BFF: Generate invoice PDF - invoiceNumber: {}", request.getInvoiceNumber());
-        byte[] pdfBytes = invoicePdfService.generateInvoicePdf(request);
-
-        String filename = "invoice-" + request.getInvoiceNumber() + ".pdf";
-        ContentDisposition contentDisposition = ContentDisposition.attachment()
-                .filename(filename)
-                .build();
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentDisposition(contentDisposition);
-
-        return ResponseEntity.ok()
-                .headers(headers)
-                .contentLength(pdfBytes.length)
-                .contentType(MediaType.APPLICATION_PDF)
-                .body(new ByteArrayResource(pdfBytes));
-    }
+//    @PostMapping(value = "/invoices/pdf", produces = MediaType.APPLICATION_PDF_VALUE)
+//    public ResponseEntity<ByteArrayResource> generateInvoicePdf(@Valid @RequestBody InvoiceRequest request) {
+//        log.info("BFF: Generate invoice PDF - invoiceNumber: {}", request.getInvoiceNumber());
+//        byte[] pdfBytes = invoicePdfService.generateInvoicePdf(request);
+//
+//        String filename = "invoice-" + request.getInvoiceNumber() + ".pdf";
+//        ContentDisposition contentDisposition = ContentDisposition.attachment()
+//                .filename(filename)
+//                .build();
+//
+//        HttpHeaders headers = new HttpHeaders();
+//        headers.setContentDisposition(contentDisposition);
+//
+//        return ResponseEntity.ok()
+//                .headers(headers)
+//                .contentLength(pdfBytes.length)
+//                .contentType(MediaType.APPLICATION_PDF)
+//                .body(new ByteArrayResource(pdfBytes));
+//    }
 
     // Sales Manager can calculate revenue and profit
     @GetMapping("/revenue")

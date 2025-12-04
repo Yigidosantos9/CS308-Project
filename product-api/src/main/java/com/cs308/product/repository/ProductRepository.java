@@ -55,11 +55,13 @@ public class ProductRepository {
             String category,
             String gender,
             String color,
+            String description,
             String sort // priceAsc, priceDesc, ratingDesc vs.
     ) {
         return store.values().stream()
                 .filter(p -> {
-                    if (q == null || q.isBlank()) return true;
+                    if (q == null || q.isBlank())
+                        return true;
                     String s = q.toLowerCase();
                     return (p.getName() != null && p.getName().toLowerCase().contains(s))
                             || (p.getDescription() != null && p.getDescription().toLowerCase().contains(s))
@@ -68,6 +70,12 @@ public class ProductRepository {
                 .filter(p -> category == null || category.isBlank())
                 .filter(p -> gender == null || gender.isBlank())
                 .filter(p -> color == null || color.isBlank())
+                .filter(p -> {
+                    if (description == null || description.isBlank())
+                        return true;
+                    return p.getDescription() != null
+                            && p.getDescription().toLowerCase().contains(description.toLowerCase());
+                })
                 .sorted(getComparator(sort))
                 .collect(Collectors.toList());
     }

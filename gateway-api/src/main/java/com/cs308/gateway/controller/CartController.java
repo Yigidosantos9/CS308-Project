@@ -6,6 +6,7 @@ import com.cs308.gateway.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -21,9 +22,11 @@ public class CartController {
 
     private final ProductService productService;
 
-    // Customers can add to cart (guests can also add, but we'll use authenticated user's ID if available)
+    // Customers can add to cart (guests can also add, but we'll use authenticated
+    // user's ID if available)
     @PostMapping("/add")
     public ResponseEntity<Cart> addToCart(
+            @AuthenticationPrincipal SecurityContext securityContext,
             @RequestParam(required = false) Long userId,
             @RequestParam Long productId,
             @RequestParam(defaultValue = "1") Integer quantity) {
@@ -31,9 +34,10 @@ public class CartController {
                 userId, productId, quantity);
 
         try {
-            // If user is authenticated, use their ID; otherwise use provided userId (for guests)
-            Long actualUserId = SecurityContext.isAuthenticated()
-                    ? SecurityContext.getContext().getUserId()
+            // If user is authenticated, use their ID; otherwise use provided userId (for
+            // guests)
+            Long actualUserId = (securityContext != null)
+                    ? securityContext.getUserId()
                     : userId;
 
             if (actualUserId == null) {
@@ -50,13 +54,16 @@ public class CartController {
 
     // Customers can view their cart
     @GetMapping
-    public ResponseEntity<Cart> getCart(@RequestParam(required = false) Long userId) {
+    public ResponseEntity<Cart> getCart(
+            @AuthenticationPrincipal SecurityContext securityContext,
+            @RequestParam(required = false) Long userId) {
         log.info("BFF: Get cart request received for userId: {}", userId);
 
         try {
-            // If user is authenticated, use their ID; otherwise use provided userId (for guests)
-            Long actualUserId = SecurityContext.isAuthenticated()
-                    ? SecurityContext.getContext().getUserId()
+            // If user is authenticated, use their ID; otherwise use provided userId (for
+            // guests)
+            Long actualUserId = (securityContext != null)
+                    ? securityContext.getUserId()
                     : userId;
 
             if (actualUserId == null) {
@@ -73,13 +80,14 @@ public class CartController {
 
     @DeleteMapping("/remove")
     public ResponseEntity<Cart> removeFromCart(
+            @AuthenticationPrincipal SecurityContext securityContext,
             @RequestParam(required = false) Long userId,
             @RequestParam Long productId) {
         log.info("BFF: Remove from cart request received - userId: {}, productId: {}", userId, productId);
 
         try {
-            Long actualUserId = SecurityContext.isAuthenticated()
-                    ? SecurityContext.getContext().getUserId()
+            Long actualUserId = (securityContext != null)
+                    ? securityContext.getUserId()
                     : userId;
 
             if (actualUserId == null) {
