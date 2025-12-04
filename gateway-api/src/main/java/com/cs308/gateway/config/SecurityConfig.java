@@ -27,6 +27,7 @@ public class SecurityConfig {
                         .pathMatchers("/actuator/**").permitAll()
                         .pathMatchers("/__fallback/**").permitAll()
                         .pathMatchers("/api/membership/**").permitAll()
+                        .pathMatchers("/api/auth/**").permitAll()
                         .pathMatchers(HttpMethod.GET, "/api/products/**").permitAll()
                         .pathMatchers(HttpMethod.POST, "/api/products/**").hasRole("PRODUCT_MANAGER")
                         .pathMatchers(HttpMethod.PUT, "/api/products/**").hasRole("PRODUCT_MANAGER")

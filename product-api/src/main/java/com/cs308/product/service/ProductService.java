@@ -16,7 +16,26 @@ public class ProductService {
 
     private final ProductRepository productRepository;
 
-    public Product addProduct(Product product) {
+    public Product addProduct(com.cs308.product.model.CreateProductRequest request) {
+        Product product = new Product();
+        product.setName(request.getName());
+        product.setPrice(request.getPrice());
+        product.setStock(request.getStock());
+        product.setModel(request.getModel());
+        product.setSerialNumber(request.getSerialNumber());
+        product.setDescription(request.getDescription());
+        product.setBrand(request.getBrand());
+        product.setProductType(request.getProductType());
+        product.setTargetAudience(request.getTargetAudience());
+        product.setWarrantyStatus(request.getWarrantyStatus());
+        product.setDistributorInfo(request.getDistributorInfo());
+        product.setSeason(request.getSeason());
+        product.setFit(request.getFit());
+        product.setMaterial(request.getMaterial());
+        product.setCareInstructions(request.getCareInstructions());
+        if (request.getActive() != null) {
+            product.setActive(request.getActive());
+        }
         return productRepository.save(product);
     }
 

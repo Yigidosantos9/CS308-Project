@@ -24,12 +24,25 @@ public class OrderClient {
             ResponseEntity<byte[]> response = orderRestTemplate.postForEntity(
                     "/invoices/pdf",
                     request,
-                    byte[].class
-            );
+                    byte[].class);
             return response.getBody();
         } catch (RestClientException e) {
             log.error("Error calling order service for invoice pdf generation", e);
             throw new RuntimeException("Failed to generate invoice PDF", e);
+        }
+    }
+
+    public Object getOrdersByUserId(Long userId) {
+        log.debug("Calling order service: GET /orders?userId={}", userId);
+
+        try {
+            ResponseEntity<Object> response = orderRestTemplate.getForEntity(
+                    "/orders?userId=" + userId,
+                    Object.class);
+            return response.getBody();
+        } catch (RestClientException e) {
+            log.error("Error calling order service for fetching orders", e);
+            throw new RuntimeException("Failed to fetch orders", e);
         }
     }
 }

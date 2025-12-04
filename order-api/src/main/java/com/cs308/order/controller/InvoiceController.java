@@ -3,7 +3,7 @@ package com.cs308.order.controller;
 import com.cs308.order.model.InvoiceRequest;
 import com.cs308.order.service.InvoicePdfService;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
+import jakarta.validation.Valid;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
@@ -16,10 +16,13 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/invoices")
-@RequiredArgsConstructor
 public class InvoiceController {
 
     private final InvoicePdfService invoicePdfService;
+
+    public InvoiceController(InvoicePdfService invoicePdfService) {
+        this.invoicePdfService = invoicePdfService;
+    }
 
     @PostMapping(value = "/pdf", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<ByteArrayResource> generateInvoicePdf(@Valid @RequestBody InvoiceRequest request) {

@@ -2,6 +2,7 @@ package com.cs308.gateway.controller;
 
 import com.cs308.gateway.model.auth.request.CreateUserRequest;
 import com.cs308.gateway.model.auth.request.LoginRequest;
+import com.cs308.gateway.model.auth.request.VerifyTokenRequest;
 import com.cs308.gateway.model.auth.response.LoginResponse;
 import com.cs308.gateway.model.auth.response.UserDetails;
 import com.cs308.gateway.service.AuthService;
@@ -22,7 +23,7 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request) {
         log.info("BFF: Login request received for email: {}", request.getEmail());
-        
+
         try {
             LoginResponse response = authService.login(request);
             return ResponseEntity.ok(response);
@@ -36,7 +37,7 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<String> register(@RequestBody CreateUserRequest request) {
         log.info("BFF: Register request received for email: {}", request.getEmail());
-        
+
         try {
             String response = authService.register(request);
             return ResponseEntity.ok(response);
@@ -48,11 +49,11 @@ public class AuthController {
     }
 
     @PostMapping("/verify-token")
-    public ResponseEntity<UserDetails> verifyToken(@RequestBody String token) {
+    public ResponseEntity<UserDetails> verifyToken(@RequestBody VerifyTokenRequest request) {
         log.info("BFF: Verify token request received");
-        
+
         try {
-            UserDetails response = authService.verifyToken(token);
+            UserDetails response = authService.verifyToken(request.getToken());
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
             log.error("Error processing token verification request", e);
@@ -60,4 +61,3 @@ public class AuthController {
         }
     }
 }
-

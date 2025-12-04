@@ -2,12 +2,13 @@ package com.cs308.order.service;
 
 import com.cs308.order.model.InvoiceItem;
 import com.cs308.order.model.InvoiceRequest;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -17,9 +18,10 @@ import java.text.DecimalFormat;
 import java.util.List;
 import java.util.Optional;
 
-@Slf4j
 @Service
 public class InvoicePdfService {
+
+    private static final Logger log = LoggerFactory.getLogger(InvoicePdfService.class);
 
     private static final float MARGIN = 50f;
     private static final DecimalFormat MONEY_FORMAT = new DecimalFormat("#,##0.00");
@@ -76,10 +78,12 @@ public class InvoicePdfService {
         y -= 12;
 
         y = writeText(content, PDType1Font.HELVETICA_BOLD, 12, MARGIN, y, "Billed To");
-        y = writeMultiline(content, PDType1Font.HELVETICA, 11, MARGIN, y, request.getBuyerName(), request.getBuyerAddress());
+        y = writeMultiline(content, PDType1Font.HELVETICA, 11, MARGIN, y, request.getBuyerName(),
+                request.getBuyerAddress());
 
         y = writeText(content, PDType1Font.HELVETICA_BOLD, 12, MARGIN + 280, y + 16, "From");
-        y = writeMultiline(content, PDType1Font.HELVETICA, 11, MARGIN + 280, y, request.getSellerName(), request.getSellerAddress());
+        y = writeMultiline(content, PDType1Font.HELVETICA, 11, MARGIN + 280, y, request.getSellerName(),
+                request.getSellerAddress());
 
         return y - 4;
     }
@@ -89,7 +93,7 @@ public class InvoicePdfService {
         y -= 14;
 
         float startX = MARGIN;
-        float[] colWidths = {260, 70, 90, 90};
+        float[] colWidths = { 260, 70, 90, 90 };
 
         y = writeTableRow(content, y, startX, colWidths, true,
                 "Item", "Qty", "Unit Price", "Total");
@@ -120,7 +124,8 @@ public class InvoicePdfService {
         float startX = MARGIN + 320;
         y = writeText(content, PDType1Font.HELVETICA_BOLD, 12, startX, y, "Summary");
         y = writeText(content, PDType1Font.HELVETICA, 11, startX, y, "Subtotal: " + formatMoney(subTotal, request));
-        y = writeText(content, PDType1Font.HELVETICA, 11, startX, y, "Tax (" + (request.getTaxRate() * 100) + "%): " + formatMoney(taxAmount, request));
+        y = writeText(content, PDType1Font.HELVETICA, 11, startX, y,
+                "Tax (" + (request.getTaxRate() * 100) + "%): " + formatMoney(taxAmount, request));
         y = writeText(content, PDType1Font.HELVETICA, 11, startX, y, "Shipping: " + formatMoney(shipping, request));
         y = writeText(content, PDType1Font.HELVETICA_BOLD, 12, startX, y, "Total: " + formatMoney(total, request));
         return y;
@@ -131,7 +136,8 @@ public class InvoicePdfService {
         writeText(content, PDType1Font.HELVETICA_OBLIQUE, 10, MARGIN, y - 12, text);
     }
 
-    private float writeText(PDPageContentStream content, PDType1Font font, float fontSize, float x, float y, String text) throws IOException {
+    private float writeText(PDPageContentStream content, PDType1Font font, float fontSize, float x, float y,
+            String text) throws IOException {
         content.beginText();
         content.setFont(font, fontSize);
         content.newLineAtOffset(x, y);
@@ -140,7 +146,8 @@ public class InvoicePdfService {
         return y - (fontSize + 4);
     }
 
-    private float writeMultiline(PDPageContentStream content, PDType1Font font, float fontSize, float x, float y, String... lines) throws IOException {
+    private float writeMultiline(PDPageContentStream content, PDType1Font font, float fontSize, float x, float y,
+            String... lines) throws IOException {
         float currentY = y;
         for (String line : lines) {
             currentY = writeText(content, font, fontSize, x, currentY, line);
@@ -148,7 +155,8 @@ public class InvoicePdfService {
         return currentY;
     }
 
-    private float writeTableRow(PDPageContentStream content, float y, float startX, float[] colWidths, boolean header, String... values) throws IOException {
+    private float writeTableRow(PDPageContentStream content, float y, float startX, float[] colWidths, boolean header,
+            String... values) throws IOException {
         float currentX = startX;
         for (int i = 0; i < values.length; i++) {
             content.beginText();

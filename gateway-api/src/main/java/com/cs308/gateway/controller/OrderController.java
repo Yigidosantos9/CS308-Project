@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class OrderController {
 
+    private final com.cs308.gateway.client.OrderClient orderClient;
+
     // Customers can place orders (must be authenticated)
     @PostMapping
     public ResponseEntity<?> placeOrder(
@@ -30,8 +32,14 @@ public class OrderController {
     public ResponseEntity<?> getMyOrders(@AuthenticationPrincipal SecurityContext securityContext) {
         Long userId = securityContext.getUserId();
         log.info("BFF: Get orders request received for user: {}", userId);
-        // TODO: Implement get orders
-        return ResponseEntity.ok().build();
+
+        try {
+            Object orders = orderClient.getOrdersByUserId(userId);
+            return ResponseEntity.ok(orders);
+        } catch (Exception e) {
+            log.error("Error fetching orders", e);
+            return ResponseEntity.internalServerError().build();
+        }
     }
 
     // Customers can cancel orders (only if in "processing" status)

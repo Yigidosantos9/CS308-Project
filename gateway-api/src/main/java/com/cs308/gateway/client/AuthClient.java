@@ -4,6 +4,7 @@ import com.cs308.gateway.model.auth.request.CreateUserRequest;
 import com.cs308.gateway.model.auth.request.LoginRequest;
 import com.cs308.gateway.model.auth.response.LoginResponse;
 import com.cs308.gateway.model.auth.response.UserDetails;
+import com.cs308.gateway.model.auth.request.VerifyTokenRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpEntity;
@@ -36,8 +37,7 @@ public class AuthClient {
             ResponseEntity<LoginResponse> response = restTemplate.postForEntity(
                     "/membership/login",
                     entity,
-                    LoginResponse.class
-            );
+                    LoginResponse.class);
             return response.getBody();
         } catch (HttpClientErrorException e) {
             log.error("HTTP error calling auth service login: {}", e.getStatusCode(), e);
@@ -59,11 +59,11 @@ public class AuthClient {
             ResponseEntity<String> response = restTemplate.postForEntity(
                     "/membership/sign-up",
                     entity,
-                    String.class
-            );
+                    String.class);
             return response.getBody();
         } catch (HttpClientErrorException | org.springframework.web.client.HttpServerErrorException e) {
-            log.error("HTTP error calling auth service sign-up: {} - {}", e.getStatusCode(), e.getResponseBodyAsString(), e);
+            log.error("HTTP error calling auth service sign-up: {} - {}", e.getStatusCode(),
+                    e.getResponseBodyAsString(), e);
             String errorBody = e.getResponseBodyAsString();
             throw new RuntimeException("Registration failed: " + (errorBody != null ? errorBody : e.getMessage()), e);
         } catch (RestClientException e) {
@@ -77,14 +77,14 @@ public class AuthClient {
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity<String> entity = new HttpEntity<>(token, headers);
+        VerifyTokenRequest request = new VerifyTokenRequest(token);
+        HttpEntity<VerifyTokenRequest> entity = new HttpEntity<>(request, headers);
 
         try {
             ResponseEntity<UserDetails> response = restTemplate.postForEntity(
                     "/membership/verify-token",
                     entity,
-                    UserDetails.class
-            );
+                    UserDetails.class);
             return response.getBody();
         } catch (HttpClientErrorException e) {
             log.error("HTTP error calling auth service verify-token: {}", e.getStatusCode(), e);
@@ -95,4 +95,3 @@ public class AuthClient {
         }
     }
 }
-
