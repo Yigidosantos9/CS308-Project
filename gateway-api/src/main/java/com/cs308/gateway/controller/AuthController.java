@@ -21,11 +21,12 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request) {
-        log.info("BFF: Login request received for email: {}", request.getEmail());
-
+    public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request,
+                                              @RequestParam(required = false) Long guestUserId) {
+        log.info("BFF: Login request received for email: {}, guestUserId: {}", request.getEmail(), guestUserId);
+        
         try {
-            LoginResponse response = authService.login(request);
+            LoginResponse response = authService.login(request, guestUserId);
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
             log.error("Error processing login request", e);

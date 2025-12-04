@@ -88,6 +88,103 @@ public class CartService {
         return cartRepository.save(cart);
     }
 
+    @Transactional
+    public Cart updateCartItemQuantity(Long userId, Long productId, Integer quantity) {
+        if (quantity == null || quantity < 0) {
+            throw new RuntimeException("Quantity must be non-negative");
+        }
+
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("Product not found"));
+
+        Cart cart = cartRepository.findByUserId(userId)
+                .orElseThrow(() -> new RuntimeException("Cart not found"));
+
+        CartItem item = cart.getItems().stream()
+                .filter(i -> i.getProduct().getId().equals(productId))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Product not in cart"));
+
+        if (quantity == 0) {
+            cart.removeItem(item);
+        } else {
+            if (quantity > product.getStock()) {
+                throw new RuntimeException("Not enough stock");
+            }
+            item.setQuantity(quantity);
+        }
+
+        recalcTotals(cart);
+        return cartRepository.save(cart);
+    }
+
+    @Transactional
+    public Cart mergeCarts(Long guestUserId, Long userId) {
+        // Get guest cart (if exists)
+        Cart guestCart = cartRepository.findByUserId(guestUserId).orElse(null);
+        
+        // If guest cart doesn't exist or is empty, nothing to merge
+        if (guestCart == null || guestCart.getItems().isEmpty()) {
+            // Return user's cart (create if doesn't exist)
+            return cartRepository.findByUserId(userId)
+                    .orElseGet(() -> {
+                        Cart newCart = new Cart();
+                        newCart.setUserId(userId);
+                        return cartRepository.save(newCart);
+                    });
+        }
+
+        // Get or create user cart
+        Cart userCart = cartRepository.findByUserId(userId)
+                .orElseGet(() -> {
+                    Cart newCart = new Cart();
+                    newCart.setUserId(userId);
+                    return cartRepository.save(newCart);
+                });
+
+        // Merge items from guest cart to user cart
+        for (CartItem guestItem : guestCart.getItems()) {
+            Product product = guestItem.getProduct();
+            Long productId = product.getId();
+            int guestQuantity = guestItem.getQuantity();
+
+            // Check if product already exists in user cart
+            CartItem existingItem = userCart.getItems().stream()
+                    .filter(i -> i.getProduct().getId().equals(productId))
+                    .findFirst()
+                    .orElse(null);
+
+            if (existingItem != null) {
+                // Merge quantities
+                int newQuantity = existingItem.getQuantity() + guestQuantity;
+                if (newQuantity > product.getStock()) {
+                    // If exceeds stock, set to max available stock
+                    newQuantity = product.getStock();
+                }
+                existingItem.setQuantity(newQuantity);
+            } else {
+                // Add new item to user cart
+                CartItem newItem = CartItem.builder()
+                        .cart(userCart)
+                        .product(product)
+                        .quantity(guestQuantity)
+                        .build();
+                userCart.addItem(newItem);
+            }
+        }
+
+        // Recalculate totals
+        recalcTotals(userCart);
+        
+        // Save user cart
+        Cart mergedCart = cartRepository.save(userCart);
+        
+        // Delete guest cart
+        cartRepository.delete(guestCart);
+        
+        return mergedCart;
+    }
+
     private void recalcTotals(Cart cart) {
         double totalPrice = 0;
         int totalQty = 0;

@@ -1,12 +1,17 @@
 package com.cs308.gateway.controller;
 
 import com.cs308.gateway.model.auth.enums.UserType;
+import com.cs308.gateway.model.product.Order;
+import com.cs308.gateway.security.RequiresRole;
 import com.cs308.gateway.security.SecurityContext;
+import com.cs308.gateway.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @Slf4j
 @RestController
@@ -14,30 +19,36 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class OrderController {
 
-    private final com.cs308.gateway.client.OrderClient orderClient;
+    private final OrderService orderService;
 
     // Customers can place orders (must be authenticated)
     @PostMapping
-    public ResponseEntity<?> placeOrder(
-            @AuthenticationPrincipal SecurityContext securityContext,
-            @RequestBody Object orderRequest) {
-        log.info("BFF: Place order request received from user: {}",
-                securityContext.getUserId());
-        // TODO: Implement place order
-        return ResponseEntity.ok().build();
+    @RequiresRole({UserType.CUSTOMER})
+    public ResponseEntity<Order> placeOrder() {
+        Long userId = SecurityContext.getContext().getUserId();
+        log.info("BFF: Place order request received from user: {}", userId);
+        
+        try {
+            Order order = orderService.createOrder(userId);
+            return ResponseEntity.ok(order);
+        } catch (RuntimeException e) {
+            log.error("Error processing place order request", e);
+            return ResponseEntity.internalServerError().build();
+        }
     }
 
     // Customers can view their orders
     @GetMapping
-    public ResponseEntity<?> getMyOrders(@AuthenticationPrincipal SecurityContext securityContext) {
-        Long userId = securityContext.getUserId();
+    @RequiresRole({UserType.CUSTOMER})
+    public ResponseEntity<List<Order>> getMyOrders() {
+        Long userId = SecurityContext.getContext().getUserId();
         log.info("BFF: Get orders request received for user: {}", userId);
-
+        
         try {
-            Object orders = orderClient.getOrdersByUserId(userId);
+            List<Order> orders = orderService.getUserOrders(userId);
             return ResponseEntity.ok(orders);
-        } catch (Exception e) {
-            log.error("Error fetching orders", e);
+        } catch (RuntimeException e) {
+            log.error("Error processing get orders request", e);
             return ResponseEntity.internalServerError().build();
         }
     }
@@ -70,7 +81,7 @@ public class OrderController {
     @GetMapping("/all")
     public ResponseEntity<?> getAllOrders() {
         log.info("BFF: Get all orders request received (Product Manager)");
-        // TODO: Implement get all orders
+        // TODO: Implement get all orders (requires additional endpoint in product-api)
         return ResponseEntity.ok().build();
     }
 
