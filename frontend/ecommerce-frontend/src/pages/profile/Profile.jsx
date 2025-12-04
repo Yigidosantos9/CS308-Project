@@ -1,3 +1,4 @@
+// frontend/src/pages/profile/Profile.jsx
 import { useState, useEffect } from 'react';
 import {
   MapPin,
@@ -41,7 +42,7 @@ const Profile = () => {
 
   useEffect(() => {
     if (user) {
-      setFormState(prev => ({
+      setFormState((prev) => ({
         ...prev,
         firstName: user.firstName || '',
         lastName: user.lastName || '',
@@ -61,34 +62,54 @@ const Profile = () => {
     { label: 'Wishlist Items', value: '7' },
   ];
 
-  // ...
-
   const [orders, setOrders] = useState([]);
 
+  // 🔧 FIX 1: Use user?.userId (or just user) instead of user?.id
   useEffect(() => {
-    if (activeTab === 'Orders' && user?.id) {
+    if (activeTab === 'Orders' && user?.userId) {
       fetchOrders();
     }
   }, [activeTab, user]);
 
+  // 🔧 FIX 2: Map backend Order → UI fields using createdAt & totalPrice
   const fetchOrders = async () => {
     try {
       const data = await orderService.getOrders();
-      // Transform data to match UI if needed
-      // Backend returns: { id, orderDate, status, totalAmount, items: [...] }
-      // UI expects: { id, date, total, status, items: count, eta }
+      // Backend Order (product-api) roughly: { id, userId, status, totalPrice, items[], createdAt? }
+      const formattedOrders = data.map((order) => {
+        const rawDate = order.createdAt || order.orderDate || order.date || null;
+        let date = 'N/A';
+        if (rawDate) {
+          const parsed = new Date(rawDate);
+          if (!Number.isNaN(parsed.getTime())) {
+            date = parsed.toLocaleDateString('en-GB', {
+              day: '2-digit',
+              month: 'short',
+              year: 'numeric',
+            });
+          }
+        }
 
-      const formattedOrders = data.map(order => ({
-        id: `RC-${order.id}`,
-        date: new Date(order.orderDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
-        total: `$${order.totalAmount.toFixed(2)}`,
-        status: order.status,
-        items: order.items.length,
-        eta: order.status === 'DELIVERED' ? 'Delivered' : 'Processing'
-      }));
+        const totalRaw =
+          typeof order.totalPrice === 'number'
+            ? order.totalPrice
+            : typeof order.totalAmount === 'number'
+            ? order.totalAmount
+            : 0;
+
+        return {
+          id: `RC-${order.id}`,
+          date,
+          total: `${totalRaw.toFixed(2)} TL`,
+          status: order.status || 'PROCESSING',
+          items: Array.isArray(order.items) ? order.items.length : 0,
+          eta: (order.status || 'PROCESSING') === 'DELIVERED' ? 'Delivered' : 'Processing',
+        };
+      });
+
       setOrders(formattedOrders);
     } catch (err) {
-      console.error("Failed to fetch orders", err);
+      console.error('Failed to fetch orders', err);
     }
   };
 
@@ -123,6 +144,7 @@ const Profile = () => {
   };
 
   const handleSave = () => {
+    // TODO: connect to a profile update endpoint when available
     setSaved(true);
     setTimeout(() => setSaved(false), 2200);
   };
@@ -245,7 +267,9 @@ const Profile = () => {
           <div>
             <p className="text-xs uppercase tracking-wide text-gray-500">{order.date}</p>
             <p className="text-lg font-bold">Order {order.id}</p>
-            <p className="text-sm text-gray-600">{order.items} items • {order.total}</p>
+            <p className="text-sm text-gray-600">
+              {order.items} items • {order.total}
+            </p>
           </div>
           <div className="flex flex-col items-start gap-2 sm:items-end">
             <span className="rounded-full bg-black px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white">
@@ -360,7 +384,10 @@ const Profile = () => {
     <div className="space-y-3 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
       <h3 className="text-lg font-bold uppercase tracking-wide">Preferences</h3>
       {toggles.map((toggle) => (
-        <div key={toggle.label} className="flex items-center justify-between border-b border-gray-100 pb-3 last:border-none last:pb-0">
+        <div
+          key={toggle.label}
+          className="flex items-center justify-between border-b border-gray-100 pb-3 last:border-none last:pb-0"
+        >
           <p className="text-sm font-semibold text-gray-800">{toggle.label}</p>
           <label className="relative inline-flex cursor-pointer items-center">
             <input type="checkbox" className="peer sr-only" defaultChecked={toggle.enabled} />
@@ -407,7 +434,9 @@ const Profile = () => {
               </div>
               <div>
                 <p className="text-sm uppercase tracking-[0.2em] text-white/70">User profile</p>
-                <p className="text-2xl font-black">{formState.firstName} {formState.lastName}</p>
+                <p className="text-2xl font-black">
+                  {formState.firstName} {formState.lastName}
+                </p>
                 <p className="text-sm text-white/70">RAWCTRL member • Istanbul</p>
               </div>
             </div>
@@ -430,13 +459,16 @@ const Profile = () => {
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
-                    className={`flex items-center justify-between rounded-xl px-3 py-2 text-sm font-semibold transition ${activeTab === tab
-                      ? 'bg-black text-white shadow'
-                      : 'text-gray-700 hover:bg-gray-100'
-                      }`}
+                    className={`flex items-center justify-between rounded-xl px-3 py-2 text-sm font-semibold transition ${
+                      activeTab === tab
+                        ? 'bg-black text-white shadow'
+                        : 'text-gray-700 hover:bg-gray-100'
+                    }`}
                   >
                     <span>{tab}</span>
-                    {activeTab === tab && <span className="h-1.5 w-1.5 rounded-full bg-white" />}
+                    {activeTab === tab && (
+                      <span className="h-1.5 w-1.5 rounded-full bg-white" />
+                    )}
                   </button>
                 ))}
               </div>
@@ -446,16 +478,22 @@ const Profile = () => {
               {stats.map((stat) => (
                 <div
                   key={stat.label}
-                  className={`rounded-xl p-3 ${stat.highlight ? 'bg-black text-white' : 'bg-gray-50'}`}
+                  className={`rounded-xl p-3 ${
+                    stat.highlight ? 'bg-black text-white' : 'bg-gray-50'
+                  }`}
                 >
-                  <p className="text-xs uppercase tracking-[0.2em] text-gray-500/90">{stat.label}</p>
+                  <p className="text-xs uppercase tracking-[0.2em] text-gray-500/90">
+                    {stat.label}
+                  </p>
                   <p className="text-xl font-black">{stat.value}</p>
                 </div>
               ))}
             </div>
 
             <div className="rounded-2xl border border-black/10 bg-white p-4 shadow-sm">
-              <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-gray-500">Support</h3>
+              <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-gray-500">
+                Support
+              </h3>
               <div className="mt-3 space-y-2 text-sm font-semibold text-black">
                 <button className="flex w-full items-center justify-between rounded-lg border border-gray-200 px-3 py-2 hover:border-black">
                   <span>Chat with stylist</span>
@@ -469,9 +507,7 @@ const Profile = () => {
             </div>
           </div>
 
-          <div className="space-y-6">
-            {renderContent()}
-          </div>
+          <div className="space-y-6">{renderContent()}</div>
         </div>
       </div>
     </div>
@@ -483,16 +519,19 @@ const LabelInput = ({ label, icon, ...props }) => (
     <span className="uppercase tracking-wide text-gray-500">{label}</span>
     <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 focus-within:border-black">
       {icon}
-      <input
-        className="w-full bg-transparent text-sm outline-none"
-        {...props}
-      />
+      <input className="w-full bg-transparent text-sm outline-none" {...props} />
     </div>
   </label>
 );
 
 const ArrowIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className="h-4 w-4"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+  >
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 5l7 7-7 7" />
   </svg>
 );
