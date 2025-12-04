@@ -18,12 +18,12 @@ import org.springframework.util.StringUtils;
 public class InvoiceEmailService {
 
     private final JavaMailSender mailSender;
-    private final InvoicePdfService invoicePdfService;
+    private final OrderService orderService;
 
     public void sendInvoiceEmail(InvoiceEmailRequest request) {
         InvoiceRequest invoice = request.getInvoice();
 
-        byte[] pdfBytes = invoicePdfService.generateInvoicePdf(invoice);
+        byte[] pdfBytes = orderService.generateInvoicePdf(invoice);
 
         MimeMessage message = mailSender.createMimeMessage();
 

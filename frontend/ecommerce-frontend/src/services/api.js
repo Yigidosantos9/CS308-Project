@@ -34,6 +34,59 @@ export const productService = {
   },
 };
 
+export const authService = {
+  login: async (email, password) => {
+    try {
+      console.log('Attempting login to:', `${API_BASE_URL}/auth/login`);
+      const response = await api.post('/auth/login', { email, password });
+      if (response.data?.token) {
+        localStorage.setItem('authToken', response.data.token);
+      }
+      return response.data;
+    } catch (error) {
+      console.error('Login error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        code: error.code,
+        config: error.config
+      });
+      throw error;
+    }
+  },
+
+  register: async (userData) => {
+    try {
+      console.log('Attempting registration to:', `${API_BASE_URL}/auth/register`, userData);
+      const response = await api.post('/auth/register', userData);
+      console.log('Registration response:', response);
+      return response.data;
+    } catch (error) {
+      console.error('Registration error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        code: error.code,
+        config: error.config
+      });
+      throw error;
+    }
+  },
+
+  logout: () => {
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('user');
+  },
+
+  getToken: () => {
+    return localStorage.getItem('authToken');
+  },
+
+  isAuthenticated: () => {
+    return !!localStorage.getItem('authToken');
+  }
+};
+
 export const reviewService = {
   getProductReviews: async (productId) => {
     try {
@@ -71,6 +124,18 @@ export const cartService = {
     return await api.delete(`/cart/remove`, {
       params: { userId, productId }
     });
+  }
+};
+
+export const orderService = {
+  getOrders: async () => {
+    try {
+      const response = await api.get('/orders');
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+      throw error;
+    }
   }
 };
 

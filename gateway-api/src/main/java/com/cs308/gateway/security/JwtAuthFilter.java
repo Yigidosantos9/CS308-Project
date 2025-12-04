@@ -73,10 +73,24 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
                     }
                     // Optionally, add user id to headers for downstream
                     String subject = claimsOpt.get().getSubject();
+                    String email = (String) claimsOpt.get().get("email");
+                    String role = (String) claimsOpt.get().get("role");
+
+                    SecurityContext context = SecurityContext.builder()
+                            .userId(Long.parseLong(subject))
+                            .email(email)
+                            // .userType(UserType.valueOf(role)) // Assuming role maps to UserType
+                            .token(token)
+                            .build();
+
+                    SecurityContext.setContext(context);
+
                     ServerHttpRequest mutated = request.mutate()
                             .header("X-User-Id", subject == null ? "" : subject)
                             .build();
-                    return chain.filter(exchange.mutate().request(mutated).build());
+
+                    return chain.filter(exchange.mutate().request(mutated).build())
+                            .doFinally(signalType -> SecurityContext.clearContext());
                 });
     }
 

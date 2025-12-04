@@ -1,85 +1,33 @@
 package com.cs308.product.repository;
 
 import com.cs308.product.domain.Product;
+import com.cs308.product.domain.enums.Color;
+import com.cs308.product.domain.enums.ProductType;
+import com.cs308.product.domain.enums.TargetAudience;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.Collectors;
+import java.util.List;
 
 @Repository
-public class ProductRepository {
+public interface ProductRepository extends JpaRepository<Product, Long> {
 
-    private final Map<Long, Product> store = new ConcurrentHashMap<>();
-    private final AtomicLong idGenerator = new AtomicLong(0);
-
-    public Optional<Product> findById(Long id) {
-        return Optional.ofNullable(store.get(id));
-    }
-
-    public List<Product> findAll() {
-        return new ArrayList<>(store.values());
-    }
-
-    public Product save(Product product) {
-        if (product.getId() == null) {
-            product.setId(idGenerator.incrementAndGet());
-        } else {
-            idGenerator.accumulateAndGet(product.getId(), Math::max);
-        }
-
-        store.put(product.getId(), product);
-        return product;
-    }
-
-    public void saveAll(Collection<Product> products) {
-        for (Product p : products) {
-            save(p);
-        }
-    }
-
-    public boolean isEmpty() {
-        return store.isEmpty();
-    }
-
-    public boolean deleteById(Long id) {
-        return store.remove(id) != null;
-    }
-
-    /**
-     * Basit arama + filtre + sıralama
-     */
-    public List<Product> search(
-            String q,
-            String category,
-            String gender,
-            String color,
-            String sort // priceAsc, priceDesc, ratingDesc vs.
-    ) {
-        return store.values().stream()
-                .filter(p -> {
-                    if (q == null || q.isBlank()) return true;
-                    String s = q.toLowerCase();
-                    return (p.getName() != null && p.getName().toLowerCase().contains(s))
-                            || (p.getDescription() != null && p.getDescription().toLowerCase().contains(s))
-                            || (p.getBrand() != null && p.getBrand().toLowerCase().contains(s));
-                })
-                .filter(p -> category == null || category.isBlank())
-                .filter(p -> gender == null || gender.isBlank())
-                .filter(p -> color == null || color.isBlank())
-                .sorted(getComparator(sort))
-                .collect(Collectors.toList());
-    }
-
-    private Comparator<Product> getComparator(String sort) {
-        if ("priceAsc".equalsIgnoreCase(sort)) {
-            return Comparator.comparing(Product::getPrice,
-                    Comparator.nullsLast(Double::compareTo));
-        } else if ("priceDesc".equalsIgnoreCase(sort)) {
-            return Comparator.comparing(Product::getPrice,
-                    Comparator.nullsLast(Double::compareTo)).reversed();
-        }
-        return (p1, p2) -> 0;
-    }
+    @Query("SELECT DISTINCT p FROM Product p " +
+            "LEFT JOIN p.variants v " +
+            "WHERE (:q IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', :q, '%')) " +
+            "OR LOWER(p.description) LIKE LOWER(CONCAT('%', :q, '%')) " +
+            "OR LOWER(p.brand) LIKE LOWER(CONCAT('%', :q, '%'))) " +
+            "AND (:productType IS NULL OR p.productType = :productType) " +
+            "AND (:targetAudience IS NULL OR p.targetAudience = :targetAudience) " +
+            "AND (:color IS NULL OR v.color = :color) " +
+            "AND (:description IS NULL OR LOWER(p.description) LIKE LOWER(CONCAT('%', :description, '%')))")
+    List<Product> search(@Param("q") String q,
+            @Param("productType") ProductType productType,
+            @Param("targetAudience") TargetAudience targetAudience,
+            @Param("color") Color color,
+            @Param("description") String description,
+            Sort sort);
 }

@@ -14,12 +14,17 @@ public class SecurityContext {
 
     private static final ThreadLocal<SecurityContext> contextHolder = new ThreadLocal<>();
 
-    public static void setContext(SecurityContext context) {
-        contextHolder.set(context);
+    public static SecurityContext getContext() {
+        SecurityContext ctx = contextHolder.get();
+        if (ctx == null) {
+            ctx = SecurityContext.builder().build();
+            contextHolder.set(ctx);
+        }
+        return ctx;
     }
 
-    public static SecurityContext getContext() {
-        return contextHolder.get();
+    public static void setContext(SecurityContext context) {
+        contextHolder.set(context);
     }
 
     public static void clearContext() {
@@ -27,26 +32,6 @@ public class SecurityContext {
     }
 
     public static boolean isAuthenticated() {
-        return getContext() != null;
-    }
-
-    public static boolean hasRole(UserType role) {
-        SecurityContext context = getContext();
-        return context != null && context.getUserType() == role;
-    }
-
-    public static boolean hasAnyRole(UserType... roles) {
-        SecurityContext context = getContext();
-        if (context == null) {
-            return false;
-        }
-        UserType userRole = context.getUserType();
-        for (UserType role : roles) {
-            if (userRole == role) {
-                return true;
-            }
-        }
-        return false;
+        return getContext().getUserId() != null;
     }
 }
-

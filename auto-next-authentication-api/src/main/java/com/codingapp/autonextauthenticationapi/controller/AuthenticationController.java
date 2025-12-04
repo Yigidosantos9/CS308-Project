@@ -2,6 +2,7 @@ package com.codingapp.autonextauthenticationapi.controller;
 
 import com.codingapp.autonextauthenticationapi.model.request.CreateUserRequest;
 import com.codingapp.autonextauthenticationapi.model.request.LoginRequest;
+import com.codingapp.autonextauthenticationapi.model.request.VerifyTokenRequest;
 import com.codingapp.autonextauthenticationapi.model.response.LoginResponse;
 import com.codingapp.autonextauthenticationapi.model.response.UserDetails;
 import com.codingapp.autonextauthenticationapi.service.AuthenticationService;
@@ -33,9 +34,9 @@ public class AuthenticationController {
     }
 
     @PostMapping("/verify-token")
-    public UserDetails verifyToken(@RequestBody String token) {
+    public UserDetails verifyToken(@RequestBody VerifyTokenRequest request) {
 
-        return authenticationService.verifyToken(token);
+        return authenticationService.verifyToken(request.getToken());
     }
 
 }

@@ -44,6 +44,17 @@ public class ProductService {
         return productClient.removeFromCart(userId, productId);
     }
 
+    public Cart updateCartItemQuantity(Long userId, Long productId, Integer quantity) {
+        log.info("Processing update cart item quantity request - userId: {}, productId: {}, quantity: {}", 
+                userId, productId, quantity);
+        return productClient.updateCartItemQuantity(userId, productId, quantity);
+    }
+
+    public Cart mergeCarts(Long guestUserId, Long userId) {
+        log.info("Processing merge carts request - guestUserId: {}, userId: {}", guestUserId, userId);
+        return productClient.mergeCarts(guestUserId, userId);
+    }
+
     public Product setProductPrice(Long productId, Double price) {
         log.info("Processing set product price - productId: {}, price: {}", productId, price);
         if (price == null || price < 0) {

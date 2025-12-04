@@ -2,7 +2,10 @@ import { Link } from 'react-router-dom';
 import { Search, ShoppingBag, User, Menu } from 'lucide-react';
 import { useState } from 'react';
 
+import { useShop } from '../../context/ShopContext';
+
 const Navbar = () => {
+  const { user } = useShop();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const navLinks = [
@@ -15,7 +18,7 @@ const Navbar = () => {
   return (
     <nav className="bg-[#F5F5F5] py-6 px-8 sticky top-0 z-50">
       <div className="container mx-auto flex justify-between items-center">
-        
+
         {/* 1. Logo */}
         <Link to="/" className="text-4xl font-black tracking-tighter uppercase">
           RAWCTRL
@@ -24,9 +27,9 @@ const Navbar = () => {
         {/* 2. Desktop Navigation (Hidden on Mobile) */}
         <div className="hidden md:flex gap-8 font-medium text-sm tracking-wide">
           {navLinks.map((link) => (
-            <Link 
-              key={link.name} 
-              to={link.path} 
+            <Link
+              key={link.name}
+              to={link.path}
               className={`hover:opacity-60 transition-opacity ${link.isRed ? 'text-red-500 font-bold' : 'text-black'}`}
             >
               {link.name}
@@ -42,12 +45,12 @@ const Navbar = () => {
           <Link to="/cart" className="hover:opacity-60 transition-opacity">
             <ShoppingBag className="w-6 h-6" />
           </Link>
-          <Link to="/profile" className="hidden sm:block hover:opacity-60 transition-opacity">
+          <Link to={user ? "/profile" : "/login"} className="hidden sm:block hover:opacity-60 transition-opacity">
             <User className="w-6 h-6" />
           </Link>
-          
+
           {/* Mobile Menu Button */}
-          <button 
+          <button
             className="md:hidden"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
           >
@@ -60,8 +63,8 @@ const Navbar = () => {
       {isMenuOpen && (
         <div className="md:hidden absolute top-full left-0 w-full bg-white shadow-lg py-4 px-8 flex flex-col gap-4">
           {navLinks.map((link) => (
-            <Link 
-              key={link.name} 
+            <Link
+              key={link.name}
               to={link.path}
               onClick={() => setIsMenuOpen(false)}
               className={`text-lg ${link.isRed ? 'text-red-500 font-bold' : 'text-black'}`}
@@ -70,7 +73,7 @@ const Navbar = () => {
             </Link>
           ))}
           <Link
-            to="/profile"
+            to={user ? "/profile" : "/login"}
             onClick={() => setIsMenuOpen(false)}
             className="flex items-center gap-2 text-lg font-semibold text-black"
           >

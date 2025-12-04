@@ -17,7 +17,26 @@ public class ProductService {
 
     private final ProductRepository productRepository;
 
-    public Product addProduct(Product product) {
+    public Product addProduct(com.cs308.product.model.CreateProductRequest request) {
+        Product product = new Product();
+        product.setName(request.getName());
+        product.setPrice(request.getPrice());
+        product.setStock(request.getStock());
+        product.setModel(request.getModel());
+        product.setSerialNumber(request.getSerialNumber());
+        product.setDescription(request.getDescription());
+        product.setBrand(request.getBrand());
+        product.setProductType(request.getProductType());
+        product.setTargetAudience(request.getTargetAudience());
+        product.setWarrantyStatus(request.getWarrantyStatus());
+        product.setDistributorInfo(request.getDistributorInfo());
+        product.setSeason(request.getSeason());
+        product.setFit(request.getFit());
+        product.setMaterial(request.getMaterial());
+        product.setCareInstructions(request.getCareInstructions());
+        if (request.getActive() != null) {
+            product.setActive(request.getActive());
+        }
         return productRepository.save(product);
     }
 
@@ -98,46 +117,64 @@ public class ProductService {
         return productRepository.findById(id);
     }
 
-
     public List<Product> search(ProductFilterRequest filter) {
         if (filter == null) {
             return productRepository.findAll();
         }
 
-        String sort = (filter.getSort() == null || filter.getSort().isBlank())
+        String sortParam = (filter.getSort() == null || filter.getSort().isBlank())
                 ? "relevance"
                 : filter.getSort();
 
+        org.springframework.data.domain.Sort sort = org.springframework.data.domain.Sort.unsorted();
+        if ("priceAsc".equalsIgnoreCase(sortParam)) {
+            sort = org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.ASC, "price");
+        } else if ("priceDesc".equalsIgnoreCase(sortParam)) {
+            sort = org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC,
+                    "price");
+        } else if ("newest".equalsIgnoreCase(sortParam)) {
+            sort = org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC,
+                    "createdAt");
+        }
+
+        com.cs308.product.domain.enums.ProductType productType = null;
+        if (filter.getCategory() != null && !filter.getCategory().isBlank()) {
+            try {
+                productType = com.cs308.product.domain.enums.ProductType.valueOf(filter.getCategory().toUpperCase());
+            } catch (IllegalArgumentException e) {
+                return List.of();
+            }
+        }
+
+        com.cs308.product.domain.enums.TargetAudience targetAudience = null;
+        if (filter.getGender() != null && !filter.getGender().isBlank()) {
+            try {
+                targetAudience = com.cs308.product.domain.enums.TargetAudience
+                        .valueOf(filter.getGender().toUpperCase());
+            } catch (IllegalArgumentException e) {
+                return List.of();
+            }
+        }
+
+        com.cs308.product.domain.enums.Color color = null;
+        if (filter.getColor() != null && !filter.getColor().isBlank()) {
+            try {
+                color = com.cs308.product.domain.enums.Color.valueOf(filter.getColor().toUpperCase());
+            } catch (IllegalArgumentException e) {
+                return List.of();
+            }
+        }
+
         return productRepository.search(
                 filter.getQ(),
-                filter.getCategory(),
-                filter.getGender(),
-                filter.getColor(),
-                sort
-        );
-    }
-
-
-    public List<Product> search(String q,
-                                String category,
-                                String gender,
-                                String color,
-                                String sort) {
-
-        ProductFilterRequest filter = new ProductFilterRequest();
-        filter.setQ(q);
-        filter.setCategory(category);
-        filter.setGender(gender);
-        filter.setColor(color);
-        filter.setSort(sort);
-
-        return search(filter);
+                productType,
+                targetAudience,
+                color,
+                filter.getDescription(),
+                sort);
     }
 
     public void delete(Long id) {
-        boolean removed = productRepository.deleteById(id);
-        if (!removed) {
-            throw new ProductNotFoundException(id);
-        }
+        productRepository.deleteById(id);
     }
 }

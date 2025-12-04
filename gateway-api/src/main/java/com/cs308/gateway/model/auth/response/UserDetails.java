@@ -17,5 +17,8 @@ public class UserDetails {
     private String userId;
     private String email;
     private UserType userType;
+    private String firstName;
+    private String lastName;
+    private String phoneNumber;
+    private java.time.LocalDate birthDate;
 }
-
