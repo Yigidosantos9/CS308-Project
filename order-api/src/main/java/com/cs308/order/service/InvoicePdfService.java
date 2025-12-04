@@ -1,0 +1,179 @@
+package com.cs308.order.service;
+
+import com.cs308.order.model.InvoiceItem;
+import com.cs308.order.model.InvoiceRequest;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.PDPageContentStream;
+import org.apache.pdfbox.pdmodel.common.PDRectangle;
+import org.apache.pdfbox.pdmodel.font.PDType1Font;
+import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.text.DecimalFormat;
+import java.util.List;
+import java.util.Optional;
+
+@Slf4j
+@Service
+public class InvoicePdfService {
+
+    private static final float MARGIN = 50f;
+    private static final DecimalFormat MONEY_FORMAT = new DecimalFormat("#,##0.00");
+
+    public byte[] generateInvoicePdf(InvoiceRequest request) {
+        validate(request);
+
+        try (PDDocument document = new PDDocument()) {
+            PDPage page = new PDPage(PDRectangle.A4);
+            document.addPage(page);
+
+            try (PDPageContentStream content = new PDPageContentStream(document, page)) {
+                float y = PDRectangle.A4.getHeight() - MARGIN;
+
+                y = drawHeader(content, request, y);
+                y = drawParties(content, request, y - 16);
+                y = drawItemsTable(content, request.getItems(), y - 14);
+                y = drawTotals(content, request, y - 10);
+
+                drawFooter(content, y - 24, "Thank you for your purchase.");
+            }
+
+            try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+                document.save(baos);
+                return baos.toByteArray();
+            }
+        } catch (IOException e) {
+            log.error("Failed to generate invoice PDF", e);
+            throw new IllegalStateException("Unable to generate invoice PDF", e);
+        }
+    }
+
+    private void validate(InvoiceRequest request) {
+        if (request == null) {
+            throw new IllegalArgumentException("Invoice request cannot be null");
+        }
+        if (!StringUtils.hasText(request.getInvoiceNumber())) {
+            throw new IllegalArgumentException("Invoice number is required");
+        }
+        if (request.getItems() == null || request.getItems().isEmpty()) {
+            throw new IllegalArgumentException("At least one invoice item is required");
+        }
+    }
+
+    private float drawHeader(PDPageContentStream content, InvoiceRequest request, float y) throws IOException {
+        y = writeText(content, PDType1Font.HELVETICA_BOLD, 22, MARGIN, y, "INVOICE");
+        y = writeText(content, PDType1Font.HELVETICA, 11, MARGIN, y, "Invoice No: " + request.getInvoiceNumber());
+        y = writeText(content, PDType1Font.HELVETICA, 11, MARGIN, y, "Issue Date: " + request.getIssueDate());
+        return writeText(content, PDType1Font.HELVETICA, 11, MARGIN, y, "Due Date: " + request.getDueDate());
+    }
+
+    private float drawParties(PDPageContentStream content, InvoiceRequest request, float y) throws IOException {
+        drawDivider(content, y);
+        y -= 12;
+
+        y = writeText(content, PDType1Font.HELVETICA_BOLD, 12, MARGIN, y, "Billed To");
+        y = writeMultiline(content, PDType1Font.HELVETICA, 11, MARGIN, y, request.getBuyerName(), request.getBuyerAddress());
+
+        y = writeText(content, PDType1Font.HELVETICA_BOLD, 12, MARGIN + 280, y + 16, "From");
+        y = writeMultiline(content, PDType1Font.HELVETICA, 11, MARGIN + 280, y, request.getSellerName(), request.getSellerAddress());
+
+        return y - 4;
+    }
+
+    private float drawItemsTable(PDPageContentStream content, List<InvoiceItem> items, float y) throws IOException {
+        drawDivider(content, y);
+        y -= 14;
+
+        float startX = MARGIN;
+        float[] colWidths = {260, 70, 90, 90};
+
+        y = writeTableRow(content, y, startX, colWidths, true,
+                "Item", "Qty", "Unit Price", "Total");
+        drawDivider(content, y + 6);
+
+        for (InvoiceItem item : items) {
+            double total = Optional.ofNullable(item.getUnitPrice()).orElse(0.0)
+                    * Optional.ofNullable(item.getQuantity()).orElse(0);
+            y = writeTableRow(content, y - 12, startX, colWidths, false,
+                    item.getDescription(),
+                    String.valueOf(item.getQuantity()),
+                    formatMoney(item.getUnitPrice()),
+                    formatMoney(total));
+        }
+
+        return y - 4;
+    }
+
+    private float drawTotals(PDPageContentStream content, InvoiceRequest request, float y) throws IOException {
+        double subTotal = request.getItems().stream()
+                .mapToDouble(item -> Optional.ofNullable(item.getUnitPrice()).orElse(0.0)
+                        * Optional.ofNullable(item.getQuantity()).orElse(0))
+                .sum();
+        double taxAmount = subTotal * Optional.ofNullable(request.getTaxRate()).orElse(0.0);
+        double shipping = Optional.ofNullable(request.getShippingFee()).orElse(0.0);
+        double total = subTotal + taxAmount + shipping;
+
+        float startX = MARGIN + 320;
+        y = writeText(content, PDType1Font.HELVETICA_BOLD, 12, startX, y, "Summary");
+        y = writeText(content, PDType1Font.HELVETICA, 11, startX, y, "Subtotal: " + formatMoney(subTotal, request));
+        y = writeText(content, PDType1Font.HELVETICA, 11, startX, y, "Tax (" + (request.getTaxRate() * 100) + "%): " + formatMoney(taxAmount, request));
+        y = writeText(content, PDType1Font.HELVETICA, 11, startX, y, "Shipping: " + formatMoney(shipping, request));
+        y = writeText(content, PDType1Font.HELVETICA_BOLD, 12, startX, y, "Total: " + formatMoney(total, request));
+        return y;
+    }
+
+    private void drawFooter(PDPageContentStream content, float y, String text) throws IOException {
+        drawDivider(content, y);
+        writeText(content, PDType1Font.HELVETICA_OBLIQUE, 10, MARGIN, y - 12, text);
+    }
+
+    private float writeText(PDPageContentStream content, PDType1Font font, float fontSize, float x, float y, String text) throws IOException {
+        content.beginText();
+        content.setFont(font, fontSize);
+        content.newLineAtOffset(x, y);
+        content.showText(text);
+        content.endText();
+        return y - (fontSize + 4);
+    }
+
+    private float writeMultiline(PDPageContentStream content, PDType1Font font, float fontSize, float x, float y, String... lines) throws IOException {
+        float currentY = y;
+        for (String line : lines) {
+            currentY = writeText(content, font, fontSize, x, currentY, line);
+        }
+        return currentY;
+    }
+
+    private float writeTableRow(PDPageContentStream content, float y, float startX, float[] colWidths, boolean header, String... values) throws IOException {
+        float currentX = startX;
+        for (int i = 0; i < values.length; i++) {
+            content.beginText();
+            content.setFont(header ? PDType1Font.HELVETICA_BOLD : PDType1Font.HELVETICA, header ? 11 : 10);
+            content.newLineAtOffset(currentX, y);
+            content.showText(values[i]);
+            content.endText();
+            currentX += colWidths[i];
+        }
+        return y;
+    }
+
+    private void drawDivider(PDPageContentStream content, float y) throws IOException {
+        content.moveTo(MARGIN, y);
+        content.lineTo(PDRectangle.A4.getWidth() - MARGIN, y);
+        content.setLineWidth(0.5f);
+        content.stroke();
+    }
+
+    private String formatMoney(double value) {
+        return "$" + MONEY_FORMAT.format(value);
+    }
+
+    private String formatMoney(double value, InvoiceRequest request) {
+        String symbol = Optional.ofNullable(request.getCurrencySymbol()).orElse("$");
+        return symbol + MONEY_FORMAT.format(value);
+    }
+}
