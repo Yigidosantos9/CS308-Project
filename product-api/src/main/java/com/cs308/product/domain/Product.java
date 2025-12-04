@@ -17,6 +17,7 @@ import jakarta.persistence.Index;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -37,89 +38,86 @@ import java.util.List;
 @Builder
 @ToString
 @Entity
-@Table(
-        name = "products",
-        indexes = {
+@Table(name = "products", indexes = {
                 @Index(name = "idx_products_name", columnList = "name"),
                 @Index(name = "idx_products_model", columnList = "model"),
                 @Index(name = "idx_products_type_audience", columnList = "product_type,target_audience")
-        }
-)
+})
 public class Product {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+        @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        private Long id;
 
-    @NotBlank
-    @Column(nullable = false, length = 200)
-    private String name;
+        @NotBlank
+        @Column(nullable = false, length = 200)
+        private String name;
 
-    @NotBlank
-    @Column(nullable = false)
-    private Double price;
+        @jakarta.validation.constraints.NotNull
+        @Column(nullable = false)
+        private Double price;
 
-    @NotBlank
-    @Column(nullable = false)
-    private Integer stock;
+        @jakarta.validation.constraints.NotNull
+        @Column(nullable = false)
+        private Integer stock;
 
-    @NotBlank
-    @Column(nullable = false, length = 100)
-    private String model;
+        @NotBlank
+        @Column(nullable = false, length = 100)
+        private String model;
 
-    @NotBlank
-    @Column(nullable = false, length = 120)
-    private String serialNumber;
+        @NotBlank
+        @Column(nullable = false, length = 120)
+        private String serialNumber;
 
-    @NotBlank
-    @Column(nullable = false, columnDefinition = "TEXT")
-    private String description;
+        @NotBlank
+        @Column(nullable = false, columnDefinition = "TEXT")
+        private String description;
 
-    @Column(length = 100)
-    private String brand;
+        @Column(length = 100)
+        private String brand;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "product_type", nullable = false, length = 40)
-    private ProductType productType;
+        @Enumerated(EnumType.STRING)
+        @Column(name = "product_type", nullable = false, length = 40)
+        private ProductType productType;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "target_audience", nullable = false, length = 16)
-    private TargetAudience targetAudience;
+        @Enumerated(EnumType.STRING)
+        @Column(name = "target_audience", nullable = false, length = 16)
+        private TargetAudience targetAudience;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "warranty_status", nullable = false, length = 16)
-    private WarrantyStatus warrantyStatus;
+        @Enumerated(EnumType.STRING)
+        @Column(name = "warranty_status", nullable = false, length = 16)
+        private WarrantyStatus warrantyStatus;
 
-    @NotBlank
-    @Column(name = "distributor_info", nullable = false, columnDefinition = "TEXT")
-    private String distributorInfo;
+        @NotBlank
+        @Column(name = "distributor_info", nullable = false, columnDefinition = "TEXT")
+        private String distributorInfo;
 
-    @Enumerated(EnumType.STRING)
-    @Column(length = 16)
-    private Season season;
+        @Enumerated(EnumType.STRING)
+        @Column(length = 16)
+        private Season season;
 
-    @Enumerated(EnumType.STRING)
-    @Column(length = 16)
-    private Fit fit;
+        @Enumerated(EnumType.STRING)
+        @Column(length = 16)
+        private Fit fit;
 
-    @Column(length = 120)
-    private String material;            // "%100 cotton" etc.
+        @Column(length = 120)
+        private String material; // "%100 cotton" etc.
 
-    @Column(columnDefinition = "TEXT")
-    private String careInstructions;    // "30 degree washing" etc.
+        @Column(columnDefinition = "TEXT")
+        private String careInstructions; // "30 degree washing" etc.
 
-    @Column(nullable = false)
-    private boolean active = true;
+        @Column(nullable = false)
+        private boolean active = true;
 
-    @CreationTimestamp
-    @Column(updatable = false)
-    private Instant createdAt;
+        @CreationTimestamp
+        @Column(updatable = false)
+        private Instant createdAt;
 
-    @UpdateTimestamp
-    private Instant updatedAt;
+        @UpdateTimestamp
+        private Instant updatedAt;
 
-    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
-    @ToString.Exclude
-    private List<ProductVariant> variants = new ArrayList<>();
+        @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+        @Builder.Default
+        @ToString.Exclude
+        private List<ProductVariant> variants = new ArrayList<>();
 }

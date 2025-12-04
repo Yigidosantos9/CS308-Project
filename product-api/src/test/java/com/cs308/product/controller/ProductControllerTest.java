@@ -35,6 +35,12 @@ class ProductControllerTest {
         @MockBean
         private ProductService productService;
 
+        @MockBean
+        private com.cs308.product.service.CommentService commentService;
+
+        @MockBean
+        private com.cs308.product.service.RatingService ratingService;
+
         @Autowired
         private ObjectMapper objectMapper;
 

@@ -10,43 +10,47 @@ import com.cs308.product.model.ProductUpdateRequest;
 import com.cs308.product.repository.ProductRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.List;
+import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
+@ExtendWith(MockitoExtension.class)
 class ProductServiceTest {
 
+    @Mock
     private ProductRepository repository;
-    private ProductService service;
 
-    @BeforeEach
-    void setUp() {
-        repository = new ProductRepository();
-        service = new ProductService(repository);
-    }
+    @InjectMocks
+    private ProductService service;
 
     @Test
     void deleteRemovesExistingProduct() {
-        Product product = sampleProduct(42L);
-        repository.saveAll(List.of(product));
+        when(repository.existsById(42L)).thenReturn(true);
+        doNothing().when(repository).deleteById(42L);
 
         service.delete(42L);
 
-        assertTrue(repository.findById(42L).isEmpty(), "product should be removed from repository");
+        verify(repository).deleteById(42L);
     }
 
     @Test
     void deleteThrowsWhenProductMissing() {
+        when(repository.existsById(99L)).thenReturn(false);
         assertThrows(ProductNotFoundException.class, () -> service.delete(99L));
     }
 
     @Test
     void updateProductReplacesExistingProduct() {
         Product existing = sampleProduct(1L);
-        repository.save(existing);
+        when(repository.findById(1L)).thenReturn(Optional.of(existing));
+        when(repository.save(any(Product.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         ProductUpdateRequest updatedPayload = ProductUpdateRequest.builder()
                 .name("Updated Jacket")
@@ -86,6 +90,7 @@ class ProductServiceTest {
                 .distributorInfo("Dist")
                 .active(true)
                 .build();
+        when(repository.findById(123L)).thenReturn(Optional.empty());
         assertThrows(ProductNotFoundException.class, () -> service.updateProduct(123L, payload));
     }
 

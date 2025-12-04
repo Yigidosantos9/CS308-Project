@@ -24,7 +24,7 @@ public class DataLoader implements CommandLineRunner {
         @Override
         public void run(String... args) {
                 // Eğer zaten ürün varsa seed etme
-                if (!repo.isEmpty()) {
+                if (repo.count() > 0) {
                         return;
                 }
 

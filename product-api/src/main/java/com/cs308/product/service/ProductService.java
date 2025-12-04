@@ -115,7 +115,7 @@ public class ProductService {
                 ? "relevance"
                 : filter.getSort();
 
-        return productRepository.search(
+        return search(
                 filter.getQ(),
                 filter.getCategory(),
                 filter.getGender(),
@@ -131,21 +131,45 @@ public class ProductService {
             String description,
             String sort) {
 
-        ProductFilterRequest filter = new ProductFilterRequest();
-        filter.setQ(q);
-        filter.setCategory(category);
-        filter.setGender(gender);
-        filter.setColor(color);
-        filter.setDescription(description);
-        filter.setSort(sort);
+        return productRepository.findAll().stream()
+                .filter(p -> {
+                    if (q == null || q.isBlank())
+                        return true;
+                    String s = q.toLowerCase();
+                    return (p.getName() != null && p.getName().toLowerCase().contains(s))
+                            || (p.getDescription() != null && p.getDescription().toLowerCase().contains(s))
+                            || (p.getBrand() != null && p.getBrand().toLowerCase().contains(s));
+                })
+                .filter(p -> category == null || category.isBlank()
+                        || (p.getProductType() != null && p.getProductType().name().equalsIgnoreCase(category)))
+                .filter(p -> gender == null || gender.isBlank()
+                        || (p.getTargetAudience() != null && p.getTargetAudience().name().equalsIgnoreCase(gender)))
+                .filter(p -> color == null || color.isBlank()) // Color is not in Product entity yet?
+                .filter(p -> {
+                    if (description == null || description.isBlank())
+                        return true;
+                    return p.getDescription() != null
+                            && p.getDescription().toLowerCase().contains(description.toLowerCase());
+                })
+                .sorted(getComparator(sort))
+                .collect(java.util.stream.Collectors.toList());
+    }
 
-        return search(filter);
+    private java.util.Comparator<Product> getComparator(String sort) {
+        if ("priceAsc".equalsIgnoreCase(sort)) {
+            return java.util.Comparator.comparing(Product::getPrice,
+                    java.util.Comparator.nullsLast(Double::compareTo));
+        } else if ("priceDesc".equalsIgnoreCase(sort)) {
+            return java.util.Comparator.comparing(Product::getPrice,
+                    java.util.Comparator.nullsLast(Double::compareTo)).reversed();
+        }
+        return (p1, p2) -> 0;
     }
 
     public void delete(Long id) {
-        boolean removed = productRepository.deleteById(id);
-        if (!removed) {
+        if (!productRepository.existsById(id)) {
             throw new ProductNotFoundException(id);
         }
+        productRepository.deleteById(id);
     }
 }
