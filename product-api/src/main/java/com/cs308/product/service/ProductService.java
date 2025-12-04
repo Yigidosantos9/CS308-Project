@@ -3,6 +3,7 @@ package com.cs308.product.service;
 import com.cs308.product.domain.Product;
 import com.cs308.product.model.ProductFilterRequest;
 import com.cs308.product.model.ProductUpdateRequest;
+import com.cs308.product.model.StockRestoreRequest;
 import com.cs308.product.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -36,6 +37,16 @@ public class ProductService {
         if (request.getActive() != null) {
             product.setActive(request.getActive());
         }
+        return productRepository.save(product);
+    }
+
+    public Product restoreStock(StockRestoreRequest request) {
+        Product product = productRepository.findById(request.getProductId())
+                .orElseThrow(() -> new ProductNotFoundException(request.getProductId()));
+
+        Integer current = product.getStock() == null ? 0 : product.getStock();
+        product.setStock(current + request.getQuantity());
+
         return productRepository.save(product);
     }
 

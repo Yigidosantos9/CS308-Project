@@ -1,8 +1,11 @@
 package com.cs308.gateway.controller;
 
 import com.cs308.gateway.model.auth.enums.UserType;
-import com.cs308.gateway.security.RequiresRole;
+import com.cs308.gateway.model.invoice.InvoiceEmailRequest;
 import com.cs308.gateway.model.invoice.InvoiceRequest;
+import com.cs308.gateway.model.product.StockRestoreRequest;
+import com.cs308.gateway.security.RequiresRole;
+import com.cs308.gateway.service.InvoiceEmailService;
 import com.cs308.gateway.service.OrderService;
 import com.cs308.gateway.service.ProductService;
 import jakarta.validation.Valid;
@@ -24,6 +27,7 @@ import org.springframework.web.bind.annotation.*;
 public class SalesManagerController {
 
     private final OrderService orderService;
+    private final InvoiceEmailService invoiceEmailService;
     private final ProductService productService;
 
     // Sales Manager can set product prices
@@ -76,6 +80,15 @@ public class SalesManagerController {
                 .body(new ByteArrayResource(pdfBytes != null ? pdfBytes : new byte[0]));
     }
 
+    // Send invoice as email with PDF attachment
+    @PostMapping("/invoices/email")
+    public ResponseEntity<Void> emailInvoice(@Valid @RequestBody InvoiceEmailRequest request) {
+        log.info("BFF: Send invoice email - to: {}, invoiceNumber: {}",
+                request.getTo(), request.getInvoice().getInvoiceNumber());
+        invoiceEmailService.sendInvoiceEmail(request);
+        return ResponseEntity.accepted().build();
+    }
+
     // Sales Manager can calculate revenue and profit
     @GetMapping("/revenue")
     public ResponseEntity<?> calculateRevenue(
@@ -90,8 +103,9 @@ public class SalesManagerController {
     @PutMapping("/refunds/{refundId}/approve")
     public ResponseEntity<?> approveRefund(@PathVariable Long refundId) {
         log.info("BFF: Approve refund request - refundId: {}", refundId);
-        // TODO: Implement approve refund
-        return ResponseEntity.ok().build();
+        // In a full implementation, refundId would be used to look up the order & items.
+        // For now we assume the caller sends productId and quantity to restore.
+        return ResponseEntity.ok("Refund approved (stock restoration should be triggered via product service).");
     }
 
     @PutMapping("/refunds/{refundId}/reject")
@@ -99,5 +113,13 @@ public class SalesManagerController {
         log.info("BFF: Reject refund request - refundId: {}", refundId);
         // TODO: Implement reject refund
         return ResponseEntity.ok().build();
+    }
+
+    // Simple helper endpoint so a Sales Manager can manually restore stock after a refund.
+    @PostMapping("/refunds/restore-stock")
+    public ResponseEntity<?> restoreStockAfterRefund(@RequestBody @Valid StockRestoreRequest request) {
+        log.info("BFF: Restore stock after refund - productId: {}, quantity: {}",
+                request.getProductId(), request.getQuantity());
+        return ResponseEntity.ok(productService.restoreStock(request));
     }
 }

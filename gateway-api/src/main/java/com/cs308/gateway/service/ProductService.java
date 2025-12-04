@@ -4,6 +4,7 @@ import com.cs308.gateway.client.ProductClient;
 import com.cs308.gateway.model.product.Cart;
 import com.cs308.gateway.model.product.Product;
 import com.cs308.gateway.model.product.ProductFilterRequest;
+import com.cs308.gateway.model.product.StockRestoreRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -60,5 +61,10 @@ public class ProductService {
             throw new IllegalArgumentException("Price must be non-negative");
         }
         return productClient.setProductPrice(productId, price);
+    }
+
+    public Product restoreStock(StockRestoreRequest request) {
+        log.info("Processing restore stock request: {}", request);
+        return productClient.restoreStock(request);
     }
 }

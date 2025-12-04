@@ -22,6 +22,10 @@ public class CartService {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
 
+        if (product.getStock() == null || product.getStock() <= 0) {
+            throw new OutOfStockException(productId);
+        }
+
         Cart cart = cartRepository.findByUserId(userId)
                 .orElseGet(() -> {
                     Cart c = new Cart();
@@ -37,12 +41,12 @@ public class CartService {
         if (existing != null) {
             int newQty = existing.getQuantity() + qty;
             if (newQty > product.getStock()) {
-                throw new RuntimeException("Not enough stock");
+                throw new OutOfStockException("Not enough stock for product " + productId);
             }
             existing.setQuantity(newQty);
         } else {
             if (qty > product.getStock()) {
-                throw new RuntimeException("Not enough stock");
+                throw new OutOfStockException("Not enough stock for product " + productId);
             }
             CartItem newItem = CartItem.builder()
                     .cart(cart)

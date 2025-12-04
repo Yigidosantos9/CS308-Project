@@ -74,32 +74,35 @@ export const ShopProvider = ({ children }) => {
   };
 
   const addToCart = async (product) => {
+    // Frontend guard: do not even attempt to add out-of-stock items
+    if (product.stock === 0) {
+      alert("This product is out of stock and cannot be added to the cart.");
+      return;
+    }
+
     try {
-      // 1. Optimistic Update
-      setCart((prev) => [...prev, { ...product, quantity: 1 }]);
-
-      // 2. Call Backend
-      await cartService.addToCart(user.id, product.id, 1);
-
-      // 3. Sync
-      await loadCart(user.id);
+      // Call backend first; rely on cart snapshot from server
+      await cartService.addToCart(user.userId, product.id, 1);
+      await loadCart(user.userId);
     } catch (err) {
       console.error("Failed to add to cart API:", err);
 
-      // 4. Error Handling
-      // If backend says "Not enough stock" (usually 500 in your current code)
-      alert("Failed to add to cart. Item might be out of stock.");
+      const apiError = err?.response?.data;
+      if (apiError?.error === "out_of_stock") {
+        alert("This product is out of stock and cannot be added to the cart.");
+      } else {
+        alert("Failed to add to cart. Please try again.");
+      }
 
-      // Revert optimistic update
-      await loadCart(user.id);
+      await loadCart(user.userId);
     }
   };
 
   const removeFromCart = async (productId) => {
     try {
       setCart((prev) => prev.filter((item) => item.id !== productId));
-      await cartService.removeFromCart(user.id, productId);
-      await loadCart(user.id);
+      await cartService.removeFromCart(user.userId, productId);
+      await loadCart(user.userId);
     } catch (err) {
       console.error("Failed to remove from cart API:", err);
     }

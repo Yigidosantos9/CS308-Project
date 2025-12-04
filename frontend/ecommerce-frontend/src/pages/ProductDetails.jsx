@@ -126,9 +126,14 @@ const ProductDetails = () => {
           {/* Add to Cart Button */}
           <button 
             onClick={() => addToCart({ ...product, selectedSize })}
-            className="w-48 bg-black text-white py-3 px-8 text-sm font-bold uppercase tracking-wider hover:bg-gray-800 transition-colors shadow-lg"
+            disabled={product.stock === 0}
+            className={`w-48 py-3 px-8 text-sm font-bold uppercase tracking-wider shadow-lg transition-colors
+              ${product.stock === 0
+                ? "bg-gray-400 text-gray-700 cursor-not-allowed"
+                : "bg-black text-white hover:bg-gray-800"
+              }`}
           >
-            Add to Cart
+            {product.stock === 0 ? "Out of Stock" : "Add to Cart"}
           </button>
 
           {/* Description */}

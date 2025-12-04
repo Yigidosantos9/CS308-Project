@@ -4,7 +4,9 @@ import com.cs308.product.domain.Product;
 import com.cs308.product.model.CreateProductRequest;
 import com.cs308.product.model.ProductFilterRequest;
 import com.cs308.product.model.ProductUpdateRequest;
+import com.cs308.product.model.StockRestoreRequest;
 import com.cs308.product.service.ProductService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,6 +25,12 @@ public class ProductController {
     public ResponseEntity<Product> addProduct(@RequestBody CreateProductRequest request) {
         Product created = service.addProduct(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
+    }
+
+    @PostMapping("/restore-stock")
+    public ResponseEntity<Product> restoreStock(@RequestBody @Valid StockRestoreRequest request) {
+        Product updated = service.restoreStock(request);
+        return ResponseEntity.ok(updated);
     }
 
     @PutMapping("/{id}")
