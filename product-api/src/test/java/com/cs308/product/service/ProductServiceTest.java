@@ -16,6 +16,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -47,7 +48,8 @@ class ProductServiceTest {
     void restoreStockIncreasesQuantity() {
         Product product = sampleProduct(10L);
         product.setStock(5);
-        repository.saveAll(List.of(product));
+        when(repository.findById(10L)).thenReturn(Optional.of(product));
+        when(repository.save(any(Product.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         StockRestoreRequest request = StockRestoreRequest.builder()
                 .productId(10L)
@@ -81,6 +83,7 @@ class ProductServiceTest {
                 .fit(existing.getFit())
                 .material("Wool")
                 .careInstructions("Hand wash")
+                .imageUrl("http://example.com/new-image.jpg")
                 .active(true)
                 .build();
 
@@ -126,6 +129,7 @@ class ProductServiceTest {
                 .fit(Fit.REGULAR)
                 .material("Cotton")
                 .careInstructions("Dry clean")
+                .imageUrl("http://example.com/image.jpg")
                 .active(true)
                 .build();
     }

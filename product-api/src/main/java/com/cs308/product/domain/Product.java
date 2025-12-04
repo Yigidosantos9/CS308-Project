@@ -106,6 +106,9 @@ public class Product {
         @Column(columnDefinition = "TEXT")
         private String careInstructions; // "30 degree washing" etc.
 
+        @Column(length = 500)
+        private String imageUrl;
+
         @Column(nullable = false)
         private boolean active = true;
 

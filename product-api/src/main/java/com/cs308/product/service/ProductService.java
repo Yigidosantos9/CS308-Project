@@ -34,6 +34,7 @@ public class ProductService {
         product.setFit(request.getFit());
         product.setMaterial(request.getMaterial());
         product.setCareInstructions(request.getCareInstructions());
+        product.setImageUrl(request.getImageUrl());
         if (request.getActive() != null) {
             product.setActive(request.getActive());
         }
@@ -103,6 +104,9 @@ public class ProductService {
         }
         if (request.getCareInstructions() != null) {
             target.setCareInstructions(request.getCareInstructions());
+        }
+        if (request.getImageUrl() != null) {
+            target.setImageUrl(request.getImageUrl());
         }
         if (request.getActive() != null) {
             target.setActive(request.getActive());

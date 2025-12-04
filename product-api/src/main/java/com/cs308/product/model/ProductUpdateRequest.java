@@ -27,6 +27,6 @@ public class ProductUpdateRequest {
     private Fit fit;
     private String material;
     private String careInstructions;
+    private String imageUrl;
     private Boolean active;
 }
-

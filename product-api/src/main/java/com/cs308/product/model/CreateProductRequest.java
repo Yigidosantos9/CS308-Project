@@ -48,5 +48,7 @@ public class CreateProductRequest {
 
     private String careInstructions;
 
+    private String imageUrl;
+
     private Boolean active = true;
 }
