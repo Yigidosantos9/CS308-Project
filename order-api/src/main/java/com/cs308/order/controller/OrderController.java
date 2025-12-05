@@ -19,4 +19,23 @@ public class OrderController {
     public ResponseEntity<List<Order>> getOrders(@RequestParam Long userId) {
         return ResponseEntity.ok(orderService.getOrdersByUserId(userId));
     }
+
+    @PostMapping
+    public ResponseEntity<Order> createOrder(@RequestParam Long userId) {
+        try {
+            return ResponseEntity.ok(orderService.createOrder(userId));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @PutMapping("/{id}/status")
+    public ResponseEntity<Order> updateOrderStatus(@PathVariable Long id, @RequestParam String status) {
+        try {
+            return ResponseEntity.ok(orderService.updateOrderStatus(id, status));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
 }

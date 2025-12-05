@@ -25,6 +25,9 @@ public class OrderItem {
     @Column(name = "price", nullable = false)
     private Double price;
 
+    @Column(name = "unit_price", nullable = false)
+    private Double unitPrice;
+
     public OrderItem() {
     }
 
@@ -33,6 +36,7 @@ public class OrderItem {
         this.productId = productId;
         this.quantity = quantity;
         this.price = price;
+        this.unitPrice = price; // Workaround for DB schema
     }
 
     public Long getId() {
@@ -73,5 +77,13 @@ public class OrderItem {
 
     public void setPrice(Double price) {
         this.price = price;
+    }
+
+    public Double getUnitPrice() {
+        return unitPrice;
+    }
+
+    public void setUnitPrice(Double unitPrice) {
+        this.unitPrice = unitPrice;
     }
 }

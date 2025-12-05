@@ -144,4 +144,20 @@ public class OrderClient {
             throw new RuntimeException("Failed to delete address", e);
         }
     }
+
+    public void updateOrderStatus(Long orderId, String status) {
+        log.debug("Calling order service: PUT /orders/{}/status?status={}", orderId, status);
+
+        try {
+            String uri = UriComponentsBuilder.fromPath("/orders/{orderId}/status")
+                    .queryParam("status", status)
+                    .buildAndExpand(orderId)
+                    .toUriString();
+
+            orderRestTemplate.put(uri, null);
+        } catch (RestClientException e) {
+            log.error("Error calling order service for update order status", e);
+            throw new RuntimeException("Failed to update order status", e);
+        }
+    }
 }

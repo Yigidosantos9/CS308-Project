@@ -23,11 +23,11 @@ public class OrderController {
 
     // Customers can place orders (must be authenticated)
     @PostMapping
-    @RequiresRole({UserType.CUSTOMER})
-    public ResponseEntity<Order> placeOrder() {
-        Long userId = SecurityContext.getContext().getUserId();
+    @RequiresRole({ UserType.CUSTOMER })
+    public ResponseEntity<Order> placeOrder(@AuthenticationPrincipal SecurityContext securityContext) {
+        Long userId = securityContext.getUserId();
         log.info("BFF: Place order request received from user: {}", userId);
-        
+
         try {
             Order order = orderService.createOrder(userId);
             return ResponseEntity.ok(order);
@@ -39,11 +39,11 @@ public class OrderController {
 
     // Customers can view their orders
     @GetMapping
-    @RequiresRole({UserType.CUSTOMER})
-    public ResponseEntity<List<Order>> getMyOrders() {
-        Long userId = SecurityContext.getContext().getUserId();
+    @RequiresRole({ UserType.CUSTOMER })
+    public ResponseEntity<List<Order>> getMyOrders(@AuthenticationPrincipal SecurityContext securityContext) {
+        Long userId = securityContext.getUserId();
         log.info("BFF: Get orders request received for user: {}", userId);
-        
+
         try {
             List<Order> orders = orderService.getUserOrders(userId);
             return ResponseEntity.ok(orders);
@@ -87,11 +87,17 @@ public class OrderController {
 
     // Product Manager can update order status
     @PutMapping("/{orderId}/status")
+    @RequiresRole({ UserType.PRODUCT_MANAGER })
     public ResponseEntity<?> updateOrderStatus(
             @PathVariable Long orderId,
             @RequestParam String status) {
         log.info("BFF: Update order status request - orderId: {}, status: {}", orderId, status);
-        // TODO: Implement update order status
-        return ResponseEntity.ok().build();
+        try {
+            orderService.updateOrderStatus(orderId, status);
+            return ResponseEntity.ok().build();
+        } catch (RuntimeException e) {
+            log.error("Error processing update order status request", e);
+            return ResponseEntity.internalServerError().build();
+        }
     }
 }

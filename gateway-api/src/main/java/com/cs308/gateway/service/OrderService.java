@@ -35,4 +35,9 @@ public class OrderService {
         log.info("Processing invoice PDF generation for invoiceNumber: {}", request.getInvoiceNumber());
         return orderClient.generateInvoicePdf(request);
     }
+
+    public void updateOrderStatus(Long orderId, String status) {
+        log.info("Processing update order status request - orderId: {}, status: {}", orderId, status);
+        orderClient.updateOrderStatus(orderId, status);
+    }
 }

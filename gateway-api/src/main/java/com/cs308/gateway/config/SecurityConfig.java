@@ -32,6 +32,7 @@ public class SecurityConfig {
                         .pathMatchers(HttpMethod.POST, "/api/products/**").hasRole("PRODUCT_MANAGER")
                         .pathMatchers(HttpMethod.PUT, "/api/products/**").hasRole("PRODUCT_MANAGER")
                         .pathMatchers(HttpMethod.DELETE, "/api/products/**").hasRole("PRODUCT_MANAGER")
+                        .pathMatchers(HttpMethod.PUT, "/api/orders/*/status").hasRole("PRODUCT_MANAGER")
                         .pathMatchers("/api/orders/**").hasRole("CUSTOMER")
                         .pathMatchers("/api/cart/**").permitAll() // Allow guests, controller handles logic
                         .pathMatchers(HttpMethod.GET, "/api/reviews/**").permitAll()

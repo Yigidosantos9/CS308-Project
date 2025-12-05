@@ -3,6 +3,10 @@ package com.cs308.order.model;
 import jakarta.persistence.*;
 import lombok.*;
 
+@Entity
+@Table(name = "address")
+@Getter
+@Setter
 public class Address {
 
     @Id

@@ -1,5 +1,6 @@
 package com.cs308.order.model;
 
+import com.cs308.order.model.enums.OrderStatus;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -18,11 +19,15 @@ public class Order {
     @Column(name = "order_date", nullable = false)
     private LocalDateTime orderDate;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
-    private String status;
+    private OrderStatus status;
 
     @Column(name = "total_amount", nullable = false)
     private Double totalAmount;
+
+    @Column(name = "total_price", nullable = false)
+    private Double totalPrice;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<OrderItem> items;
@@ -30,7 +35,7 @@ public class Order {
     public Order() {
     }
 
-    public Order(Long userId, LocalDateTime orderDate, String status, Double totalAmount, List<OrderItem> items) {
+    public Order(Long userId, LocalDateTime orderDate, OrderStatus status, Double totalAmount, List<OrderItem> items) {
         this.userId = userId;
         this.orderDate = orderDate;
         this.status = status;
@@ -62,11 +67,11 @@ public class Order {
         this.orderDate = orderDate;
     }
 
-    public String getStatus() {
+    public OrderStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(OrderStatus status) {
         this.status = status;
     }
 
@@ -84,5 +89,13 @@ public class Order {
 
     public void setItems(List<OrderItem> items) {
         this.items = items;
+    }
+
+    public Double getTotalPrice() {
+        return totalPrice;
+    }
+
+    public void setTotalPrice(Double totalPrice) {
+        this.totalPrice = totalPrice;
     }
 }
