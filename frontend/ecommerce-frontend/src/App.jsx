@@ -4,7 +4,7 @@ import { ShopProvider } from './context/ShopContext';
 // Layout
 import MainLayout from './components/layout/MainLayout';
 import PrivateRoute from './components/auth/PrivateRoute';
-
+import AdminDashboard from './pages/admin/AdminDashboard';
 // Pages
 import Home from './pages/Home';
 import Shop from './pages/Shop';
@@ -25,6 +25,7 @@ function App() {
             <Route path="product/:id" element={<ProductDetails />} />
             <Route path="cart" element={<Cart />} />
             <Route path="login" element={<Login />} />
+            <Route path="admin" element={<AdminDashboard />} />
             <Route path="register" element={<Register />} />
             <Route path="profile" element={
               <PrivateRoute>

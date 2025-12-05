@@ -1,3 +1,4 @@
+// frontend/src/services/api.js
 import axios from 'axios';
 
 const API_BASE_URL = 'http://localhost:8080/api';
@@ -9,26 +10,16 @@ const api = axios.create({
   },
 });
 
-// Attach Authorization header automatically if a token exists
-api.interceptors.request.use(
-  (config) => {
-    try {
-      const token = localStorage.getItem('authToken');
-      if (token) {
-        config.headers = config.headers || {};
-        // Don't overwrite an explicit Authorization if caller set one
-        if (!config.headers.Authorization) {
-          config.headers.Authorization = `Bearer ${token}`;
-        }
-      }
-    } catch (e) {
-      // localStorage may not be available in some environments; ignore
-      console.warn('Unable to access localStorage for auth token', e);
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
+// Attach Authorization header automatically if token exists
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('authToken');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// ---------- PRODUCT SERVICE ----------
 
 export const productService = {
   getProductById: async (id) => {
@@ -49,20 +40,38 @@ export const productService = {
       const response = await api.get('/products', { params });
       return response.data;
     } catch (error) {
-      console.error("Error fetching products:", error);
+      console.error('Error fetching products:', error);
+      throw error;
+    }
+  },
+
+  // Used by AdminDashboard Products tab
+  deleteProduct: async (id) => {
+    try {
+      await api.delete(`/products/${id}`);
+    } catch (error) {
+      console.error(`Error deleting product ${id}:`, error);
       throw error;
     }
   },
 };
+
+// ---------- AUTH SERVICE ----------
 
 export const authService = {
   login: async (email, password) => {
     try {
       console.log('Attempting login to:', `${API_BASE_URL}/auth/login`);
       const response = await api.post('/auth/login', { email, password });
+
       if (response.data?.token) {
         localStorage.setItem('authToken', response.data.token);
       }
+      if (response.data?.user) {
+        // Optional: if backend returns user object, store it
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+      }
+
       return response.data;
     } catch (error) {
       console.error('Login error details:', {
@@ -70,7 +79,7 @@ export const authService = {
         response: error.response?.data,
         status: error.response?.status,
         code: error.code,
-        config: error.config
+        config: error.config,
       });
       throw error;
     }
@@ -88,8 +97,19 @@ export const authService = {
         response: error.response?.data,
         status: error.response?.status,
         code: error.code,
-        config: error.config
+        config: error.config,
       });
+      throw error;
+    }
+  },
+
+  // Optional helper to verify token with backend, used by ShopContext
+  verifyToken: async (token) => {
+    try {
+      const response = await api.post('/auth/verify-token', { token });
+      return response.data; // expected to be user object / SecurityContext info
+    } catch (error) {
+      console.error('Token verification failed:', error);
       throw error;
     }
   },
@@ -105,8 +125,10 @@ export const authService = {
 
   isAuthenticated: () => {
     return !!localStorage.getItem('authToken');
-  }
+  },
 };
+
+// ---------- REVIEW SERVICE ----------
 
 export const reviewService = {
   getProductReviews: async (productId) => {
@@ -118,74 +140,70 @@ export const reviewService = {
       return [];
     }
   },
+
   addReview: async (reviewData) => {
     return await api.post('/reviews', reviewData);
-  }
+  },
 };
+
+// ---------- CART SERVICE (via gateway /api/cart) ----------
 
 export const cartService = {
-  // POST /cart/add?userId=...&productId=...&quantity=...
+  // POST /api/cart/add?userId=...&productId=...&quantity=...
   addToCart: async (userId, productId, quantity = 1) => {
-    const params = {};
-    if (userId != null) params.userId = userId;
-    if (productId != null) params.productId = productId;
-    if (quantity != null) params.quantity = quantity;
-
-    const response = await api.post('/cart/add', null, { params });
-    return response.data; // Cart
+    return await api.post('/cart/add', null, {
+      params: { userId, productId, quantity },
+    });
   },
 
-  // GET /cart?userId=...
+  // GET /api/cart?userId=...
   getCart: async (userId) => {
-    const params = {};
-    if (userId != null) params.userId = userId;
-
-    const response = await api.get('/cart', { params });
-    return response.data; // Cart
+    const response = await api.get('/cart', {
+      params: { userId },
+    });
+    return response.data;
   },
 
-  // DELETE /cart/remove?userId=...&productId=...
+  // DELETE /api/cart/remove?userId=...&productId=...
   removeFromCart: async (userId, productId) => {
-    const params = {};
-    if (userId != null) params.userId = userId;
-    if (productId != null) params.productId = productId;
-
-    const response = await api.delete('/cart/remove', { params });
-    return response.data; // Updated Cart
+    return await api.delete('/cart/remove', {
+      params: { userId, productId },
+    });
   },
 
-  // PUT /cart/update?userId=...&productId=...&quantity=...
-  updateCartItemQuantity: async (userId, productId, quantity) => {
-    const params = {};
-    if (userId != null) params.userId = userId;
-    if (productId != null) params.productId = productId;
-    if (quantity != null) params.quantity = quantity;
-
-    const response = await api.put('/cart/update', null, { params });
-    return response.data; // Updated Cart
-  }
+  // (available in backend if needed later)
+  // updateCartItemQuantity: async (userId, productId, quantity) => {
+  //   const response = await api.put('/cart/update', null, {
+  //     params: { userId, productId, quantity },
+  //   });
+  //   return response.data;
+  // },
 };
 
+// ---------- ORDER SERVICE ----------
+
 export const orderService = {
+  // GET /api/orders  (user inferred from token)
   getOrders: async () => {
     try {
       const response = await api.get('/orders');
       return response.data;
     } catch (error) {
-      console.error("Error fetching orders:", error);
+      console.error('Error fetching orders:', error);
       throw error;
     }
   },
 
-  createOrder: async () => {
+  // POST /api/orders (place order from current cart)
+  placeOrder: async () => {
     try {
       const response = await api.post('/orders');
       return response.data;
     } catch (error) {
-      console.error("Error creating order:", error);
+      console.error('Error placing order:', error);
       throw error;
     }
-  }
+  },
 };
 
 export default api;
