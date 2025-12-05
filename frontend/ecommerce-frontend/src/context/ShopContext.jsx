@@ -1,3 +1,4 @@
+// frontend/src/context/ShopContext.jsx
 import { createContext, useState, useContext, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import api, { cartService } from '../services/api';
@@ -7,9 +8,8 @@ const ShopContext = createContext();
 export const ShopProvider = ({ children }) => {
   const [cart, setCart] = useState([]);
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); // if you ever want to use this in UI
 
-  // On app load: check auth and restore user from token
   useEffect(() => {
     checkAuth();
   }, []);
@@ -18,27 +18,22 @@ export const ShopProvider = ({ children }) => {
     const token = localStorage.getItem('authToken');
     if (token) {
       try {
+        // If you prefer: const userData = await authService.verifyToken(token);
         const response = await api.post('/auth/verify-token', { token });
-        // Assume backend returns something like:
-        // { userId, firstName, lastName, email, ... }
         setUser(response.data);
       } catch (error) {
         console.error('Token verification failed:', error);
         localStorage.removeItem('authToken');
+        localStorage.removeItem('user');
         setUser(null);
       }
-    } else {
-      setUser(null);
     }
     setLoading(false);
   };
 
-  // Whenever user changes, (re)load cart from backend or clear it
   useEffect(() => {
     if (user?.userId) {
       loadCart(user.userId);
-    } else {
-      setCart([]);
     }
   }, [user]);
 
@@ -47,11 +42,12 @@ export const ShopProvider = ({ children }) => {
 
     try {
       const cartData = await cartService.getCart(userId);
+
       if (cartData && Array.isArray(cartData.items)) {
         const formattedCart = cartData.items.map((item) => ({
           ...item.product,
           quantity: item.quantity,
-          // Backend CartItem doesn't have size, so we default for display
+          // Backend has no size info; default to M for now.
           selectedSize: 'M',
         }));
         setCart(formattedCart);
@@ -59,86 +55,68 @@ export const ShopProvider = ({ children }) => {
         setCart([]);
       }
     } catch (err) {
+      // Common case: new user with no cart yet -> backend may throw "Cart not found"
       console.error('Failed to load cart:', err);
-      // If backend fails, keep current cart (or clear if you prefer)
+      setCart([]);
     }
   };
 
   const addToCart = async (product) => {
-    // Frontend guard: do not attempt to add out-of-stock items
-    if (product.stock === 0) {
-      const error = new Error('Product is out of stock');
-      error.code = 'out_of_stock';
-      throw error;
-    }
-
-    // Guest mode: no backend cart, keep local-only cart
-    if (!user || !user.userId) {
-      setCart((prev) => {
-        const existingIndex = prev.findIndex((item) => item.id === product.id);
-        if (existingIndex !== -1) {
-          const copy = [...prev];
-          copy[existingIndex] = {
-            ...copy[existingIndex],
-            quantity: (copy[existingIndex].quantity || 0) + 1,
-          };
-          return copy;
-        }
-        return [
-          ...prev,
-          {
-            ...product,
-            quantity: 1,
-            selectedSize: product.selectedSize || 'M',
-          },
-        ];
-      });
+    // 1) Require login (for now)
+    if (!user?.userId) {
+      alert('Please log in to add items to your cart.');
       return;
     }
 
-    // Authenticated: sync with backend
+    // 2) Frontend stock guard (if backend product has stock field)
+    if (product.stock === 0) {
+      alert('This product is out of stock and cannot be added to the cart.');
+      return;
+    }
+
     try {
       await cartService.addToCart(user.userId, product.id, 1);
       await loadCart(user.userId);
     } catch (err) {
       console.error('Failed to add to cart API:', err);
-      // Rethrow so page components can show proper error messages
-      throw err;
+
+      const apiError = err?.response?.data;
+
+      // This is guessy; adjust based on your GlobalExceptionHandler shape.
+      const message =
+        apiError?.message ||
+        apiError?.error ||
+        'Failed to add to cart. Please try again.';
+
+      alert(message);
+
+      // Re-sync cart snapshot from server
+      await loadCart(user.userId);
     }
   };
 
   const removeFromCart = async (productId) => {
-    // Optimistic local update
-    setCart((prev) => prev.filter((item) => item.id !== productId));
-
-    // Guest mode: nothing to do on backend
-    if (!user || !user.userId) {
+    if (!user?.userId) {
+      // If you ever support guest carts in frontend-only state, handle that here.
+      setCart((prev) => prev.filter((item) => item.id !== productId));
       return;
     }
 
     try {
+      // Optimistic update
+      setCart((prev) => prev.filter((item) => item.id !== productId));
       await cartService.removeFromCart(user.userId, productId);
       await loadCart(user.userId);
     } catch (err) {
       console.error('Failed to remove from cart API:', err);
-      // Reload from backend to be safe
+      // Re-sync in case optimistic update was wrong
       await loadCart(user.userId);
-      throw err;
     }
   };
 
   return (
     <ShopContext.Provider
-      value={{
-        cart,
-        user,
-        loading,
-        addToCart,
-        removeFromCart,
-        setUser,
-        checkAuth,
-        loadCart,
-      }}
+      value={{ cart, user, addToCart, removeFromCart, setUser, checkAuth, loading }}
     >
       {children}
     </ShopContext.Provider>
