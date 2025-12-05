@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 @Slf4j
-@Service
+// @Service
 @RequiredArgsConstructor
 public class InvoiceEmailService {
 
@@ -52,5 +52,3 @@ public class InvoiceEmailService {
         }
     }
 }
-
-

@@ -22,18 +22,18 @@ import org.springframework.web.bind.annotation.*;
 @Slf4j
 @RestController
 @RequestMapping("/api/sales")
-@RequiresRole({UserType.SALES_MANAGER}) // All endpoints require Sales Manager role
+@RequiresRole({ UserType.SALES_MANAGER }) // All endpoints require Sales Manager role
 @RequiredArgsConstructor
 public class SalesManagerController {
 
     private final OrderService orderService;
-    private final InvoiceEmailService invoiceEmailService;
+    // private final InvoiceEmailService invoiceEmailService;
     private final ProductService productService;
 
     // Sales Manager can set product prices
     @PutMapping("/products/{productId}/price")
     public ResponseEntity<?> setProductPrice(
-            @PathVariable Long productId, 
+            @PathVariable Long productId,
             @RequestParam @PositiveOrZero Double price) {
         log.info("BFF: Set product price request - productId: {}, price: {}", productId, price);
         return ResponseEntity.ok(productService.setProductPrice(productId, price));
@@ -42,7 +42,7 @@ public class SalesManagerController {
     // Sales Manager can set discounts
     @PostMapping("/products/{productId}/discount")
     public ResponseEntity<?> setDiscount(
-            @PathVariable Long productId, 
+            @PathVariable Long productId,
             @RequestParam Double discountRate) {
         log.info("BFF: Set discount request - productId: {}, discountRate: {}", productId, discountRate);
         // TODO: Implement set discount
@@ -52,7 +52,7 @@ public class SalesManagerController {
     // Sales Manager can view invoices in date range
     @GetMapping("/invoices")
     public ResponseEntity<?> getInvoices(
-            @RequestParam String startDate, 
+            @RequestParam String startDate,
             @RequestParam String endDate) {
         log.info("BFF: Get invoices request - startDate: {}, endDate: {}", startDate, endDate);
         // TODO: Implement get invoices
@@ -85,14 +85,14 @@ public class SalesManagerController {
     public ResponseEntity<Void> emailInvoice(@Valid @RequestBody InvoiceEmailRequest request) {
         log.info("BFF: Send invoice email - to: {}, invoiceNumber: {}",
                 request.getTo(), request.getInvoice().getInvoiceNumber());
-        invoiceEmailService.sendInvoiceEmail(request);
+        // invoiceEmailService.sendInvoiceEmail(request);
         return ResponseEntity.accepted().build();
     }
 
     // Sales Manager can calculate revenue and profit
     @GetMapping("/revenue")
     public ResponseEntity<?> calculateRevenue(
-            @RequestParam String startDate, 
+            @RequestParam String startDate,
             @RequestParam String endDate) {
         log.info("BFF: Calculate revenue request - startDate: {}, endDate: {}", startDate, endDate);
         // TODO: Implement calculate revenue
@@ -103,7 +103,8 @@ public class SalesManagerController {
     @PutMapping("/refunds/{refundId}/approve")
     public ResponseEntity<?> approveRefund(@PathVariable Long refundId) {
         log.info("BFF: Approve refund request - refundId: {}", refundId);
-        // In a full implementation, refundId would be used to look up the order & items.
+        // In a full implementation, refundId would be used to look up the order &
+        // items.
         // For now we assume the caller sends productId and quantity to restore.
         return ResponseEntity.ok("Refund approved (stock restoration should be triggered via product service).");
     }
@@ -115,7 +116,8 @@ public class SalesManagerController {
         return ResponseEntity.ok().build();
     }
 
-    // Simple helper endpoint so a Sales Manager can manually restore stock after a refund.
+    // Simple helper endpoint so a Sales Manager can manually restore stock after a
+    // refund.
     @PostMapping("/refunds/restore-stock")
     public ResponseEntity<?> restoreStockAfterRefund(@RequestBody @Valid StockRestoreRequest request) {
         log.info("BFF: Restore stock after refund - productId: {}, quantity: {}",
