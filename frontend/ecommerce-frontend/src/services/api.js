@@ -139,4 +139,33 @@ export const orderService = {
   }
 };
 
+export const addressService = {
+  getAddresses: async () => {
+    try {
+      const response = await api.get('/addresses');
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching addresses:", error);
+      throw error;
+    }
+  },
+  addAddress: async (addressData) => {
+    try {
+      const response = await api.post('/addresses', addressData);
+      return response.data;
+    } catch (error) {
+      console.error("Error adding address:", error);
+      throw error;
+    }
+  },
+  deleteAddress: async (addressId) => {
+    try {
+      await api.delete(`/addresses/${addressId}`);
+    } catch (error) {
+      console.error("Error deleting address:", error);
+      throw error;
+    }
+  }
+};
+
 export default api;

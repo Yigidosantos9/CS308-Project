@@ -15,7 +15,7 @@ import {
   BadgeCheck,
 } from 'lucide-react';
 import { useShop } from '../../context/ShopContext';
-import { orderService } from '../../services/api';
+import { orderService, addressService } from '../../services/api';
 
 const tabs = [
   'Profile',
@@ -92,204 +92,143 @@ const Profile = () => {
     }
   };
 
-  const addresses = [
-    {
-      title: 'Home',
-      detail: 'Acibadem Mah., No:12/4, Kadikoy, Istanbul, 34718',
-      isDefault: true,
-    },
-    {
-      title: 'Office',
-      detail: 'Buyukdere Cad. 145/2, Levent, Istanbul, 34394',
-      isDefault: false,
-    },
-  ];
+  const [addresses, setAddresses] = useState([]);
+  const [showAddAddress, setShowAddAddress] = useState(false);
+  const [newAddress, setNewAddress] = useState({
+    title: '',
+    addressLine: '',
+    city: '',
+    country: '',
+    zipCode: ''
+  });
 
-  const payments = [
-    { brand: 'Visa', last4: '4242', expiry: '04/27', primary: true },
-    { brand: 'Mastercard', last4: '9900', expiry: '11/26', primary: false },
-  ];
+  useEffect(() => {
+    if (activeTab === 'Addresses' && user?.id) {
+      fetchAddresses();
+    }
+  }, [activeTab, user]);
 
-  const toggles = [
-    { label: 'Order status push notifications', enabled: true },
-    { label: 'Product launch & drops', enabled: true },
-    { label: 'Weekly style digest', enabled: false },
-    { label: 'SMS alerts', enabled: false },
-  ];
-
-  const handleChange = (field, value) => {
-    setFormState((prev) => ({ ...prev, [field]: value }));
-    setSaved(false);
+  const fetchAddresses = async () => {
+    try {
+      const data = await addressService.getAddresses();
+      setAddresses(data);
+    } catch (err) {
+      console.error("Failed to fetch addresses", err);
+    }
   };
 
-  const handleSave = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2200);
+  const handleAddAddress = async (e) => {
+    e.preventDefault();
+    try {
+      await addressService.addAddress(newAddress);
+      setShowAddAddress(false);
+      setNewAddress({ title: '', addressLine: '', city: '', country: '', zipCode: '' });
+      fetchAddresses();
+    } catch (err) {
+      console.error("Failed to add address", err);
+    }
   };
 
-  const Badge = ({ children }) => (
-    <span className="inline-flex items-center gap-2 rounded-full bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-black shadow-sm">
-      <BadgeCheck className="h-3.5 w-3.5" />
-      {children}
-    </span>
-  );
-
-  const ProfileContent = () => (
-    <div className="space-y-8">
-      <div className="grid gap-6 lg:grid-cols-2">
-        <div className="rounded-2xl bg-white p-6 shadow-sm">
-          <h3 className="mb-4 text-lg font-bold uppercase tracking-wide">Contact</h3>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <LabelInput
-              label="First name"
-              value={formState.firstName}
-              onChange={(e) => handleChange('firstName', e.target.value)}
-            />
-            <LabelInput
-              label="Last name"
-              value={formState.lastName}
-              onChange={(e) => handleChange('lastName', e.target.value)}
-            />
-            <LabelInput
-              label="Email"
-              type="email"
-              icon={<Mail className="h-4 w-4 text-gray-400" />}
-              value={formState.email}
-              onChange={(e) => handleChange('email', e.target.value)}
-            />
-            <LabelInput
-              label="Phone"
-              type="tel"
-              icon={<Phone className="h-4 w-4 text-gray-400" />}
-              value={formState.phone}
-              onChange={(e) => handleChange('phone', e.target.value)}
-            />
-          </div>
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            <LabelInput
-              label="City"
-              icon={<Home className="h-4 w-4 text-gray-400" />}
-              value={formState.city}
-              onChange={(e) => handleChange('city', e.target.value)}
-            />
-            <LabelInput
-              label="Country"
-              icon={<Globe className="h-4 w-4 text-gray-400" />}
-              value={formState.country}
-              onChange={(e) => handleChange('country', e.target.value)}
-            />
-          </div>
-        </div>
-
-        <div className="rounded-2xl bg-white p-6 shadow-sm">
-          <h3 className="mb-4 text-lg font-bold uppercase tracking-wide">Personal</h3>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <LabelInput
-              label="Date of birth"
-              type="date"
-              icon={<Calendar className="h-4 w-4 text-gray-400" />}
-              value={formState.birthDate}
-              onChange={(e) => handleChange('birthDate', e.target.value)}
-            />
-            <div className="flex flex-col gap-2">
-              <span className="text-sm font-semibold uppercase tracking-wide text-gray-500">
-                Membership
-              </span>
-              <div className="flex items-center justify-between rounded-xl border border-gray-200 px-4 py-3">
-                <div>
-                  <p className="text-sm font-bold">RAWCTRL Black</p>
-                  <p className="text-xs text-gray-500">Priority support & 2-day delivery</p>
-                </div>
-                <ShieldCheck className="h-5 w-5 text-gray-800" />
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-6 flex flex-wrap items-center gap-3">
-            <Badge>Member since 2023</Badge>
-            <Badge>Preferred size M</Badge>
-            <Badge>Style: Minimal</Badge>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex items-center justify-between gap-4 rounded-2xl bg-black px-6 py-5 text-white shadow-md">
-        <div className="space-y-1">
-          <p className="text-sm uppercase tracking-wider text-white/70">RAWCTRL Care</p>
-          <p className="text-lg font-semibold">Free tailoring & priority support for members.</p>
-        </div>
-        <button
-          onClick={handleSave}
-          className="rounded-full bg-white px-5 py-2 text-sm font-bold uppercase tracking-wide text-black transition hover:opacity-90"
-        >
-          Save profile
-        </button>
-      </div>
-
-      {saved && (
-        <div className="flex items-center gap-2 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-semibold text-green-700">
-          <CheckCircle className="h-4 w-4" />
-          Changes saved for this session.
-        </div>
-      )}
-    </div>
-  );
-
-  const OrdersContent = () => (
-    <div className="space-y-4">
-      {orders.map((order) => (
-        <div
-          key={order.id}
-          className="flex flex-col gap-3 rounded-2xl border border-gray-200 bg-white px-5 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between"
-        >
-          <div>
-            <p className="text-xs uppercase tracking-wide text-gray-500">{order.date}</p>
-            <p className="text-lg font-bold">Order {order.id}</p>
-            <p className="text-sm text-gray-600">{order.items} items • {order.total}</p>
-          </div>
-          <div className="flex flex-col items-start gap-2 sm:items-end">
-            <span className="rounded-full bg-black px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white">
-              {order.status}
-            </span>
-            <p className="text-xs text-gray-500">{order.eta}</p>
-            <button className="text-sm font-semibold underline underline-offset-4">
-              View details
-            </button>
-          </div>
-        </div>
-      ))}
-      <div className="flex items-center gap-3 rounded-2xl border border-dashed border-gray-300 px-5 py-4 text-sm text-gray-600">
-        <Package className="h-5 w-5 text-gray-700" />
-        Track upcoming deliveries and returns from here.
-      </div>
-    </div>
-  );
+  const handleDeleteAddress = async (addressId) => {
+    try {
+      await addressService.deleteAddress(addressId);
+      fetchAddresses();
+    } catch (err) {
+      console.error("Failed to delete address", err);
+    }
+  };
 
   const AddressesContent = () => (
-    <div className="grid gap-4 md:grid-cols-2">
-      {addresses.map((address) => (
-        <div key={address.title} className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <MapPin className="h-4 w-4" />
-              <p className="text-sm font-semibold uppercase tracking-wide">{address.title}</p>
+    <div className="space-y-6">
+      <div className="grid gap-4 md:grid-cols-2">
+        {addresses.map((address) => (
+          <div key={address.id} className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <MapPin className="h-4 w-4" />
+                <p className="text-sm font-semibold uppercase tracking-wide">{address.title}</p>
+              </div>
             </div>
-            {address.isDefault && (
-              <span className="rounded-full bg-black px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white">
-                Default
-              </span>
-            )}
+            <p className="mt-3 text-sm text-gray-700 leading-relaxed">
+              {address.addressLine}<br />
+              {address.city}, {address.country} {address.zipCode}
+            </p>
+            <div className="mt-4 flex gap-3 text-sm font-semibold text-black">
+              <button className="underline underline-offset-4">Edit</button>
+              <button
+                onClick={() => handleDeleteAddress(address.id)}
+                className="underline underline-offset-4 text-red-600"
+              >
+                Delete
+              </button>
+            </div>
           </div>
-          <p className="mt-3 text-sm text-gray-700 leading-relaxed">{address.detail}</p>
-          <div className="mt-4 flex gap-3 text-sm font-semibold text-black">
-            <button className="underline underline-offset-4">Edit</button>
-            <button className="underline underline-offset-4">Set default</button>
+        ))}
+
+        {!showAddAddress ? (
+          <button
+            onClick={() => setShowAddAddress(true)}
+            className="flex h-full min-h-[140px] flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-gray-300 bg-white/50 text-sm font-semibold text-gray-700 transition hover:border-black hover:text-black"
+          >
+            + Add new address
+          </button>
+        ) : (
+          <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+            <h3 className="mb-4 text-sm font-bold uppercase tracking-wide">New Address</h3>
+            <form onSubmit={handleAddAddress} className="space-y-3">
+              <input
+                placeholder="Title (e.g. Home)"
+                className="w-full rounded-lg border border-gray-200 p-2 text-sm"
+                value={newAddress.title}
+                onChange={e => setNewAddress({ ...newAddress, title: e.target.value })}
+                required
+              />
+              <input
+                placeholder="Address Line"
+                className="w-full rounded-lg border border-gray-200 p-2 text-sm"
+                value={newAddress.addressLine}
+                onChange={e => setNewAddress({ ...newAddress, addressLine: e.target.value })}
+                required
+              />
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  placeholder="City"
+                  className="w-full rounded-lg border border-gray-200 p-2 text-sm"
+                  value={newAddress.city}
+                  onChange={e => setNewAddress({ ...newAddress, city: e.target.value })}
+                  required
+                />
+                <input
+                  placeholder="Zip Code"
+                  className="w-full rounded-lg border border-gray-200 p-2 text-sm"
+                  value={newAddress.zipCode}
+                  onChange={e => setNewAddress({ ...newAddress, zipCode: e.target.value })}
+                  required
+                />
+              </div>
+              <input
+                placeholder="Country"
+                className="w-full rounded-lg border border-gray-200 p-2 text-sm"
+                value={newAddress.country}
+                onChange={e => setNewAddress({ ...newAddress, country: e.target.value })}
+                required
+              />
+              <div className="flex gap-2 pt-2">
+                <button type="submit" className="flex-1 rounded-lg bg-black py-2 text-sm font-bold text-white">
+                  Save
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowAddAddress(false)}
+                  className="flex-1 rounded-lg border border-gray-200 py-2 text-sm font-bold"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
           </div>
-        </div>
-      ))}
-      <button className="flex h-full min-h-[140px] flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-gray-300 bg-white/50 text-sm font-semibold text-gray-700 transition hover:border-black hover:text-black">
-        + Add new address
-      </button>
+        )}
+      </div>
     </div>
   );
 

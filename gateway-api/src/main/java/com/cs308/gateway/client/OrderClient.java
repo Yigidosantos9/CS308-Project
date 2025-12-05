@@ -91,4 +91,57 @@ public class OrderClient {
             throw new RuntimeException("Failed to get user orders", e);
         }
     }
+
+    public com.cs308.gateway.model.address.Address addAddress(Long userId,
+            com.cs308.gateway.model.address.AddressRequest request) {
+        log.debug("Calling order service: POST /addresses - userId: {}", userId);
+
+        try {
+            String uri = UriComponentsBuilder.fromPath("/addresses")
+                    .queryParam("userId", userId)
+                    .toUriString();
+
+            return orderRestTemplate.postForObject(uri, request, com.cs308.gateway.model.address.Address.class);
+        } catch (RestClientException e) {
+            log.error("Error calling order service for add address", e);
+            throw new RuntimeException("Failed to add address", e);
+        }
+    }
+
+    public List<com.cs308.gateway.model.address.Address> getAddresses(Long userId) {
+        log.debug("Calling order service: GET /addresses - userId: {}", userId);
+
+        try {
+            String uri = UriComponentsBuilder.fromPath("/addresses")
+                    .queryParam("userId", userId)
+                    .toUriString();
+
+            ResponseEntity<List<com.cs308.gateway.model.address.Address>> response = orderRestTemplate.exchange(
+                    uri,
+                    HttpMethod.GET,
+                    null,
+                    new ParameterizedTypeReference<List<com.cs308.gateway.model.address.Address>>() {
+                    });
+
+            return response.getBody();
+        } catch (RestClientException e) {
+            log.error("Error calling order service for get addresses", e);
+            throw new RuntimeException("Failed to get addresses", e);
+        }
+    }
+
+    public void deleteAddress(Long addressId) {
+        log.debug("Calling order service: DELETE /addresses/{}", addressId);
+
+        try {
+            String uri = UriComponentsBuilder.fromPath("/addresses/{addressId}")
+                    .buildAndExpand(addressId)
+                    .toUriString();
+
+            orderRestTemplate.delete(uri);
+        } catch (RestClientException e) {
+            log.error("Error calling order service for delete address", e);
+            throw new RuntimeException("Failed to delete address", e);
+        }
+    }
 }
