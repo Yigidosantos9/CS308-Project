@@ -165,12 +165,20 @@ public class ProductService {
             }
         }
 
+        String qPattern = (filter.getQ() != null && !filter.getQ().isBlank())
+                ? "%" + filter.getQ().toLowerCase() + "%"
+                : null;
+
+        String descriptionPattern = (filter.getDescription() != null && !filter.getDescription().isBlank())
+                ? "%" + filter.getDescription().toLowerCase() + "%"
+                : null;
+
         return productRepository.search(
-                filter.getQ(),
+                qPattern,
                 productType,
                 targetAudience,
                 color,
-                filter.getDescription(),
+                descriptionPattern,
                 sort);
     }
 

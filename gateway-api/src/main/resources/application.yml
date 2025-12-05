@@ -6,6 +6,17 @@ spring:
     name: gateway-api
   main:
     web-application-type: reactive
+  mail:
+    host: localhost
+    port: 1025
+    username: user
+    password: password
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
   cloud:
     gateway:
       routes:
