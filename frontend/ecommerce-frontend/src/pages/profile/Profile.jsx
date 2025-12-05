@@ -27,7 +27,7 @@ const tabs = [
 ];
 
 const Profile = () => {
-  const { user } = useShop();
+  const { user, checkAuth, loading } = useShop();
   const [activeTab, setActiveTab] = useState('Profile');
   const [formState, setFormState] = useState({
     firstName: user?.firstName || '',
@@ -40,14 +40,24 @@ const Profile = () => {
   });
 
   useEffect(() => {
+    // Refresh user details from the backend when the page mounts
+    checkAuth();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
     if (user) {
+      const formattedBirthDate = user.birthDate
+        ? new Date(user.birthDate).toISOString().split('T')[0]
+        : '';
+
       setFormState(prev => ({
         ...prev,
         firstName: user.firstName || '',
         lastName: user.lastName || '',
         email: user.email || '',
         phone: user.phoneNumber || '',
-        birthDate: user.birthDate || '',
+        birthDate: formattedBirthDate,
       }));
     }
   }, [user]);
@@ -66,7 +76,7 @@ const Profile = () => {
   const [orders, setOrders] = useState([]);
 
   useEffect(() => {
-    if (activeTab === 'Orders' && user?.id) {
+    if (activeTab === 'Orders' && user?.userId) {
       fetchOrders();
     }
   }, [activeTab, user]);
@@ -394,6 +404,14 @@ const Profile = () => {
         return null;
     }
   };
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#F5F5F5] text-sm font-semibold">
+        Loading your profile...
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F5F5F5] pb-24 pt-12">

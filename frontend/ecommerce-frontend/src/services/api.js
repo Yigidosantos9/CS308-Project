@@ -9,6 +9,15 @@ const api = axios.create({
   },
 });
 
+// Attach Authorization header automatically when a token exists
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('authToken');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
 export const productService = {
   getProductById: async (id) => {
     try {
@@ -84,6 +93,11 @@ export const authService = {
 
   isAuthenticated: () => {
     return !!localStorage.getItem('authToken');
+  },
+
+  verifyToken: async (token) => {
+    const response = await api.post('/auth/verify-token', { token });
+    return response.data;
   }
 };
 
