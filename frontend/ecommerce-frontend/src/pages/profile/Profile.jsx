@@ -12,6 +12,7 @@ import {
   Phone,
   Calendar,
   LogOut,
+  FileText,
 } from 'lucide-react';
 import { useShop } from '../../context/ShopContext';
 import { authService, orderService, addressService } from '../../services/api';
@@ -66,21 +67,16 @@ const Profile = () => {
     }
   }, [user]);
 
-  const stats = [
-    { label: 'Completed Orders', value: '12', highlight: true },
-    { label: 'Open Returns', value: '1' },
-    { label: 'Loyalty Points', value: '840' },
-    { label: 'Wishlist Items', value: '7' },
-  ];
 
   const [orders, setOrders] = useState([]);
 
+  // Fetch orders when profile loads to calculate stats
   useEffect(() => {
-    if (activeTab === 'Orders' && user?.userId) {
+    if (user?.userId) {
       fetchOrders();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab, user]);
+  }, [user]);
 
   const fetchOrders = async () => {
     try {
@@ -97,6 +93,17 @@ const Profile = () => {
       console.error('Failed to fetch orders', err);
     }
   };
+
+  // Calculate dynamic stats based on actual orders
+  const completedOrders = orders.filter(o => o.status === 'DELIVERED').length;
+  const totalOrders = orders.length;
+
+  const stats = [
+    { label: 'Total Orders', value: String(totalOrders), highlight: true },
+    { label: 'Completed', value: String(completedOrders) },
+    { label: 'Preparing', value: String(orders.filter(o => o.status === 'PREPARING').length) },
+    { label: 'Shipped', value: String(orders.filter(o => o.status === 'SHIPPED').length) },
+  ];
 
   const [addresses, setAddresses] = useState([]);
   const [showAddAddress, setShowAddAddress] = useState(false);
@@ -209,9 +216,8 @@ const Profile = () => {
           {stats.map((stat, idx) => (
             <div
               key={idx}
-              className={`rounded-xl p-4 ${
-                stat.highlight ? 'bg-black text-white' : 'bg-gray-100'
-              }`}
+              className={`rounded-xl p-4 ${stat.highlight ? 'bg-black text-white' : 'bg-gray-100'
+                }`}
             >
               <p className="text-2xl font-bold">{stat.value}</p>
               <p className="text-sm opacity-70">{stat.label}</p>
@@ -221,6 +227,14 @@ const Profile = () => {
       </div>
     </div>
   );
+
+  const handleDownloadInvoice = async (orderId) => {
+    try {
+      await orderService.getInvoice(orderId);
+    } catch (error) {
+      console.error('Failed to download invoice', error);
+    }
+  };
 
   const OrdersContent = () => (
     <div className="space-y-4">
@@ -249,19 +263,27 @@ const Profile = () => {
                     order.totalAmount?.toFixed(2)}
                 </p>
                 <span
-                  className={`inline-block rounded-full px-3 py-1 text-xs font-medium ${
-                    order.status === 'DELIVERED'
-                      ? 'bg-green-100 text-green-800'
-                      : order.status === 'PROCESSING'
+                  className={`inline-block rounded-full px-3 py-1 text-xs font-medium ${order.status === 'DELIVERED'
+                    ? 'bg-green-100 text-green-800'
+                    : order.status === 'PROCESSING'
                       ? 'bg-yellow-100 text-yellow-800'
                       : order.status === 'IN_TRANSIT'
-                      ? 'bg-blue-100 text-blue-800'
-                      : 'bg-gray-100 text-gray-800'
-                  }`}
+                        ? 'bg-blue-100 text-blue-800'
+                        : 'bg-gray-100 text-gray-800'
+                    }`}
                 >
                   {order.status}
                 </span>
               </div>
+            </div>
+            <div className="mt-4 flex justify-end">
+              <button
+                onClick={() => handleDownloadInvoice(order.id)}
+                className="flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-700"
+              >
+                <FileText className="h-4 w-4" />
+                Download Invoice
+              </button>
             </div>
           </div>
         ))
@@ -562,11 +584,10 @@ const Profile = () => {
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
-                    className={`flex items-center justify-between rounded-xl px-3 py-2 text-sm font-semibold transition ${
-                      activeTab === tab
-                        ? 'bg-black text-white shadow'
-                        : 'text-gray-700 hover:bg-gray-100'
-                    }`}
+                    className={`flex items-center justify-between rounded-xl px-3 py-2 text-sm font-semibold transition ${activeTab === tab
+                      ? 'bg-black text-white shadow'
+                      : 'text-gray-700 hover:bg-gray-100'
+                      }`}
                   >
                     <span>{tab}</span>
                     {activeTab === tab && (
@@ -581,9 +602,8 @@ const Profile = () => {
               {stats.map((stat) => (
                 <div
                   key={stat.label}
-                  className={`rounded-xl p-3 ${
-                    stat.highlight ? 'bg-black text-white' : 'bg-gray-50'
-                  }`}
+                  className={`rounded-xl p-3 ${stat.highlight ? 'bg-black text-white' : 'bg-gray-50'
+                    }`}
                 >
                   <p className="text-xs uppercase tracking-[0.2em] text-gray-500/90">
                     {stat.label}

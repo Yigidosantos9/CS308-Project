@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,6 +20,16 @@ public class OrderService {
 
     public List<Order> getOrdersByUserId(Long userId) {
         return orderRepository.findByUserId(userId);
+    }
+
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public Order getOrderById(Long orderId) {
+        Order order = orderRepository.findById(orderId).orElse(null);
+        if (order != null && order.getItems() != null) {
+            // Force load items (LAZY loading workaround)
+            order.getItems().size();
+        }
+        return order;
     }
 
     public Order updateOrderStatus(Long orderId, String status) {
@@ -61,6 +72,14 @@ public class OrderService {
         }
         order.setItems(items);
 
-        return orderRepository.save(order);
+        // Save order first to get the ID
+        Order savedOrder = orderRepository.save(order);
+
+        // Generate invoice number based on order ID and date
+        String invoiceNumber = "INV-" + savedOrder.getOrderDate().format(DateTimeFormatter.ofPattern("yyyyMMdd")) + "-"
+                + savedOrder.getId();
+        savedOrder.setInvoiceNumber(invoiceNumber);
+
+        return orderRepository.save(savedOrder);
     }
 }

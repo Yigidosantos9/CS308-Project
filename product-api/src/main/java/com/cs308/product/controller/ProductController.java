@@ -33,6 +33,16 @@ public class ProductController {
         return ResponseEntity.ok(updated);
     }
 
+    @PutMapping("/{id}/stock/reduce")
+    public ResponseEntity<Product> reduceStock(@PathVariable Long id, @RequestParam Integer quantity) {
+        try {
+            Product updated = service.reduceStock(id, quantity);
+            return ResponseEntity.ok(updated);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<Product> updateProduct(@PathVariable Long id,
             @RequestBody ProductUpdateRequest request) {

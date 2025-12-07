@@ -323,4 +323,20 @@ public class ProductClient {
             throw new RuntimeException("Failed to get review stats", e);
         }
     }
+
+    public void reduceStock(Long productId, Integer quantity) {
+        log.debug("Calling product service: PUT /products/{}/stock/reduce?quantity={}", productId, quantity);
+
+        try {
+            String uri = UriComponentsBuilder.fromPath("/products/{productId}/stock/reduce")
+                    .queryParam("quantity", quantity)
+                    .buildAndExpand(productId)
+                    .toUriString();
+
+            restTemplate.put(uri, null);
+        } catch (RestClientException e) {
+            log.error("Error calling product service to reduce stock", e);
+            throw new RuntimeException("Failed to reduce stock", e);
+        }
+    }
 }

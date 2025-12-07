@@ -7,6 +7,10 @@ import com.cs308.gateway.security.SecurityContext;
 import com.cs308.gateway.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -51,6 +55,37 @@ public class OrderController {
             return ResponseEntity.ok(orders);
         } catch (RuntimeException e) {
             log.error("Error processing get orders request", e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    // Customers can download invoice PDF for their orders
+    @GetMapping(value = "/{orderId}/invoice", produces = MediaType.APPLICATION_PDF_VALUE)
+    @RequiresRole({ UserType.CUSTOMER, UserType.PRODUCT_MANAGER })
+    public ResponseEntity<ByteArrayResource> getOrderInvoice(
+            @AuthenticationPrincipal SecurityContext securityContext,
+            @PathVariable Long orderId) {
+        Long userId = securityContext.getUserId();
+        log.info("BFF: Get invoice request - orderId: {}, userId: {}", orderId, userId);
+
+        try {
+            byte[] pdfBytes = orderService.getOrderInvoice(orderId);
+
+            String filename = "invoice-order-" + orderId + ".pdf";
+            ContentDisposition contentDisposition = ContentDisposition.attachment()
+                    .filename(filename)
+                    .build();
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentDisposition(contentDisposition);
+
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .contentLength(pdfBytes.length)
+                    .contentType(MediaType.APPLICATION_PDF)
+                    .body(new ByteArrayResource(pdfBytes));
+        } catch (RuntimeException e) {
+            log.error("Error processing get invoice request", e);
             return ResponseEntity.internalServerError().build();
         }
     }

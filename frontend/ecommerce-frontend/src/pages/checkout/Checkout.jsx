@@ -25,10 +25,10 @@ const Checkout = () => {
             const orderData = {
                 userId: user.userId,
                 items: cart.map(item => ({
-                    productId: item.productId,
+                    productId: item.id,  // Cart items have 'id' from product spread
                     quantity: item.quantity,
                     price: item.price,
-                    size: item.size
+                    size: item.selectedSize || item.size
                 })),
                 totalPrice: total
             };

@@ -29,6 +29,9 @@ public class Order {
     @Column(name = "total_price", nullable = false)
     private Double totalPrice;
 
+    @Column(name = "invoice_number")
+    private String invoiceNumber;
+
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<OrderItem> items;
 
@@ -97,5 +100,13 @@ public class Order {
 
     public void setTotalPrice(Double totalPrice) {
         this.totalPrice = totalPrice;
+    }
+
+    public String getInvoiceNumber() {
+        return invoiceNumber;
+    }
+
+    public void setInvoiceNumber(String invoiceNumber) {
+        this.invoiceNumber = invoiceNumber;
     }
 }

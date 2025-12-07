@@ -1,12 +1,22 @@
 package com.cs308.order.controller;
 
 import com.cs308.order.model.Order;
+import com.cs308.order.model.InvoiceRequest;
+import com.cs308.order.model.InvoiceItem;
 import com.cs308.order.service.OrderService;
+import com.cs308.order.service.InvoicePdfService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/orders")
@@ -14,6 +24,7 @@ import java.util.List;
 public class OrderController {
 
     private final OrderService orderService;
+    private final InvoicePdfService invoicePdfService;
 
     @GetMapping
     public ResponseEntity<List<Order>> getOrders(@RequestParam Long userId) {
@@ -38,6 +49,62 @@ public class OrderController {
             return ResponseEntity.ok(orderService.updateOrderStatus(id, status));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @GetMapping(value = "/{id}/invoice", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<ByteArrayResource> getInvoice(@PathVariable Long id) {
+        try {
+            Order order = orderService.getOrderById(id);
+            if (order == null) {
+                return ResponseEntity.notFound().build();
+            }
+
+            // Build invoice request from order
+            InvoiceRequest invoiceRequest = new InvoiceRequest();
+            invoiceRequest.setInvoiceNumber(
+                    order.getInvoiceNumber() != null ? order.getInvoiceNumber() : "INV-" + order.getId());
+            invoiceRequest.setIssueDate(order.getOrderDate().format(DateTimeFormatter.ISO_LOCAL_DATE));
+            invoiceRequest.setDueDate(order.getOrderDate().plusDays(30).format(DateTimeFormatter.ISO_LOCAL_DATE));
+            invoiceRequest.setBuyerName("Customer #" + order.getUserId());
+            invoiceRequest.setBuyerAddress("Address on file");
+            invoiceRequest.setSellerName("RAWCTRL Store");
+            invoiceRequest.setSellerAddress("Istanbul, Turkey");
+            invoiceRequest.setTaxRate(0.18);
+            invoiceRequest.setShippingFee(0.0);
+            invoiceRequest.setCurrencySymbol("$");
+
+            // Convert order items to invoice items
+            List<InvoiceItem> invoiceItems = order.getItems().stream()
+                    .map(item -> {
+                        InvoiceItem invoiceItem = new InvoiceItem();
+                        invoiceItem.setDescription("Product #" + item.getProductId());
+                        invoiceItem.setQuantity(item.getQuantity());
+                        invoiceItem.setUnitPrice(item.getUnitPrice() != null ? item.getUnitPrice()
+                                : item.getPrice() / item.getQuantity());
+                        return invoiceItem;
+                    })
+                    .collect(Collectors.toList());
+            invoiceRequest.setItems(invoiceItems);
+
+            byte[] pdfBytes = invoicePdfService.generateInvoicePdf(invoiceRequest);
+
+            String filename = "invoice-" + invoiceRequest.getInvoiceNumber() + ".pdf";
+            ContentDisposition contentDisposition = ContentDisposition.attachment()
+                    .filename(filename)
+                    .build();
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentDisposition(contentDisposition);
+
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .contentLength(pdfBytes.length)
+                    .contentType(MediaType.APPLICATION_PDF)
+                    .body(new ByteArrayResource(pdfBytes));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().build();
         }
     }
 }

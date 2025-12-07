@@ -51,6 +51,24 @@ public class ProductService {
         return productRepository.save(product);
     }
 
+    public Product reduceStock(Long productId, Integer quantity) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ProductNotFoundException(productId));
+
+        Integer currentStock = product.getStock() == null ? 0 : product.getStock();
+        if (currentStock < quantity) {
+            throw new IllegalArgumentException("Insufficient stock for product: " + productId);
+        }
+
+        product.setStock(currentStock - quantity);
+
+        // Increment sales count for popularity sorting
+        Integer currentSales = product.getSalesCount() == null ? 0 : product.getSalesCount();
+        product.setSalesCount(currentSales + quantity);
+
+        return productRepository.save(product);
+    }
+
     public Product updateProduct(Long id, ProductUpdateRequest request) {
         Product existing = productRepository.findById(id)
                 .orElseThrow(() -> new ProductNotFoundException(id));
@@ -115,8 +133,7 @@ public class ProductService {
      */
     public List<Product> getAll() {
         return productRepository.findAll(
-                Sort.by(Sort.Direction.ASC, "name")
-        );
+                Sort.by(Sort.Direction.ASC, "name"));
     }
 
     public Optional<Product> getById(Long id) {
@@ -131,8 +148,7 @@ public class ProductService {
         // No filter object at all => just return all sorted A–Z
         if (filter == null) {
             return productRepository.findAll(
-                    Sort.by(Sort.Direction.ASC, "name")
-            );
+                    Sort.by(Sort.Direction.ASC, "name"));
         }
 
         // If sort is missing/blank, treat it as nameAsc
@@ -205,8 +221,7 @@ public class ProductService {
                 targetAudience,
                 color,
                 descriptionPattern,
-                sort
-        );
+                sort);
     }
 
     public void delete(Long id) {
