@@ -42,11 +42,15 @@ const Profile = () => {
     country: user?.country || 'Turkey',
   });
 
-  // Mock Data for UI sections
-  const payments = [
-    { brand: 'Visa', last4: '4242', expiry: '12/24', primary: true },
-    { brand: 'Mastercard', last4: '8899', expiry: '01/26', primary: false },
-  ];
+  // Payment Methods state
+  const [payments, setPayments] = useState([]);
+  const [showAddPayment, setShowAddPayment] = useState(false);
+  const [newPayment, setNewPayment] = useState({
+    cardNumber: '',
+    expiry: '',
+    cvv: '',
+    cardholderName: '',
+  });
 
   const toggles = [
     { label: 'Email Notifications', enabled: true },
@@ -495,9 +499,101 @@ const Profile = () => {
           </div>
         </div>
       ))}
-      <button className="flex h-full min-h-[160px] flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-gray-300 bg-white/50 text-sm font-semibold text-gray-700 transition hover:border-black hover:text-black">
-        + Add payment method
-      </button>
+
+      {/* Add Payment Button or Form */}
+      {showAddPayment ? (
+        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+          <h3 className="mb-3 text-lg font-bold">Add New Card</h3>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              // Detect card brand from first digit
+              const firstDigit = newPayment.cardNumber.charAt(0);
+              let brand = 'Card';
+              if (firstDigit === '4') brand = 'Visa';
+              else if (firstDigit === '5') brand = 'Mastercard';
+              else if (firstDigit === '3') brand = 'Amex';
+
+              const newCard = {
+                brand,
+                last4: newPayment.cardNumber.slice(-4),
+                expiry: newPayment.expiry,
+                primary: payments.length === 0,
+              };
+              setPayments([...payments, newCard]);
+              setShowAddPayment(false);
+              setNewPayment({ cardNumber: '', expiry: '', cvv: '', cardholderName: '' });
+            }}
+            className="space-y-3"
+          >
+            <input
+              type="text"
+              placeholder="Cardholder Name"
+              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+              value={newPayment.cardholderName}
+              onChange={(e) => setNewPayment({ ...newPayment, cardholderName: e.target.value })}
+              required
+            />
+            <input
+              type="text"
+              placeholder="Card Number"
+              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+              value={newPayment.cardNumber}
+              onChange={(e) => setNewPayment({ ...newPayment, cardNumber: e.target.value.replace(/\D/g, '').slice(0, 16) })}
+              maxLength={16}
+              required
+            />
+            <div className="flex gap-3">
+              <input
+                type="text"
+                placeholder="MM/YY"
+                className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                value={newPayment.expiry}
+                onChange={(e) => {
+                  let value = e.target.value.replace(/\D/g, '');
+                  if (value.length >= 2) {
+                    value = value.slice(0, 2) + '/' + value.slice(2, 4);
+                  }
+                  setNewPayment({ ...newPayment, expiry: value });
+                }}
+                maxLength={5}
+                required
+              />
+              <input
+                type="text"
+                placeholder="CVV"
+                className="w-20 rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                value={newPayment.cvv}
+                onChange={(e) => setNewPayment({ ...newPayment, cvv: e.target.value.replace(/\D/g, '').slice(0, 4) })}
+                maxLength={4}
+                required
+              />
+            </div>
+            <div className="flex gap-2 pt-2">
+              <button
+                type="submit"
+                className="flex-1 rounded-lg bg-black py-2 text-sm font-bold text-white"
+              >
+                Save Card
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowAddPayment(false)}
+                className="flex-1 rounded-lg border border-gray-200 py-2 text-sm font-bold"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      ) : (
+        <button
+          onClick={() => setShowAddPayment(true)}
+          className="flex h-full min-h-[160px] flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-gray-300 bg-white/50 text-sm font-semibold text-gray-700 transition hover:border-black hover:text-black"
+        >
+          + Add payment method
+        </button>
+      )}
     </div>
   );
 
@@ -576,7 +672,7 @@ const Profile = () => {
       case 'Addresses':
         return <AddressesContent />;
       case 'Payment Methods':
-        return <PaymentContent />;
+        return PaymentContent();
       case 'Security / Password':
         return <SecurityContent />;
       case 'Notifications / Preferences':
