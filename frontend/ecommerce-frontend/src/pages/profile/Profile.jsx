@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   MapPin,
   ShieldCheck,
@@ -10,9 +11,7 @@ import {
   Mail,
   Phone,
   Calendar,
-  Home,
-  Globe,
-  BadgeCheck,
+  LogOut
 } from 'lucide-react';
 import { useShop } from '../../context/ShopContext';
 import { orderService, addressService } from '../../services/api';
@@ -27,7 +26,9 @@ const tabs = [
 ];
 
 const Profile = () => {
-  const { user } = useShop();
+  const navigate = useNavigate();
+  const { user, setUser } = useShop();
+  
   const [activeTab, setActiveTab] = useState('Profile');
   const [formState, setFormState] = useState({
     firstName: user?.firstName || '',
@@ -38,6 +39,19 @@ const Profile = () => {
     city: user?.city || 'Istanbul',
     country: user?.country || 'Turkey',
   });
+
+  // Mock Data for UI sections
+  const payments = [
+    { brand: 'Visa', last4: '4242', expiry: '12/24', primary: true },
+    { brand: 'Mastercard', last4: '8899', expiry: '01/26', primary: false }
+  ];
+
+  const toggles = [
+    { label: 'Email Notifications', enabled: true },
+    { label: 'SMS Notifications', enabled: false },
+    { label: 'Order Updates', enabled: true },
+    { label: 'Promotional Offers', enabled: true },
+  ];
 
   useEffect(() => {
     if (user) {
@@ -52,16 +66,12 @@ const Profile = () => {
     }
   }, [user]);
 
-  const [saved, setSaved] = useState(false);
-
   const stats = [
     { label: 'Completed Orders', value: '12', highlight: true },
     { label: 'Open Returns', value: '1' },
     { label: 'Loyalty Points', value: '840' },
     { label: 'Wishlist Items', value: '7' },
   ];
-
-  // ...
 
   const [orders, setOrders] = useState([]);
 
@@ -74,9 +84,6 @@ const Profile = () => {
   const fetchOrders = async () => {
     try {
       const data = await orderService.getOrders(user.userId);
-      // Transform data to match UI if needed
-      // Backend returns: { id, orderDate, status, totalPrice, items: [...] }
-
       const formattedOrders = data.map(order => ({
         id: order.id,
         orderDate: order.orderDate,
@@ -134,6 +141,12 @@ const Profile = () => {
     } catch (err) {
       console.error("Failed to delete address", err);
     }
+  };
+
+  // LOGOUT HANDLER
+  const handleLogout = () => {
+    setUser(null); // Clear global user state
+    navigate('/login'); // Redirect to login page
   };
 
   const ProfileContent = () => (
@@ -395,12 +408,12 @@ const Profile = () => {
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="flex items-center gap-4">
               <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-xl font-bold text-black shadow">
-                {formState.firstName.charAt(0)}
-                {formState.lastName.charAt(0)}
+                {formState.firstName ? formState.firstName.charAt(0) : 'U'}
+                {formState.lastName ? formState.lastName.charAt(0) : ''}
               </div>
               <div>
                 <p className="text-sm uppercase tracking-[0.2em] text-white/70">User profile</p>
-                <p className="text-2xl font-black">{formState.firstName} {formState.lastName}</p>
+                <p className="text-2xl font-black">{formState.firstName || 'User'} {formState.lastName}</p>
                 <p className="text-sm text-white/70">RAWCTRL member • Istanbul</p>
               </div>
             </div>
@@ -460,6 +473,15 @@ const Profile = () => {
                 </button>
               </div>
             </div>
+
+            {/* NEW LOGOUT BUTTON */}
+            <button
+              onClick={handleLogout}
+              className="group flex w-full items-center justify-between rounded-2xl border border-red-100 bg-red-50 p-4 text-sm font-bold text-red-600 transition hover:border-red-200 hover:bg-red-100 hover:shadow-sm"
+            >
+              <span>Log out</span>
+              <LogOut className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+            </button>
           </div>
 
           <div className="space-y-6">
