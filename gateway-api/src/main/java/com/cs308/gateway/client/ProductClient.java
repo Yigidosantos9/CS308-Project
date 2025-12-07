@@ -210,12 +210,117 @@ public class ProductClient {
             ResponseEntity<Product> response = restTemplate.postForEntity(
                     "/products/restore-stock",
                     request,
-                    Product.class
-            );
+                    Product.class);
             return response.getBody();
         } catch (RestClientException e) {
             log.error("Error calling product service to restore stock", e);
             throw new RuntimeException("Failed to restore product stock", e);
+        }
+    }
+
+    // ==================== REVIEW METHODS ====================
+
+    public Object addReview(Long userId, Object reviewRequest) {
+        log.debug("Calling product service: POST /reviews for userId: {}", userId);
+
+        try {
+            org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+            headers.set("X-User-Id", String.valueOf(userId));
+            org.springframework.http.HttpEntity<Object> entity = new org.springframework.http.HttpEntity<>(
+                    reviewRequest, headers);
+
+            ResponseEntity<Object> response = restTemplate.exchange(
+                    "/reviews",
+                    HttpMethod.POST,
+                    entity,
+                    Object.class);
+            return response.getBody();
+        } catch (RestClientException e) {
+            log.error("Error calling product service to add review", e);
+            throw new RuntimeException("Failed to add review", e);
+        }
+    }
+
+    public List<?> getProductReviews(Long productId) {
+        log.debug("Calling product service: GET /reviews/product/{}", productId);
+
+        try {
+            ResponseEntity<List> response = restTemplate.exchange(
+                    "/reviews/product/{productId}",
+                    HttpMethod.GET,
+                    null,
+                    List.class,
+                    productId);
+            return response.getBody();
+        } catch (RestClientException e) {
+            log.error("Error calling product service to get reviews", e);
+            throw new RuntimeException("Failed to get reviews", e);
+        }
+    }
+
+    public List<?> getPendingReviews() {
+        log.debug("Calling product service: GET /reviews/pending");
+
+        try {
+            ResponseEntity<List> response = restTemplate.exchange(
+                    "/reviews/pending",
+                    HttpMethod.GET,
+                    null,
+                    List.class);
+            return response.getBody();
+        } catch (RestClientException e) {
+            log.error("Error calling product service to get pending reviews", e);
+            throw new RuntimeException("Failed to get pending reviews", e);
+        }
+    }
+
+    public Object approveReview(Long reviewId) {
+        log.debug("Calling product service: PUT /reviews/{}/approve", reviewId);
+
+        try {
+            ResponseEntity<Object> response = restTemplate.exchange(
+                    "/reviews/{reviewId}/approve",
+                    HttpMethod.PUT,
+                    null,
+                    Object.class,
+                    reviewId);
+            return response.getBody();
+        } catch (RestClientException e) {
+            log.error("Error calling product service to approve review", e);
+            throw new RuntimeException("Failed to approve review", e);
+        }
+    }
+
+    public void disapproveReview(Long reviewId) {
+        log.debug("Calling product service: DELETE /reviews/{}", reviewId);
+
+        try {
+            restTemplate.exchange(
+                    "/reviews/{reviewId}",
+                    HttpMethod.DELETE,
+                    null,
+                    Void.class,
+                    reviewId);
+        } catch (RestClientException e) {
+            log.error("Error calling product service to disapprove review", e);
+            throw new RuntimeException("Failed to disapprove review", e);
+        }
+    }
+
+    public Object getProductReviewStats(Long productId) {
+        log.debug("Calling product service: GET /reviews/product/{}/stats", productId);
+
+        try {
+            ResponseEntity<Object> response = restTemplate.exchange(
+                    "/reviews/product/{productId}/stats",
+                    HttpMethod.GET,
+                    null,
+                    Object.class,
+                    productId);
+            return response.getBody();
+        } catch (RestClientException e) {
+            log.error("Error calling product service to get review stats", e);
+            throw new RuntimeException("Failed to get review stats", e);
         }
     }
 }

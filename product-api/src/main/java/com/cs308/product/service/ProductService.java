@@ -135,6 +135,9 @@ public class ProductService {
         } else if ("newest".equalsIgnoreCase(sortParam)) {
             sort = org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC,
                     "createdAt");
+        } else if ("popularity".equalsIgnoreCase(sortParam)) {
+            sort = org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC,
+                    "salesCount");
         }
 
         com.cs308.product.domain.enums.ProductType productType = null;

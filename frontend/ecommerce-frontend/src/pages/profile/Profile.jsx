@@ -138,6 +138,62 @@ const Profile = () => {
     }
   };
 
+  const ProfileContent = () => (
+    <div className="space-y-6">
+      <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+        <h3 className="mb-4 text-lg font-bold">Personal Information</h3>
+        <div className="grid gap-4 md:grid-cols-2">
+          <LabelInput label="First Name" icon={<Mail className="h-4 w-4" />} value={formState.firstName} readOnly />
+          <LabelInput label="Last Name" icon={<Mail className="h-4 w-4" />} value={formState.lastName} readOnly />
+          <LabelInput label="Email" icon={<Mail className="h-4 w-4" />} value={formState.email} readOnly />
+          <LabelInput label="Phone" icon={<Phone className="h-4 w-4" />} value={formState.phone || 'Not set'} readOnly />
+          <LabelInput label="Birth Date" icon={<Calendar className="h-4 w-4" />} value={formState.birthDate || 'Not set'} readOnly />
+        </div>
+      </div>
+      <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+        <h3 className="mb-4 text-lg font-bold">Account Statistics</h3>
+        <div className="grid gap-4 md:grid-cols-4">
+          {stats.map((stat, idx) => (
+            <div key={idx} className={`rounded-xl p-4 ${stat.highlight ? 'bg-black text-white' : 'bg-gray-100'}`}>
+              <p className="text-2xl font-bold">{stat.value}</p>
+              <p className="text-sm opacity-70">{stat.label}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
+  const OrdersContent = () => (
+    <div className="space-y-4">
+      {orders.length === 0 ? (
+        <div className="rounded-2xl border border-gray-200 bg-white p-8 text-center shadow-sm">
+          <Package className="mx-auto h-12 w-12 text-gray-400" />
+          <p className="mt-4 text-gray-600">No orders yet</p>
+        </div>
+      ) : (
+        orders.map((order) => (
+          <div key={order.id} className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-bold">Order #{order.id}</p>
+                <p className="text-sm text-gray-500">{new Date(order.orderDate).toLocaleDateString()}</p>
+              </div>
+              <div className="text-right">
+                <p className="font-bold">${order.totalPrice?.toFixed(2) || order.totalAmount?.toFixed(2)}</p>
+                <span className={`inline-block rounded-full px-3 py-1 text-xs font-medium ${order.status === 'DELIVERED' ? 'bg-green-100 text-green-800' :
+                    order.status === 'PROCESSING' ? 'bg-yellow-100 text-yellow-800' :
+                      order.status === 'IN_TRANSIT' ? 'bg-blue-100 text-blue-800' :
+                        'bg-gray-100 text-gray-800'
+                  }`}>{order.status}</span>
+              </div>
+            </div>
+          </div>
+        ))
+      )}
+    </div>
+  );
+
   const AddressesContent = () => (
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-2">
@@ -351,9 +407,9 @@ const Profile = () => {
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-3">
-              <Badge>RAWCTRL Black</Badge>
-              <Badge>Priority shipping</Badge>
-              <Badge>Spend: $1.2k</Badge>
+              <span className="rounded-full bg-white/20 px-3 py-1 text-sm font-medium text-white">RAWCTRL Black</span>
+              <span className="rounded-full bg-white/20 px-3 py-1 text-sm font-medium text-white">Priority shipping</span>
+              <span className="rounded-full bg-white/20 px-3 py-1 text-sm font-medium text-white">Spend: $1.2k</span>
             </div>
           </div>
         </div>

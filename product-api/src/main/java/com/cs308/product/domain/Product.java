@@ -109,6 +109,14 @@ public class Product {
         @Column(nullable = false)
         private boolean active = true;
 
+        @Column(name = "sales_count")
+        @Builder.Default
+        private Integer salesCount = 0;
+
+        @Column(name = "average_rating")
+        @Builder.Default
+        private Double averageRating = 0.0;
+
         @CreationTimestamp
         @Column(updatable = false)
         private Instant createdAt;

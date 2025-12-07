@@ -11,10 +11,10 @@ const Cart = () => {
   return (
     <div className="min-h-screen bg-[#F5F5F5] py-12 px-4 md:px-12">
       <div className="container mx-auto max-w-6xl">
-        
+
         {/* Main Split Layout */}
         <div className="flex flex-col lg:flex-row gap-12 relative">
-          
+
           {/* LEFT SIDE: Cart Items */}
           <div className="flex-1 pr-0 lg:pr-12 border-r-0 lg:border-r border-gray-300 min-h-[500px]">
             {cart.length === 0 ? (
@@ -26,12 +26,12 @@ const Cart = () => {
               <div className="flex flex-col gap-8">
                 {cart.map((item, index) => (
                   <div key={`${item.id}-${item.selectedSize}-${index}`} className="flex gap-6 items-start">
-                    
+
                     {/* Product Image */}
                     <div className="w-24 h-32 bg-gray-200 flex-shrink-0 overflow-hidden rounded-sm">
-                      <img 
-                        src={item.images?.[0]?.url || "https://via.placeholder.com/150"} 
-                        alt={item.name} 
+                      <img
+                        src={item.images?.[0]?.url || "https://via.placeholder.com/150"}
+                        alt={item.name}
                         className="w-full h-full object-cover"
                       />
                     </div>
@@ -41,12 +41,15 @@ const Cart = () => {
                       <h3 className="font-bold text-lg text-black leading-tight mb-2">
                         {item.name}
                       </h3>
-                      <p className="text-gray-600 text-sm uppercase tracking-wide mb-4">
+                      <p className="text-gray-600 text-sm uppercase tracking-wide mb-1">
                         BEDEN: {item.selectedSize || 'N/A'}
                       </p>
-                      
+                      <p className="text-gray-600 text-sm mb-4">
+                        Adet: <span className="font-semibold text-black">{item.quantity || 1}</span>
+                      </p>
+
                       {/* Remove Button (Optional) */}
-                      <button 
+                      <button
                         onClick={() => removeFromCart(item.id, item.selectedSize)}
                         className="text-xs text-red-500 hover:text-red-700 flex items-center gap-1"
                       >
@@ -56,7 +59,10 @@ const Cart = () => {
 
                     {/* Price */}
                     <div className="pt-2 text-right">
-                      <p className="font-bold text-lg">{item.price.toFixed(2)} TL</p>
+                      <p className="font-bold text-lg">{(item.price * (item.quantity || 1)).toFixed(2)} TL</p>
+                      {(item.quantity || 1) > 1 && (
+                        <p className="text-gray-500 text-xs">{item.quantity} × {item.price.toFixed(2)} TL</p>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -67,7 +73,7 @@ const Cart = () => {
           {/* RIGHT SIDE: Order Info (Sticky) */}
           <div className="w-full lg:w-[400px] flex-shrink-0">
             <div className="bg-[#9CA3AF] p-8 rounded-xl shadow-sm sticky top-24 text-white">
-              
+
               {/* Header */}
               <div className="border-b border-white/30 pb-4 mb-6">
                 <h2 className="text-2xl font-bold">Order Info</h2>

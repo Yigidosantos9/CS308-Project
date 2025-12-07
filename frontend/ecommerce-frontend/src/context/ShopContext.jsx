@@ -4,10 +4,30 @@ import api, { cartService } from '../services/api';
 
 const ShopContext = createContext();
 
+// Generate or retrieve guest user ID for anonymous cart
+const getGuestUserId = () => {
+  let guestId = localStorage.getItem('guestUserId');
+  if (!guestId) {
+    // Generate a negative ID to distinguish from real users
+    guestId = -Math.floor(Math.random() * 1000000 + 1);
+    localStorage.setItem('guestUserId', guestId.toString());
+  }
+  return parseInt(guestId);
+};
+
 export const ShopProvider = ({ children }) => {
   const [cart, setCart] = useState([]);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+
+  // Show toast notification
+  const showToast = (message, type = 'success') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => {
+      setToast({ show: false, message: '', type: 'success' });
+    }, 2500);
+  };
 
   useEffect(() => {
     checkAuth();
@@ -15,45 +35,62 @@ export const ShopProvider = ({ children }) => {
 
   const checkAuth = async () => {
     const token = localStorage.getItem('authToken');
+    const storedUserData = localStorage.getItem('userData');
+
+    // First, load from localStorage for immediate display
+    if (storedUserData) {
+      try {
+        const parsedUser = JSON.parse(storedUserData);
+        setUser(parsedUser);
+      } catch (e) {
+        console.error("Failed to parse stored user data:", e);
+      }
+    }
+
     if (token) {
       try {
-        // We need to call verify-token. Since authService.verifyToken is not exported or we can't import it easily if it's not in api.js properly, 
-        // let's assume we can use api.post directly or add it to authService.
-        // Looking at api.js, authService has verifyToken but it takes token as string.
-        // Wait, api.js authService.verifyToken implementation:
-        // verifyToken: (token) => { ... }
-        // But the backend expects the token in the body.
-
-        // Let's use api.post directly to be safe or update api.js. 
-        // Actually, let's update api.js first to expose verifyToken properly if needed, 
-        // but for now I will assume I can use axios directly or the existing authService if it works.
-        // The existing authService.verifyToken in api.js seems to just return localStorage.getItem('authToken')? 
-        // No, wait, I read api.js earlier.
-
-        /*
-          isAuthenticated: () => {
-            return !!localStorage.getItem('authToken');
-          }
-        */
-
-        // It does NOT have verifyToken that calls the backend. I need to add it to api.js first.
-        // But for this step, I will just implement the logic here using the api instance.
-
         const response = await api.post('/auth/verify-token', { token });
-        setUser(response.data);
+        const userData = response.data;
+        setUser(userData);
+
+        // Update stored user data
+        localStorage.setItem('userData', JSON.stringify(userData));
+
+        // Merge guest cart with user cart if guest had items
+        const guestId = localStorage.getItem('guestUserId');
+        if (guestId) {
+          try {
+            await cartService.mergeCarts(parseInt(guestId), userData.userId);
+            localStorage.removeItem('guestUserId'); // Clear guest ID after merge
+          } catch (mergeErr) {
+            console.log("Cart merge skipped or failed:", mergeErr);
+          }
+        }
       } catch (error) {
         console.error("Token verification failed:", error);
-        localStorage.removeItem('authToken');
-        setUser(null);
+        // Don't clear user if we have localStorage data - might be temporary network issue
+        // Only clear if it's a 401 (unauthorized)
+        if (error.response?.status === 401) {
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('userData');
+          setUser(null);
+        }
       }
     }
     setLoading(false);
   };
 
-  useEffect(() => {
+  // Get the current effective user ID (real user or guest)
+  const getEffectiveUserId = () => {
     if (user?.userId) {
-      loadCart(user.userId);
+      return user.userId;
     }
+    return getGuestUserId();
+  };
+
+  useEffect(() => {
+    // Load cart for current user (logged in or guest)
+    loadCart(getEffectiveUserId());
   }, [user]);
 
   const loadCart = async (userId) => {
@@ -63,54 +100,95 @@ export const ShopProvider = ({ children }) => {
         const formattedCart = cartData.items.map(item => ({
           ...item.product,
           quantity: item.quantity,
-          // Backend CartItem doesn't have size, so we default to M for display
           selectedSize: "M"
         }));
         setCart(formattedCart);
+      } else {
+        setCart([]);
       }
     } catch (err) {
       console.error("Failed to load cart:", err);
+      setCart([]);
     }
   };
 
   const addToCart = async (product) => {
     // Frontend guard: do not even attempt to add out-of-stock items
     if (product.stock === 0) {
-      alert("This product is out of stock and cannot be added to the cart.");
+      showToast("This product is out of stock!", "error");
       return;
     }
 
+    const effectiveUserId = getEffectiveUserId();
+
     try {
       // Call backend first; rely on cart snapshot from server
-      await cartService.addToCart(user.userId, product.id, 1);
-      await loadCart(user.userId);
+      await cartService.addToCart(effectiveUserId, product.id, 1);
+      await loadCart(effectiveUserId);
+      showToast("Added to cart! ✓", "success");
     } catch (err) {
       console.error("Failed to add to cart API:", err);
 
       const apiError = err?.response?.data;
       if (apiError?.error === "out_of_stock") {
-        alert("This product is out of stock and cannot be added to the cart.");
+        showToast("This product is out of stock!", "error");
       } else {
-        alert("Failed to add to cart. Please try again.");
+        showToast("Failed to add to cart. Please try again.", "error");
       }
 
-      await loadCart(user.userId);
+      await loadCart(effectiveUserId);
     }
   };
 
   const removeFromCart = async (productId) => {
+    const effectiveUserId = getEffectiveUserId();
     try {
       setCart((prev) => prev.filter((item) => item.id !== productId));
-      await cartService.removeFromCart(user.userId, productId);
-      await loadCart(user.userId);
+      await cartService.removeFromCart(effectiveUserId, productId);
+      await loadCart(effectiveUserId);
+      showToast("Removed from cart", "success");
     } catch (err) {
       console.error("Failed to remove from cart API:", err);
     }
   };
 
   return (
-    <ShopContext.Provider value={{ cart, user, addToCart, removeFromCart, setUser, checkAuth }}>
+    <ShopContext.Provider value={{ cart, user, addToCart, removeFromCart, setUser, checkAuth, loading, toast }}>
       {children}
+
+      {/* Toast Notification */}
+      {toast.show && (
+        <div className={`fixed bottom-6 right-6 z-[9999] px-6 py-4 rounded-lg shadow-2xl transform transition-all duration-300 ${toast.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
+          }`}
+          style={{ animation: 'slideUp 0.3s ease-out' }}>
+          <div className="flex items-center gap-3">
+            {toast.type === 'success' ? (
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+              </svg>
+            ) : (
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            )}
+            <span className="font-semibold">{toast.message}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Animation styles */}
+      <style>{`
+        @keyframes slideUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
     </ShopContext.Provider>
   );
 };

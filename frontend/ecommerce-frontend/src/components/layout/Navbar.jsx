@@ -5,8 +5,11 @@ import { useState } from 'react';
 import { useShop } from '../../context/ShopContext';
 
 const Navbar = () => {
-  const { user } = useShop();
+  const { user, cart } = useShop();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  // Calculate total items in cart
+  const cartItemCount = cart.reduce((total, item) => total + (item.quantity || 1), 0);
 
   const navLinks = [
     { name: 'NEW!', path: '/shop?category=new', isRed: true },
@@ -42,11 +45,30 @@ const Navbar = () => {
           <button className="hover:opacity-60 transition-opacity">
             <Search className="w-6 h-6" />
           </button>
-          <Link to="/cart" className="hover:opacity-60 transition-opacity">
+          <Link to="/cart" className="relative hover:opacity-60 transition-opacity">
             <ShoppingBag className="w-6 h-6" />
+            {cartItemCount > 0 && (
+              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                {cartItemCount > 99 ? '99+' : cartItemCount}
+              </span>
+            )}
           </Link>
-          <Link to={user ? "/profile" : "/login"} className="hidden sm:block hover:opacity-60 transition-opacity">
-            <User className="w-6 h-6" />
+
+          {/* User Profile Link - Shows name when logged in */}
+          <Link
+            to={user ? "/profile" : "/login"}
+            className="hidden sm:flex items-center gap-2 hover:opacity-60 transition-opacity"
+          >
+            {user ? (
+              <>
+                <span className="text-sm font-medium max-w-[120px] truncate">
+                  {user.firstName || user.email?.split('@')[0] || 'Profile'}
+                </span>
+                <User className="w-6 h-6" />
+              </>
+            ) : (
+              <User className="w-6 h-6" />
+            )}
           </Link>
 
           {/* Mobile Menu Button */}

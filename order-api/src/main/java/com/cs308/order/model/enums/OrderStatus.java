@@ -3,7 +3,7 @@ package com.cs308.order.model.enums;
 public enum OrderStatus {
     PREPARING,
     PROCESSING,
-    SHIPPED,
+    IN_TRANSIT,
     DELIVERED,
     CANCELLED
 }

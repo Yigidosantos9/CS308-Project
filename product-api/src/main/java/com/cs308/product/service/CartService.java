@@ -64,7 +64,14 @@ public class CartService {
     @Transactional(readOnly = true)
     public Cart getCart(Long userId) {
         return cartRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Cart not found"));
+                .orElseGet(() -> {
+                    // Return an empty cart (not persisted)
+                    Cart emptyCart = new Cart();
+                    emptyCart.setUserId(userId);
+                    emptyCart.setTotalPrice(0.0);
+                    emptyCart.setTotalQuantity(0);
+                    return emptyCart;
+                });
     }
 
     @Transactional
@@ -126,7 +133,7 @@ public class CartService {
     public Cart mergeCarts(Long guestUserId, Long userId) {
         // Get guest cart (if exists)
         Cart guestCart = cartRepository.findByUserId(guestUserId).orElse(null);
-        
+
         // If guest cart doesn't exist or is empty, nothing to merge
         if (guestCart == null || guestCart.getItems().isEmpty()) {
             // Return user's cart (create if doesn't exist)
@@ -179,13 +186,13 @@ public class CartService {
 
         // Recalculate totals
         recalcTotals(userCart);
-        
+
         // Save user cart
         Cart mergedCart = cartRepository.save(userCart);
-        
+
         // Delete guest cart
         cartRepository.delete(guestCart);
-        
+
         return mergedCart;
     }
 

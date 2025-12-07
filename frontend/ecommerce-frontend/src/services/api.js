@@ -41,6 +41,15 @@ export const authService = {
       const response = await api.post('/auth/login', { email, password });
       if (response.data?.token) {
         localStorage.setItem('authToken', response.data.token);
+        // Also store user data for persistence
+        const userData = {
+          userId: response.data.userId,
+          email: response.data.email,
+          firstName: response.data.firstName,
+          lastName: response.data.lastName,
+          userType: response.data.userType
+        };
+        localStorage.setItem('userData', JSON.stringify(userData));
       }
       return response.data;
     } catch (error) {
@@ -75,6 +84,7 @@ export const authService = {
 
   logout: () => {
     localStorage.removeItem('authToken');
+    localStorage.removeItem('userData');
     localStorage.removeItem('user');
   },
 
@@ -97,8 +107,20 @@ export const reviewService = {
       return [];
     }
   },
+  getProductReviewStats: async (productId) => {
+    try {
+      const response = await api.get(`/reviews/product/${productId}/stats`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching review stats for product ${productId}:`, error);
+      return { averageRating: 0, reviewCount: 0 };
+    }
+  },
   addReview: async (reviewData) => {
-    return await api.post('/reviews', reviewData);
+    const token = localStorage.getItem('authToken');
+    return await api.post('/reviews', reviewData, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
   }
 };
 
@@ -123,6 +145,13 @@ export const cartService = {
   removeFromCart: async (userId, productId) => {
     return await api.delete(`/cart/remove`, {
       params: { userId, productId }
+    });
+  },
+
+  // POST /cart/merge?guestUserId=...&userId=...
+  mergeCarts: async (guestUserId, userId) => {
+    return await api.post(`/cart/merge`, null, {
+      params: { guestUserId, userId }
     });
   }
 };

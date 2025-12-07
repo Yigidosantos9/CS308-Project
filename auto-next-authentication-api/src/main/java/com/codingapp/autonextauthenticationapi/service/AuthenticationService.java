@@ -11,10 +11,14 @@ import com.codingapp.autonextauthenticationapi.repository.UserRepository;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.security.SignatureException;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 
 @RequiredArgsConstructor
@@ -23,7 +27,16 @@ public class AuthenticationService {
 
     private final UserRepository userRepository;
     private final TokenService tokenService;
+
+    @Value("${jwt.secret}")
+    private String secret;
+
     private Key secretKey;
+
+    @PostConstruct
+    void initKey() {
+        this.secretKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+    }
 
     public String signUp(CreateUserRequest createUserRequest) {
 

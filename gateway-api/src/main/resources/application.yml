@@ -57,7 +57,7 @@ spring:
             - StripPrefix=1
 
         - id: review-service
-          uri: ${REVIEW_SERVICE_URI:http://localhost:9004}
+          uri: ${REVIEW_SERVICE_URI:http://localhost:9001}
           predicates:
             - Path=/api/reviews/**
           filters:
