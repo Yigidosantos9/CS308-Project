@@ -7,7 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,10 +22,9 @@ public class Order {
     private Long userId;
     private OrderStatus status;
     private Double totalPrice;
-    
+
     @Builder.Default
     private List<OrderItem> items = new ArrayList<>();
-    
-    private Instant orderDate;
-}
 
+    private LocalDateTime orderDate;
+}

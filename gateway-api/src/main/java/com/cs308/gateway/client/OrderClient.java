@@ -38,7 +38,7 @@ public class OrderClient {
         }
     }
 
-    public Order createOrder(Long userId) {
+    public Order createOrder(Long userId, com.cs308.gateway.model.product.CreateOrderRequest request) {
         log.debug("Calling order service: POST /orders - userId: {}", userId);
 
         try {
@@ -46,7 +46,7 @@ public class OrderClient {
                     .queryParam("userId", userId)
                     .toUriString();
 
-            Order order = orderRestTemplate.postForObject(uri, null, Order.class);
+            Order order = orderRestTemplate.postForObject(uri, request, Order.class);
             return order;
         } catch (RestClientException e) {
             log.error("Error calling order service for create order", e);

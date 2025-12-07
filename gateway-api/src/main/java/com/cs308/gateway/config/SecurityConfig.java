@@ -33,12 +33,13 @@ public class SecurityConfig {
                         .pathMatchers(HttpMethod.PUT, "/api/products/**").hasRole("PRODUCT_MANAGER")
                         .pathMatchers(HttpMethod.DELETE, "/api/products/**").hasRole("PRODUCT_MANAGER")
                         .pathMatchers(HttpMethod.PUT, "/api/orders/*/status").hasRole("PRODUCT_MANAGER")
-                        .pathMatchers("/api/orders/**").hasRole("CUSTOMER")
+                        .pathMatchers("/api/orders/**").authenticated() // Allow any authenticated user
                         .pathMatchers("/api/cart/**").permitAll() // Allow guests, controller handles logic
                         .pathMatchers(HttpMethod.GET, "/api/reviews/**").permitAll()
-                        .pathMatchers(HttpMethod.POST, "/api/reviews/**").hasRole("CUSTOMER")
-                        .pathMatchers(HttpMethod.DELETE, "/api/reviews/**").hasRole("CUSTOMER")
-                        .pathMatchers("/api/payments/**").hasRole("CUSTOMER")
+                        .pathMatchers(HttpMethod.POST, "/api/reviews/**").authenticated() // Any authenticated user can
+                                                                                          // review
+                        .pathMatchers(HttpMethod.DELETE, "/api/reviews/**").authenticated()
+                        .pathMatchers("/api/payments/**").authenticated()
                         .anyExchange().authenticated())
                 .addFilterAt(jwtWebFilter, SecurityWebFiltersOrder.AUTHENTICATION);
         return http.build();

@@ -23,13 +23,15 @@ public class OrderController {
 
     // Customers can place orders (must be authenticated)
     @PostMapping
-    @RequiresRole({ UserType.CUSTOMER })
-    public ResponseEntity<Order> placeOrder(@AuthenticationPrincipal SecurityContext securityContext) {
+    @RequiresRole({ UserType.CUSTOMER, UserType.PRODUCT_MANAGER })
+    public ResponseEntity<Order> placeOrder(
+            @AuthenticationPrincipal SecurityContext securityContext,
+            @RequestBody(required = false) com.cs308.gateway.model.product.CreateOrderRequest request) {
         Long userId = securityContext.getUserId();
         log.info("BFF: Place order request received from user: {}", userId);
 
         try {
-            Order order = orderService.createOrder(userId);
+            Order order = orderService.createOrder(userId, request);
             return ResponseEntity.ok(order);
         } catch (RuntimeException e) {
             log.error("Error processing place order request", e);
@@ -39,7 +41,7 @@ public class OrderController {
 
     // Customers can view their orders
     @GetMapping
-    @RequiresRole({ UserType.CUSTOMER })
+    @RequiresRole({ UserType.CUSTOMER, UserType.PRODUCT_MANAGER })
     public ResponseEntity<List<Order>> getMyOrders(@AuthenticationPrincipal SecurityContext securityContext) {
         Long userId = securityContext.getUserId();
         log.info("BFF: Get orders request received for user: {}", userId);

@@ -9,6 +9,20 @@ const api = axios.create({
   },
 });
 
+// Add request interceptor to attach auth token
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
 export const productService = {
   getProductById: async (id) => {
     try {
@@ -164,9 +178,9 @@ export const cartService = {
 };
 
 export const orderService = {
-  getOrders: async () => {
+  getOrders: async (userId) => {
     try {
-      const response = await api.get('/orders');
+      const response = await api.get('/orders', { params: { userId } });
       return response.data;
     } catch (error) {
       console.error("Error fetching orders:", error);
@@ -175,7 +189,11 @@ export const orderService = {
   },
   createOrder: async (orderData) => {
     try {
-      const response = await api.post('/orders', orderData);
+      // Send order data in body with userId as query param
+      const response = await api.post(`/orders?userId=${orderData.userId}`, {
+        items: orderData.items,
+        totalPrice: orderData.totalPrice
+      });
       return response.data;
     } catch (error) {
       console.error("Error creating order:", error);

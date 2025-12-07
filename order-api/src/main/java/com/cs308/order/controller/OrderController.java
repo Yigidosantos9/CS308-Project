@@ -21,9 +21,11 @@ public class OrderController {
     }
 
     @PostMapping
-    public ResponseEntity<Order> createOrder(@RequestParam Long userId) {
+    public ResponseEntity<Order> createOrder(
+            @RequestParam Long userId,
+            @RequestBody(required = false) com.cs308.order.dto.CreateOrderRequest request) {
         try {
-            return ResponseEntity.ok(orderService.createOrder(userId));
+            return ResponseEntity.ok(orderService.createOrder(userId, request));
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.internalServerError().build();

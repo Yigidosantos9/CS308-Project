@@ -16,9 +16,9 @@ public class OrderService {
 
     private final OrderClient orderClient;
 
-    public Order createOrder(Long userId) {
+    public Order createOrder(Long userId, com.cs308.gateway.model.product.CreateOrderRequest request) {
         log.info("Processing create order request for userId: {}", userId);
-        return orderClient.createOrder(userId);
+        return orderClient.createOrder(userId, request);
     }
 
     public Order getOrder(Long orderId, Long userId) {

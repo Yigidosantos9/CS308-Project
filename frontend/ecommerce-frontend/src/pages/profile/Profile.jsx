@@ -66,25 +66,23 @@ const Profile = () => {
   const [orders, setOrders] = useState([]);
 
   useEffect(() => {
-    if (activeTab === 'Orders' && user?.id) {
+    if (activeTab === 'Orders' && user?.userId) {
       fetchOrders();
     }
   }, [activeTab, user]);
 
   const fetchOrders = async () => {
     try {
-      const data = await orderService.getOrders();
+      const data = await orderService.getOrders(user.userId);
       // Transform data to match UI if needed
-      // Backend returns: { id, orderDate, status, totalAmount, items: [...] }
-      // UI expects: { id, date, total, status, items: count, eta }
+      // Backend returns: { id, orderDate, status, totalPrice, items: [...] }
 
       const formattedOrders = data.map(order => ({
-        id: `RC-${order.id}`,
-        date: new Date(order.orderDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
-        total: `$${order.totalAmount.toFixed(2)}`,
+        id: order.id,
+        orderDate: order.orderDate,
+        totalPrice: order.totalPrice,
         status: order.status,
-        items: order.items.length,
-        eta: order.status === 'DELIVERED' ? 'Delivered' : 'Processing'
+        items: order.items || []
       }));
       setOrders(formattedOrders);
     } catch (err) {
@@ -182,9 +180,9 @@ const Profile = () => {
               <div className="text-right">
                 <p className="font-bold">${order.totalPrice?.toFixed(2) || order.totalAmount?.toFixed(2)}</p>
                 <span className={`inline-block rounded-full px-3 py-1 text-xs font-medium ${order.status === 'DELIVERED' ? 'bg-green-100 text-green-800' :
-                    order.status === 'PROCESSING' ? 'bg-yellow-100 text-yellow-800' :
-                      order.status === 'IN_TRANSIT' ? 'bg-blue-100 text-blue-800' :
-                        'bg-gray-100 text-gray-800'
+                  order.status === 'PROCESSING' ? 'bg-yellow-100 text-yellow-800' :
+                    order.status === 'IN_TRANSIT' ? 'bg-blue-100 text-blue-800' :
+                      'bg-gray-100 text-gray-800'
                   }`}>{order.status}</span>
               </div>
             </div>

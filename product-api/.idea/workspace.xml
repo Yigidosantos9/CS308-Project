@@ -5,11 +5,16 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="654f1a8e-c5fd-4cb5-929e-c485d23f36cf" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/../frontend/ecommerce-frontend/src/App.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/ecommerce-frontend/src/App.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/ecommerce-frontend/src/components/layout/Navbar.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/ecommerce-frontend/src/components/layout/Navbar.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/ecommerce-frontend/src/context/ShopContext.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/ecommerce-frontend/src/context/ShopContext.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/ecommerce-frontend/src/pages/cart/Cart.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/ecommerce-frontend/src/pages/cart/Cart.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/ecommerce-frontend/src/pages/profile/Profile.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/ecommerce-frontend/src/pages/profile/Profile.jsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../frontend/ecommerce-frontend/src/services/api.js" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/ecommerce-frontend/src/services/api.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/client/OrderClient.java" beforeDir="false" afterPath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/client/OrderClient.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/config/SecurityConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/config/SecurityConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/controller/OrderController.java" beforeDir="false" afterPath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/controller/OrderController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/model/product/Order.java" beforeDir="false" afterPath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/model/product/Order.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/model/product/enums/OrderStatus.java" beforeDir="false" afterPath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/model/product/enums/OrderStatus.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/service/OrderService.java" beforeDir="false" afterPath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/service/OrderService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../order-api/src/main/java/com/cs308/order/controller/OrderController.java" beforeDir="false" afterPath="$PROJECT_DIR$/../order-api/src/main/java/com/cs308/order/controller/OrderController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../order-api/src/main/java/com/cs308/order/service/OrderService.java" beforeDir="false" afterPath="$PROJECT_DIR$/../order-api/src/main/java/com/cs308/order/service/OrderService.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -146,7 +151,7 @@
       <workItem from="1764829278430" duration="198000" />
       <workItem from="1764834855970" duration="804000" />
       <workItem from="1764861267800" duration="9599000" />
-      <workItem from="1765104498796" duration="2749000" />
+      <workItem from="1765104498796" duration="3411000" />
     </task>
     <servers />
   </component>
