@@ -25,24 +25,24 @@ const Cart = () => {
             ) : (
               <div className="flex flex-col gap-8">
                 {cart.map((item, index) => (
-                  <div key={`${item.id}-${item.selectedSize}-${index}`} className="flex gap-6 items-start">
+                  <div key={`${item.id}-${item.size}-${index}`} className="flex gap-6 items-start">
 
                     {/* Product Image */}
-                    <div className="w-24 h-32 bg-gray-200 flex-shrink-0 overflow-hidden rounded-sm">
-                      <img
-                        src={item.images?.[0]?.url || "https://via.placeholder.com/150"}
-                        alt={item.name}
-                        className="w-full h-full object-cover"
-                      />
+                    <div className="w-24 h-32 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400 text-xs flex-shrink-0">
+                      {item.images && item.images.length > 0 ? (
+                        <img src={item.images[0].url} alt={item.name} className="object-cover rounded-lg w-full h-full" />
+                      ) : (
+                        <>-{item.name}</>
+                      )}
                     </div>
 
-                    {/* Details */}
+                    {/* Product Info */}
                     <div className="flex-grow pt-2">
                       <h3 className="font-bold text-lg text-black leading-tight mb-2">
                         {item.name}
                       </h3>
                       <p className="text-gray-600 text-sm uppercase tracking-wide mb-1">
-                        BEDEN: {item.selectedSize || 'N/A'}
+                        BEDEN: {item.size || 'N/A'}
                       </p>
                       <p className="text-gray-600 text-sm mb-4">
                         Adet: <span className="font-semibold text-black">{item.quantity || 1}</span>
@@ -50,7 +50,7 @@ const Cart = () => {
 
                       {/* Remove Button (Optional) */}
                       <button
-                        onClick={() => removeFromCart(item.id, item.selectedSize)}
+                        onClick={() => removeFromCart(item.id, item.size)}
                         className="text-xs text-red-500 hover:text-red-700 flex items-center gap-1"
                       >
                         <Trash2 size={14} /> Remove

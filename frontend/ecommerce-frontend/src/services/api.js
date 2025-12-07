@@ -135,16 +135,36 @@ export const reviewService = {
     return await api.post('/reviews', reviewData, {
       headers: { Authorization: `Bearer ${token}` }
     });
+  },
+  // PM: Get pending reviews for approval
+  getPendingReviews: async () => {
+    try {
+      const response = await api.get('/reviews/pending');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching pending reviews:', error);
+      return [];
+    }
+  },
+  // PM: Approve a review
+  approveReview: async (reviewId) => {
+    return await api.put(`/reviews/${reviewId}/approve`);
+  },
+  // PM: Disapprove/delete a review
+  disapproveReview: async (reviewId) => {
+    return await api.delete(`/reviews/${reviewId}`);
   }
 };
 
 // UPDATED: Matches CartController.java exactly
 export const cartService = {
-  // POST /cart/add?userId=...&productId=...&quantity=...
-  addToCart: async (userId, productId, quantity) => {
-    return await api.post(`/cart/add`, null, {
-      params: { userId, productId, quantity }
-    });
+  // POST /cart/add?userId=...&productId=...&quantity=...&size=...
+  addToCart: async (userId, productId, quantity, size) => {
+    const params = { userId, productId, quantity };
+    if (size) {
+      params.size = size;
+    }
+    return await api.post(`/cart/add`, null, { params });
   },
 
   // GET /cart?userId=...
@@ -217,6 +237,28 @@ export const orderService = {
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error("Error downloading invoice:", error);
+      throw error;
+    }
+  },
+  // Product Manager: Get all orders
+  getAllOrders: async () => {
+    try {
+      const response = await api.get('/orders/all');
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching all orders:", error);
+      throw error;
+    }
+  },
+  // Product Manager: Update order status
+  updateOrderStatus: async (orderId, status) => {
+    try {
+      const response = await api.put(`/orders/${orderId}/status`, null, {
+        params: { status }
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Error updating order status:", error);
       throw error;
     }
   }

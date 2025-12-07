@@ -2,8 +2,8 @@ package com.cs308.gateway.model.product.enums;
 
 public enum OrderStatus {
     PREPARING,
-    PROCESSING,
-    SHIPPED,
+    IN_TRANSIT,
     DELIVERED,
-    CANCELLED
+    CANCELLED,
+    REFUNDED
 }

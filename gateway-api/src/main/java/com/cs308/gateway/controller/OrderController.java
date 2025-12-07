@@ -116,10 +116,16 @@ public class OrderController {
 
     // Product Manager can view all orders and update delivery status
     @GetMapping("/all")
-    public ResponseEntity<?> getAllOrders() {
+    @RequiresRole({ UserType.PRODUCT_MANAGER })
+    public ResponseEntity<List<Order>> getAllOrders() {
         log.info("BFF: Get all orders request received (Product Manager)");
-        // TODO: Implement get all orders (requires additional endpoint in product-api)
-        return ResponseEntity.ok().build();
+        try {
+            List<Order> orders = orderService.getAllOrders();
+            return ResponseEntity.ok(orders);
+        } catch (RuntimeException e) {
+            log.error("Error processing get all orders request", e);
+            return ResponseEntity.internalServerError().build();
+        }
     }
 
     // Product Manager can update order status

@@ -14,6 +14,7 @@ import Checkout from './pages/checkout/Checkout';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
 import Profile from './pages/profile/Profile';
+import PMDashboard from './pages/admin/PMDashboard';
 
 function App() {
   return (
@@ -35,6 +36,11 @@ function App() {
             <Route path="profile" element={
               <PrivateRoute>
                 <Profile />
+              </PrivateRoute>
+            } />
+            <Route path="pm-dashboard" element={
+              <PrivateRoute>
+                <PMDashboard />
               </PrivateRoute>
             } />
           </Route>

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useShop } from '../context/ShopContext';
-import { productService, reviewService } from '../services/api';
+import { productService, reviewService, orderService } from '../services/api';
 
 const StarRating = ({ rating, onRate, interactive = false }) => {
   const [hover, setHover] = useState(0);
@@ -66,6 +66,7 @@ const ProductDetails = () => {
   const [newReview, setNewReview] = useState({ rating: 0, comment: '' });
   const [reviewLoading, setReviewLoading] = useState(false);
   const [reviewError, setReviewError] = useState('');
+  const [canReview, setCanReview] = useState(false); // User has DELIVERED order with this product
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -95,11 +96,32 @@ const ProductDetails = () => {
       }
     };
 
+    // Check if user can review (has DELIVERED order with this product)
+    const checkCanReview = async () => {
+      if (!user?.userId) {
+        setCanReview(false);
+        return;
+      }
+      try {
+        const orders = await orderService.getOrders(user.userId);
+        // Check if any DELIVERED order contains this product
+        const hasDeliveredProduct = orders.some(order =>
+          order.status === 'DELIVERED' &&
+          order.items?.some(item => item.productId === parseInt(id))
+        );
+        setCanReview(hasDeliveredProduct);
+      } catch (error) {
+        console.error('Error checking order status:', error);
+        setCanReview(false);
+      }
+    };
+
     if (id) {
       fetchProduct();
       fetchReviews();
+      checkCanReview();
     }
-  }, [id]);
+  }, [id, user]);
 
   const handleSubmitReview = async (e) => {
     e.preventDefault();
@@ -260,18 +282,20 @@ const ProductDetails = () => {
               </div>
             </div>
 
-            {/* Add to Cart Button */}
-            <button
-              onClick={() => addToCart({ ...displayProduct, selectedSize })}
-              disabled={displayProduct.stock === 0}
-              className={`w-48 py-3 px-8 text-sm font-bold uppercase tracking-wider shadow-lg transition-colors
-                ${displayProduct.stock === 0
-                  ? "bg-gray-400 text-gray-700 cursor-not-allowed"
-                  : "bg-black text-white hover:bg-gray-800"
-                }`}
-            >
-              {displayProduct.stock === 0 ? "Out of Stock" : "Add to Cart"}
-            </button>
+            {/* Add to Cart Button - Hidden for Product Manager */}
+            {user?.userType !== 'PRODUCT_MANAGER' && (
+              <button
+                onClick={() => addToCart({ ...displayProduct, selectedSize })}
+                disabled={displayProduct.stock === 0}
+                className={`w-48 py-3 px-8 text-sm font-bold uppercase tracking-wider shadow-lg transition-colors
+                  ${displayProduct.stock === 0
+                    ? "bg-gray-400 text-gray-700 cursor-not-allowed"
+                    : "bg-black text-white hover:bg-gray-800"
+                  }`}
+              >
+                {displayProduct.stock === 0 ? "Out of Stock" : "Add to Cart"}
+              </button>
+            )}
 
             {/* Description */}
             <p className="text-gray-600 text-sm leading-relaxed mt-4">
@@ -287,13 +311,17 @@ const ProductDetails = () => {
             <h2 className="text-2xl font-bold tracking-tight">
               Customer Reviews ({reviewStats.reviewCount})
             </h2>
-            {user && (
+            {canReview ? (
               <button
                 onClick={() => setShowReviewForm(!showReviewForm)}
                 className="px-4 py-2 bg-black text-white text-sm font-semibold rounded-lg hover:bg-gray-800 transition-colors"
               >
                 {showReviewForm ? 'Cancel' : 'Write a Review'}
               </button>
+            ) : user && (
+              <span className="text-sm text-gray-500">
+                You can review after ordering this product
+              </span>
             )}
           </div>
 

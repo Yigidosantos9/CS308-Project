@@ -21,9 +21,10 @@ public class CartController {
 
     @PostMapping("/add")
     public ResponseEntity<Cart> addToCart(@RequestParam Long userId,
-                                          @RequestParam Long productId,
-                                          @RequestParam(defaultValue = "1") Integer quantity) {
-        return ResponseEntity.ok(cartService.addToCart(userId, productId, quantity));
+            @RequestParam Long productId,
+            @RequestParam(defaultValue = "1") Integer quantity,
+            @RequestParam(required = false) String size) {
+        return ResponseEntity.ok(cartService.addToCart(userId, productId, quantity, size));
     }
 
     @GetMapping
@@ -33,20 +34,20 @@ public class CartController {
 
     @DeleteMapping("/remove")
     public ResponseEntity<Cart> removeFromCart(@RequestParam Long userId,
-                                               @RequestParam Long productId) {
+            @RequestParam Long productId) {
         return ResponseEntity.ok(cartService.removeFromCart(userId, productId));
     }
 
     @PutMapping("/update")
     public ResponseEntity<Cart> updateCartItemQuantity(@RequestParam Long userId,
-                                                      @RequestParam Long productId,
-                                                      @RequestParam Integer quantity) {
+            @RequestParam Long productId,
+            @RequestParam Integer quantity) {
         return ResponseEntity.ok(cartService.updateCartItemQuantity(userId, productId, quantity));
     }
 
     @PostMapping("/merge")
     public ResponseEntity<Cart> mergeCarts(@RequestParam Long guestUserId,
-                                          @RequestParam Long userId) {
+            @RequestParam Long userId) {
         return ResponseEntity.ok(cartService.mergeCarts(guestUserId, userId));
     }
 

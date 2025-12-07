@@ -92,6 +92,24 @@ public class OrderClient {
         }
     }
 
+    public List<Order> getAllOrders() {
+        log.debug("Calling order service: GET /orders/all");
+
+        try {
+            ResponseEntity<List<Order>> response = orderRestTemplate.exchange(
+                    "/orders/all",
+                    HttpMethod.GET,
+                    null,
+                    new ParameterizedTypeReference<List<Order>>() {
+                    });
+
+            return response.getBody();
+        } catch (RestClientException e) {
+            log.error("Error calling order service for get all orders", e);
+            throw new RuntimeException("Failed to get all orders", e);
+        }
+    }
+
     public com.cs308.gateway.model.address.Address addAddress(Long userId,
             com.cs308.gateway.model.address.AddressRequest request) {
         log.debug("Calling order service: POST /addresses - userId: {}", userId);

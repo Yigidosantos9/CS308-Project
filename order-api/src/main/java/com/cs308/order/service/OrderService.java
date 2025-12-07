@@ -23,6 +23,18 @@ public class OrderService {
     }
 
     @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public List<Order> getAllOrders() {
+        List<Order> orders = orderRepository.findAll();
+        // Force load items for each order
+        orders.forEach(order -> {
+            if (order.getItems() != null) {
+                order.getItems().size();
+            }
+        });
+        return orders;
+    }
+
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public Order getOrderById(Long orderId) {
         Order order = orderRepository.findById(orderId).orElse(null);
         if (order != null && order.getItems() != null) {

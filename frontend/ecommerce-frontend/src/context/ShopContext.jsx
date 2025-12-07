@@ -116,7 +116,7 @@ export const ShopProvider = ({ children }) => {
         const formattedCart = cartData.items.map((item) => ({
           ...item.product,
           quantity: item.quantity,
-          selectedSize: 'M',
+          size: item.size, // Get size from backend cart item
         }));
         setCart(formattedCart);
       } else {
@@ -139,7 +139,8 @@ export const ShopProvider = ({ children }) => {
 
     try {
       // Call backend first; rely on cart snapshot from server
-      await cartService.addToCart(effectiveUserId, product.id, 1);
+      // Pass selectedSize if available
+      await cartService.addToCart(effectiveUserId, product.id, 1, product.selectedSize);
       await loadCart(effectiveUserId);
       showToast('Added to cart! ✓', 'success');
     } catch (err) {
@@ -180,6 +181,14 @@ export const ShopProvider = ({ children }) => {
     }
   };
 
+  // Logout function
+  const logout = () => {
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('userData');
+    setUser(null);
+    setCart([]);
+  };
+
   return (
     <ShopContext.Provider
       value={{
@@ -190,6 +199,7 @@ export const ShopProvider = ({ children }) => {
         clearCart,
         setUser,
         checkAuth,
+        logout,
         loading,
         toast,
       }}
@@ -199,11 +209,10 @@ export const ShopProvider = ({ children }) => {
       {/* Toast Notification */}
       {toast.show && (
         <div
-          className={`fixed bottom-6 right-6 z-[9999] px-6 py-4 rounded-lg shadow-2xl transform transition-all duration-300 ${
-            toast.type === 'success'
-              ? 'bg-green-600 text-white'
-              : 'bg-red-600 text-white'
-          }`}
+          className={`fixed bottom-6 right-6 z-[9999] px-6 py-4 rounded-lg shadow-2xl transform transition-all duration-300 ${toast.type === 'success'
+            ? 'bg-green-600 text-white'
+            : 'bg-red-600 text-white'
+            }`}
           style={{ animation: 'slideUp 0.3s ease-out' }}
         >
           <div className="flex items-center gap-3">

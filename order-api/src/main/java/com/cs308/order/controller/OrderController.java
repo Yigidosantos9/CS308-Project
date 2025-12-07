@@ -31,6 +31,11 @@ public class OrderController {
         return ResponseEntity.ok(orderService.getOrdersByUserId(userId));
     }
 
+    @GetMapping("/all")
+    public ResponseEntity<List<Order>> getAllOrders() {
+        return ResponseEntity.ok(orderService.getAllOrders());
+    }
+
     @PostMapping
     public ResponseEntity<Order> createOrder(
             @RequestParam Long userId,

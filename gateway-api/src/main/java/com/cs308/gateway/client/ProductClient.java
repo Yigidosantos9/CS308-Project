@@ -81,16 +81,21 @@ public class ProductClient {
         }
     }
 
-    public Cart addToCart(Long userId, Long productId, Integer quantity) {
-        log.debug("Calling product service: POST /cart/add - userId: {}, productId: {}, quantity: {}",
-                userId, productId, quantity);
+    public Cart addToCart(Long userId, Long productId, Integer quantity, String size) {
+        log.debug("Calling product service: POST /cart/add - userId: {}, productId: {}, quantity: {}, size: {}",
+                userId, productId, quantity, size);
 
         try {
-            String uri = UriComponentsBuilder.fromPath("/cart/add")
+            UriComponentsBuilder builder = UriComponentsBuilder.fromPath("/cart/add")
                     .queryParam("userId", userId)
                     .queryParam("productId", productId)
-                    .queryParam("quantity", quantity)
-                    .toUriString();
+                    .queryParam("quantity", quantity);
+
+            if (size != null && !size.isEmpty()) {
+                builder.queryParam("size", size);
+            }
+
+            String uri = builder.toUriString();
 
             Cart cart = restTemplate.postForObject(uri, null, Cart.class);
             return cart;

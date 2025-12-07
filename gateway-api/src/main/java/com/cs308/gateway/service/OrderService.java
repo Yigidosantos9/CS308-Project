@@ -51,6 +51,11 @@ public class OrderService {
         return orderClient.getUserOrders(userId);
     }
 
+    public List<Order> getAllOrders() {
+        log.info("Processing get all orders request (Product Manager)");
+        return orderClient.getAllOrders();
+    }
+
     public byte[] generateInvoicePdf(InvoiceRequest request) {
         log.info("Processing invoice PDF generation for invoiceNumber: {}", request.getInvoiceNumber());
         return orderClient.generateInvoicePdf(request);

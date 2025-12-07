@@ -30,9 +30,10 @@ public class CartController {
             @AuthenticationPrincipal SecurityContext securityContext,
             @RequestParam(required = false) Long userId,
             @RequestParam Long productId,
-            @RequestParam(defaultValue = "1") Integer quantity) {
-        log.info("BFF: Add to cart request received - userId: {}, productId: {}, quantity: {}",
-                userId, productId, quantity);
+            @RequestParam(defaultValue = "1") Integer quantity,
+            @RequestParam(required = false) String size) {
+        log.info("BFF: Add to cart request received - userId: {}, productId: {}, quantity: {}, size: {}",
+                userId, productId, quantity, size);
 
         try {
             // If user is authenticated, use their ID; otherwise use provided userId (for
@@ -45,7 +46,7 @@ public class CartController {
                 return ResponseEntity.badRequest().build();
             }
 
-            Cart cart = productService.addToCart(actualUserId, productId, quantity);
+            Cart cart = productService.addToCart(actualUserId, productId, quantity, size);
             return ResponseEntity.ok(cart);
         } catch (RuntimeException e) {
             log.error("Error processing add to cart request", e);

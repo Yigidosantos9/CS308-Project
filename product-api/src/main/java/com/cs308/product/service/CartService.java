@@ -17,7 +17,7 @@ public class CartService {
     private final ProductRepository productRepository;
 
     @Transactional
-    public Cart addToCart(Long userId, Long productId, int qty) {
+    public Cart addToCart(Long userId, Long productId, int qty, String size) {
 
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
@@ -33,8 +33,11 @@ public class CartService {
                     return c;
                 });
 
+        // Find existing item by productId AND size
+        final String itemSize = size;
         CartItem existing = cart.getItems().stream()
-                .filter(i -> i.getProduct().getId().equals(productId))
+                .filter(i -> i.getProduct().getId().equals(productId) &&
+                        java.util.Objects.equals(i.getSize(), itemSize))
                 .findFirst()
                 .orElse(null);
 
@@ -52,6 +55,7 @@ public class CartService {
                     .cart(cart)
                     .product(product)
                     .quantity(qty)
+                    .size(size)
                     .build();
 
             cart.addItem(newItem);

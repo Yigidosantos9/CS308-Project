@@ -28,10 +28,10 @@ public class ProductService {
         return productClient.getProduct(id);
     }
 
-    public Cart addToCart(Long userId, Long productId, Integer quantity) {
-        log.info("Processing add to cart request - userId: {}, productId: {}, quantity: {}", 
-                userId, productId, quantity);
-        return productClient.addToCart(userId, productId, quantity);
+    public Cart addToCart(Long userId, Long productId, Integer quantity, String size) {
+        log.info("Processing add to cart request - userId: {}, productId: {}, quantity: {}, size: {}",
+                userId, productId, quantity, size);
+        return productClient.addToCart(userId, productId, quantity, size);
     }
 
     public Cart getCart(Long userId) {
@@ -45,7 +45,7 @@ public class ProductService {
     }
 
     public Cart updateCartItemQuantity(Long userId, Long productId, Integer quantity) {
-        log.info("Processing update cart item quantity request - userId: {}, productId: {}, quantity: {}", 
+        log.info("Processing update cart item quantity request - userId: {}, productId: {}, quantity: {}",
                 userId, productId, quantity);
         return productClient.updateCartItemQuantity(userId, productId, quantity);
     }

@@ -8,7 +8,7 @@ const Navbar = () => {
   const { user, cart } = useShop();
   const navigate = useNavigate();
   const location = useLocation(); // Added useLocation
-  
+
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -87,18 +87,21 @@ const Navbar = () => {
             </button>
           )}
 
-          <Link to="/cart" className="relative hover:opacity-60 transition-opacity">
-            <ShoppingBag className="w-6 h-6" />
-            {cartItemCount > 0 && (
-              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                {cartItemCount > 99 ? '99+' : cartItemCount}
-              </span>
-            )}
-          </Link>
+          {/* Cart - Hidden for Product Manager */}
+          {user?.userType !== 'PRODUCT_MANAGER' && (
+            <Link to="/cart" className="relative hover:opacity-60 transition-opacity">
+              <ShoppingBag className="w-6 h-6" />
+              {cartItemCount > 0 && (
+                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                  {cartItemCount > 99 ? '99+' : cartItemCount}
+                </span>
+              )}
+            </Link>
+          )}
 
-          {/* User Profile Link - Shows name when logged in */}
+          {/* User Profile Link - PM goes to dashboard, others to profile */}
           <Link
-            to={user ? "/profile" : "/login"}
+            to={user ? (user.userType === 'PRODUCT_MANAGER' ? "/pm-dashboard" : "/profile") : "/login"}
             className="hidden sm:flex items-center gap-2 hover:opacity-60 transition-opacity"
           >
             {user ? (
@@ -137,12 +140,12 @@ const Navbar = () => {
             </Link>
           ))}
           <Link
-            to={user ? "/profile" : "/login"}
+            to={user ? (user.userType === 'PRODUCT_MANAGER' ? "/pm-dashboard" : "/profile") : "/login"}
             onClick={() => setIsMenuOpen(false)}
             className="flex items-center gap-2 text-lg font-semibold text-black"
           >
             <User className="w-5 h-5" />
-            Profile
+            {user?.userType === 'PRODUCT_MANAGER' ? 'Dashboard' : 'Profile'}
           </Link>
         </div>
       )}
