@@ -86,14 +86,14 @@ const Checkout = () => {
                                         <p className="font-medium">{item.name}</p>
                                         <p className="text-sm text-gray-500">Size: {item.size} • Qty: {item.quantity}</p>
                                     </div>
-                                    <p className="font-bold">{(item.price * item.quantity).toFixed(2)} TL</p>
+                                    <p className="font-bold">{(item.price * item.quantity).toFixed(2)} $</p>
                                 </div>
                             ))}
                         </div>
                         <div className="border-t pt-4">
                             <div className="flex justify-between text-lg font-bold">
                                 <span>Total</span>
-                                <span>{total.toFixed(2)} TL</span>
+                                <span>{total.toFixed(2)} $</span>
                             </div>
                         </div>
                     </div>

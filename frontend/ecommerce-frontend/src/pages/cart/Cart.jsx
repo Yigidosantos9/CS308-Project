@@ -59,9 +59,9 @@ const Cart = () => {
 
                     {/* Price */}
                     <div className="pt-2 text-right">
-                      <p className="font-bold text-lg">{(item.price * (item.quantity || 1)).toFixed(2)} TL</p>
+                      <p className="font-bold text-lg">{(item.price * (item.quantity || 1)).toFixed(2)} $</p>
                       {(item.quantity || 1) > 1 && (
-                        <p className="text-gray-500 text-xs">{item.quantity} × {item.price.toFixed(2)} TL</p>
+                        <p className="text-gray-500 text-xs">{item.quantity} × {item.price.toFixed(2)} $</p>
                       )}
                     </div>
                   </div>
@@ -83,11 +83,11 @@ const Cart = () => {
               <div className="space-y-4 mb-8">
                 <div className="flex justify-between text-lg font-medium text-gray-100">
                   <span>SUBTOTAL:</span>
-                  <span>{total.toFixed(2)} TL</span>
+                  <span>{total.toFixed(2)} $</span>
                 </div>
                 <div className="flex justify-between text-lg font-bold text-white">
                   <span>TOTAL:</span>
-                  <span>{total.toFixed(2)} TL</span>
+                  <span>{total.toFixed(2)} $</span>
                 </div>
               </div>
 

@@ -35,8 +35,17 @@ public class OrderItem {
         this.order = order;
         this.productId = productId;
         this.quantity = quantity;
-        this.price = price;
-        this.unitPrice = price; // Workaround for DB schema
+        this.price = price; // Total price for this line item
+        this.unitPrice = quantity > 0 ? price / quantity : price; // Calculate unit price from total
+    }
+
+    // Constructor with explicit unitPrice
+    public OrderItem(Order order, Long productId, Integer quantity, Double unitPrice, Double totalPrice) {
+        this.order = order;
+        this.productId = productId;
+        this.quantity = quantity;
+        this.unitPrice = unitPrice;
+        this.price = totalPrice;
     }
 
     public Long getId() {

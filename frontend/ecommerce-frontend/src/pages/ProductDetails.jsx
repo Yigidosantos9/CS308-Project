@@ -229,7 +229,7 @@ const ProductDetails = () => {
             {/* Price */}
             <div className="flex items-baseline gap-4">
               <span className="text-2xl font-medium text-black">
-                {(displayProduct.price || 0).toFixed(2)} TL
+                ${(displayProduct.price || 0).toFixed(2)}
               </span>
               <span className="text-xs text-gray-500 font-light">
                 (Tax Included)

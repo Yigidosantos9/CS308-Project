@@ -70,18 +70,21 @@ public class OrderController {
             invoiceRequest.setBuyerAddress("Address on file");
             invoiceRequest.setSellerName("RAWCTRL Store");
             invoiceRequest.setSellerAddress("Istanbul, Turkey");
-            invoiceRequest.setTaxRate(0.18);
+            invoiceRequest.setTaxRate(0.18); // 18% VAT
             invoiceRequest.setShippingFee(0.0);
             invoiceRequest.setCurrencySymbol("$");
 
             // Convert order items to invoice items
+            // Prices are VAT-inclusive, so divide by 1.18 to get net price for invoice
             List<InvoiceItem> invoiceItems = order.getItems().stream()
                     .map(item -> {
                         InvoiceItem invoiceItem = new InvoiceItem();
                         invoiceItem.setDescription("Product #" + item.getProductId());
                         invoiceItem.setQuantity(item.getQuantity());
-                        invoiceItem.setUnitPrice(item.getUnitPrice() != null ? item.getUnitPrice()
-                                : item.getPrice() / item.getQuantity());
+                        // Calculate net unit price (before VAT) from VAT-inclusive price
+                        Double grossUnitPrice = item.getUnitPrice() != null ? item.getUnitPrice()
+                                : item.getPrice() / item.getQuantity();
+                        invoiceItem.setUnitPrice(grossUnitPrice / 1.18); // Remove 18% VAT
                         return invoiceItem;
                     })
                     .collect(Collectors.toList());

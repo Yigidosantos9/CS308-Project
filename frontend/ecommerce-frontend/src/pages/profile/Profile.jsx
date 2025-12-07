@@ -13,6 +13,7 @@ import {
   Calendar,
   LogOut,
   FileText,
+  ChevronDown,
 } from 'lucide-react';
 import { useShop } from '../../context/ShopContext';
 import { authService, orderService, addressService } from '../../services/api';
@@ -228,12 +229,19 @@ const Profile = () => {
     </div>
   );
 
-  const handleDownloadInvoice = async (orderId) => {
+  const handleDownloadInvoice = async (orderId, e) => {
+    e.stopPropagation(); // Prevent card expansion
     try {
       await orderService.getInvoice(orderId);
     } catch (error) {
       console.error('Failed to download invoice', error);
     }
+  };
+
+  const [expandedOrderId, setExpandedOrderId] = useState(null);
+
+  const toggleOrderExpand = (orderId) => {
+    setExpandedOrderId(expandedOrderId === orderId ? null : orderId);
   };
 
   const OrdersContent = () => (
@@ -247,44 +255,89 @@ const Profile = () => {
         orders.map((order) => (
           <div
             key={order.id}
-            className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm"
+            className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden"
           >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-bold">Order #{order.id}</p>
-                <p className="text-sm text-gray-500">
-                  {new Date(order.orderDate).toLocaleDateString()}
-                </p>
-              </div>
-              <div className="text-right">
-                <p className="font-bold">
-                  $
-                  {order.totalPrice?.toFixed(2) ||
-                    order.totalAmount?.toFixed(2)}
-                </p>
-                <span
-                  className={`inline-block rounded-full px-3 py-1 text-xs font-medium ${order.status === 'DELIVERED'
-                    ? 'bg-green-100 text-green-800'
-                    : order.status === 'PROCESSING'
-                      ? 'bg-yellow-100 text-yellow-800'
-                      : order.status === 'IN_TRANSIT'
-                        ? 'bg-blue-100 text-blue-800'
-                        : 'bg-gray-100 text-gray-800'
-                    }`}
-                >
-                  {order.status}
-                </span>
+            {/* Order Header - Clickable */}
+            <div
+              className="p-5 cursor-pointer hover:bg-gray-50 transition"
+              onClick={() => toggleOrderExpand(order.id)}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <ChevronDown
+                    className={`h-5 w-5 text-gray-400 transition-transform ${expandedOrderId === order.id ? 'rotate-180' : ''
+                      }`}
+                  />
+                  <div>
+                    <p className="font-bold">Order #{order.id}</p>
+                    <p className="text-sm text-gray-500">
+                      {new Date(order.orderDate).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="font-bold">
+                    $
+                    {order.totalPrice?.toFixed(2) ||
+                      order.totalAmount?.toFixed(2)}
+                  </p>
+                  <span
+                    className={`inline-block rounded-full px-3 py-1 text-xs font-medium ${order.status === 'DELIVERED'
+                      ? 'bg-green-100 text-green-800'
+                      : order.status === 'PROCESSING'
+                        ? 'bg-yellow-100 text-yellow-800'
+                        : order.status === 'IN_TRANSIT'
+                          ? 'bg-blue-100 text-blue-800'
+                          : 'bg-gray-100 text-gray-800'
+                      }`}
+                  >
+                    {order.status}
+                  </span>
+                </div>
               </div>
             </div>
-            <div className="mt-4 flex justify-end">
-              <button
-                onClick={() => handleDownloadInvoice(order.id)}
-                className="flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-700"
-              >
-                <FileText className="h-4 w-4" />
-                Download Invoice
-              </button>
-            </div>
+
+            {/* Order Details - Expandable */}
+            {expandedOrderId === order.id && (
+              <div className="border-t border-gray-200 bg-gray-50 p-5">
+                <h4 className="font-semibold mb-3">Order Items</h4>
+                {order.items && order.items.length > 0 ? (
+                  <div className="space-y-3">
+                    {order.items.map((item, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between bg-white rounded-lg p-3 border border-gray-100"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center">
+                            <Package className="h-5 w-5 text-gray-500" />
+                          </div>
+                          <div>
+                            <p className="font-medium">Product #{item.productId}</p>
+                            <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
+                          </div>
+                        </div>
+                        <p className="font-medium">
+                          ${(item.price || item.unitPrice * item.quantity)?.toFixed(2)}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-500 text-sm">No items available</p>
+                )}
+
+                <div className="mt-4 pt-4 border-t border-gray-200 flex justify-end">
+                  <button
+                    onClick={(e) => handleDownloadInvoice(order.id, e)}
+                    className="flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-700"
+                  >
+                    <FileText className="h-4 w-4" />
+                    Download Invoice
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         ))
       )}
