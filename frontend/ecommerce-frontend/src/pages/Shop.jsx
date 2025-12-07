@@ -24,7 +24,6 @@ const Shop = () => {
         setLoading(true);
         setError(null);
 
-        // Build filter object based on ProductFilterRequest.java
         const filter = {
           q: searchQuery,
           category: currentCategory === 'all' ? null : currentCategory,
@@ -47,13 +46,19 @@ const Shop = () => {
   // Handler to update URL params
   const handleFilterChange = (key, value) => {
     const newParams = new URLSearchParams(searchParams);
+    
+    // FIX: If changing category, CLEAR the search query to avoid conflicting filters
+    if (key === 'category') {
+      newParams.delete('q');
+    }
+
     if (value) {
       newParams.set(key, value);
     } else {
       newParams.delete(key);
     }
     setSearchParams(newParams);
-    setIsMobileFiltersOpen(false); // Close mobile menu on selection
+    setIsMobileFiltersOpen(false); 
   };
 
   return (
@@ -64,7 +69,7 @@ const Shop = () => {
         <div className="flex justify-between items-end mb-8 border-b border-gray-300 pb-4">
           <div>
             <h1 className="text-3xl font-bold uppercase tracking-tight">
-              {currentCategory || 'All Products'}
+              {searchQuery ? `Search: "${searchQuery}"` : (currentCategory || 'All Products')}
             </h1>
             <p className="text-gray-500 text-sm mt-1">
               {products.length} Items Found
@@ -82,7 +87,7 @@ const Shop = () => {
 
         <div className="flex flex-col md:flex-row gap-12">
           
-          {/* SIDEBAR FILTERS (Desktop & Mobile Wrapper) */}
+          {/* SIDEBAR FILTERS */}
           <div className={`
             fixed inset-0 bg-white z-50 p-6 transform transition-transform duration-300 md:relative md:transform-none md:bg-transparent md:p-0 md:w-64 md:block
             ${isMobileFiltersOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
@@ -127,7 +132,6 @@ const Shop = () => {
                 <option value="relevance">Relevance</option>
                 <option value="priceAsc">Price: Low to High</option>
                 <option value="priceDesc">Price: High to Low</option>
-                {/* NEW SORT OPTIONS */}
                 <option value="nameAsc">Name: A - Z</option>
                 <option value="nameDesc">Name: Z - A</option>
                 <option value="newest">Newest Arrivals</option>
@@ -156,7 +160,19 @@ const Shop = () => {
             ) : products.length === 0 ? (
               <div className="text-center py-20">
                 <h3 className="text-xl font-bold mb-2">No products found.</h3>
-                <p className="text-gray-500">Try changing your filters.</p>
+                <p className="text-gray-500">Try changing your filters or search term.</p>
+                {searchQuery && (
+                  <button 
+                    onClick={() => {
+                      const newParams = new URLSearchParams(searchParams);
+                      newParams.delete('q');
+                      setSearchParams(newParams);
+                    }}
+                    className="mt-4 text-black underline"
+                  >
+                    Clear Search
+                  </button>
+                )}
               </div>
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-10">

@@ -1,15 +1,24 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Search, ShoppingBag, User, Menu, X } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 import { useShop } from '../../context/ShopContext';
 
 const Navbar = () => {
   const { user, cart } = useShop();
   const navigate = useNavigate();
+  const location = useLocation(); // Added useLocation
+  
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // FIX: Reset search UI when navigating to a new page
+  useEffect(() => {
+    setIsSearchOpen(false);
+    setSearchQuery('');
+    setIsMenuOpen(false);
+  }, [location.pathname]);
 
   // Calculate total items in cart
   const cartItemCount = cart.reduce((total, item) => total + (item.quantity || 1), 0);
@@ -142,4 +151,3 @@ const Navbar = () => {
 };
 
 export default Navbar;
-
