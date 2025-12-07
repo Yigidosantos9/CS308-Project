@@ -6,6 +6,7 @@ import com.cs308.product.model.ProductUpdateRequest;
 import com.cs308.product.model.StockRestoreRequest;
 import com.cs308.product.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -109,41 +110,62 @@ public class ProductService {
         }
     }
 
+    /**
+     * getAll(): returns products sorted alphabetically by name (A–Z)
+     */
     public List<Product> getAll() {
-        return productRepository.findAll();
+        return productRepository.findAll(
+                Sort.by(Sort.Direction.ASC, "name")
+        );
     }
 
     public Optional<Product> getById(Long id) {
         return productRepository.findById(id);
     }
 
+    /**
+     * search(): applies filters and sorts.
+     * Default sort (including "relevance") = Name A–Z.
+     */
     public List<Product> search(ProductFilterRequest filter) {
+        // No filter object at all => just return all sorted A–Z
         if (filter == null) {
-            return productRepository.findAll();
+            return productRepository.findAll(
+                    Sort.by(Sort.Direction.ASC, "name")
+            );
         }
 
+        // If sort is missing/blank, treat it as nameAsc
         String sortParam = (filter.getSort() == null || filter.getSort().isBlank())
-                ? "relevance"
+                ? "nameAsc"
                 : filter.getSort();
 
-        org.springframework.data.domain.Sort sort = org.springframework.data.domain.Sort.unsorted();
+        Sort sort;
+
         if ("priceAsc".equalsIgnoreCase(sortParam)) {
-            sort = org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.ASC, "price");
+            sort = Sort.by(Sort.Direction.ASC, "price");
         } else if ("priceDesc".equalsIgnoreCase(sortParam)) {
-            sort = org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC,
-                    "price");
+            sort = Sort.by(Sort.Direction.DESC, "price");
         } else if ("newest".equalsIgnoreCase(sortParam)) {
-            sort = org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC,
-                    "createdAt");
+            sort = Sort.by(Sort.Direction.DESC, "createdAt");
         } else if ("popularity".equalsIgnoreCase(sortParam)) {
-            sort = org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC,
-                    "salesCount");
+            sort = Sort.by(Sort.Direction.DESC, "salesCount");
+        } else if ("nameAsc".equalsIgnoreCase(sortParam)) {
+            // A–Z (case-sensitive at DB level, but fine for your case)
+            sort = Sort.by(Sort.Direction.ASC, "name");
+        } else if ("nameDesc".equalsIgnoreCase(sortParam)) {
+            // Z–A
+            sort = Sort.by(Sort.Direction.DESC, "name");
+        } else {
+            // Any unknown sort (including "relevance") => fallback to A–Z
+            sort = Sort.by(Sort.Direction.ASC, "name");
         }
 
         com.cs308.product.domain.enums.ProductType productType = null;
         if (filter.getCategory() != null && !filter.getCategory().isBlank()) {
             try {
-                productType = com.cs308.product.domain.enums.ProductType.valueOf(filter.getCategory().toUpperCase());
+                productType = com.cs308.product.domain.enums.ProductType
+                        .valueOf(filter.getCategory().toUpperCase());
             } catch (IllegalArgumentException e) {
                 return List.of();
             }
@@ -162,7 +184,8 @@ public class ProductService {
         com.cs308.product.domain.enums.Color color = null;
         if (filter.getColor() != null && !filter.getColor().isBlank()) {
             try {
-                color = com.cs308.product.domain.enums.Color.valueOf(filter.getColor().toUpperCase());
+                color = com.cs308.product.domain.enums.Color
+                        .valueOf(filter.getColor().toUpperCase());
             } catch (IllegalArgumentException e) {
                 return List.of();
             }
@@ -182,7 +205,8 @@ public class ProductService {
                 targetAudience,
                 color,
                 descriptionPattern,
-                sort);
+                sort
+        );
     }
 
     public void delete(Long id) {
