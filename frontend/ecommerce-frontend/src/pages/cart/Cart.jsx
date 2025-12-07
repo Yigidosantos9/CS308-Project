@@ -92,9 +92,11 @@ const Cart = () => {
               </div>
 
               {/* Purchase Button */}
-              <button className="w-full bg-[#4299E1] hover:bg-[#3182CE] text-white font-bold py-3 px-6 rounded-md transition-colors uppercase tracking-wide text-sm shadow-md">
-                PURCHASE
-              </button>
+              <Link to="/checkout" className="block w-full">
+                <button className="w-full bg-[#4299E1] hover:bg-[#3182CE] text-white font-bold py-3 px-6 rounded-md transition-colors uppercase tracking-wide text-sm shadow-md">
+                  PURCHASE
+                </button>
+              </Link>
 
             </div>
           </div>

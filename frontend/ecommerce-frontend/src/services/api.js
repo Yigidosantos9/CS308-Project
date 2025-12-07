@@ -153,6 +153,13 @@ export const cartService = {
     return await api.post(`/cart/merge`, null, {
       params: { guestUserId, userId }
     });
+  },
+
+  // DELETE /cart/clear?userId=...
+  clearCart: async (userId) => {
+    return await api.delete(`/cart/clear`, {
+      params: { userId }
+    });
   }
 };
 
@@ -163,6 +170,15 @@ export const orderService = {
       return response.data;
     } catch (error) {
       console.error("Error fetching orders:", error);
+      throw error;
+    }
+  },
+  createOrder: async (orderData) => {
+    try {
+      const response = await api.post('/orders', orderData);
+      return response.data;
+    } catch (error) {
+      console.error("Error creating order:", error);
       throw error;
     }
   }

@@ -1,12 +1,15 @@
-import { Link } from 'react-router-dom';
-import { Search, ShoppingBag, User, Menu } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Search, ShoppingBag, User, Menu, X } from 'lucide-react';
 import { useState } from 'react';
 
 import { useShop } from '../../context/ShopContext';
 
 const Navbar = () => {
   const { user, cart } = useShop();
+  const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Calculate total items in cart
   const cartItemCount = cart.reduce((total, item) => total + (item.quantity || 1), 0);
@@ -17,6 +20,15 @@ const Navbar = () => {
     { name: 'SWEATSHIRTS', path: '/shop?category=sweatshirts', isRed: false },
     { name: 'ACCESSORIES', path: '/shop?category=accessories', isRed: false },
   ];
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/shop?q=${encodeURIComponent(searchQuery.trim())}`);
+      setIsSearchOpen(false);
+      setSearchQuery('');
+    }
+  };
 
   return (
     <nav className="bg-[#F5F5F5] py-6 px-8 sticky top-0 z-50">
@@ -42,9 +54,30 @@ const Navbar = () => {
 
         {/* 3. Icons */}
         <div className="flex items-center gap-5">
-          <button className="hover:opacity-60 transition-opacity">
-            <Search className="w-6 h-6" />
-          </button>
+          {/* Search Button/Input */}
+          {isSearchOpen ? (
+            <form onSubmit={handleSearch} className="flex items-center gap-2">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search products..."
+                autoFocus
+                className="w-40 md:w-64 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+              />
+              <button type="submit" className="hover:opacity-60 transition-opacity">
+                <Search className="w-5 h-5" />
+              </button>
+              <button type="button" onClick={() => { setIsSearchOpen(false); setSearchQuery(''); }} className="hover:opacity-60 transition-opacity">
+                <X className="w-5 h-5" />
+              </button>
+            </form>
+          ) : (
+            <button onClick={() => setIsSearchOpen(true)} className="hover:opacity-60 transition-opacity">
+              <Search className="w-6 h-6" />
+            </button>
+          )}
+
           <Link to="/cart" className="relative hover:opacity-60 transition-opacity">
             <ShoppingBag className="w-6 h-6" />
             {cartItemCount > 0 && (
@@ -109,3 +142,4 @@ const Navbar = () => {
 };
 
 export default Navbar;
+

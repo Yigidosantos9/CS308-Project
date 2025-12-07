@@ -152,8 +152,20 @@ export const ShopProvider = ({ children }) => {
     }
   };
 
+  const clearCart = async () => {
+    const effectiveUserId = getEffectiveUserId();
+    try {
+      await cartService.clearCart(effectiveUserId);
+      setCart([]);
+      showToast("Cart cleared", "success");
+    } catch (err) {
+      console.error("Failed to clear cart:", err);
+      setCart([]); // Clear locally anyway
+    }
+  };
+
   return (
-    <ShopContext.Provider value={{ cart, user, addToCart, removeFromCart, setUser, checkAuth, loading, toast }}>
+    <ShopContext.Provider value={{ cart, user, addToCart, removeFromCart, clearCart, setUser, checkAuth, loading, toast }}>
       {children}
 
       {/* Toast Notification */}
