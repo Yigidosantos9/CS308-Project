@@ -96,7 +96,7 @@ public class InvoicePdfService {
         float[] colWidths = { 260, 70, 90, 90 };
 
         y = writeTableRow(content, y, startX, colWidths, true,
-                "Item", "Qty", "Unit Price", "Total");
+                "Item", "Qty", "Unit Price", "Subtotal");
         drawDivider(content, y + 6);
 
         for (InvoiceItem item : items) {
