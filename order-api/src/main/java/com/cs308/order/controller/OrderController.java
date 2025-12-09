@@ -62,7 +62,8 @@ public class OrderController {
     }
 
     @GetMapping(value = "/{id}/invoice", produces = MediaType.APPLICATION_PDF_VALUE)
-    public ResponseEntity<ByteArrayResource> getInvoice(@PathVariable Long id) {
+    public ResponseEntity<ByteArrayResource> getInvoice(@PathVariable Long id,
+            @RequestParam(required = false) String buyerName) {
         try {
             Order order = orderService.getOrderById(id);
             if (order == null) {
@@ -75,7 +76,8 @@ public class OrderController {
                     order.getInvoiceNumber() != null ? order.getInvoiceNumber() : "INV-" + order.getId());
             invoiceRequest.setIssueDate(order.getOrderDate().format(DateTimeFormatter.ISO_LOCAL_DATE));
             invoiceRequest.setDueDate(order.getOrderDate().plusDays(30).format(DateTimeFormatter.ISO_LOCAL_DATE));
-            invoiceRequest.setBuyerName("Customer #" + order.getUserId());
+            invoiceRequest.setBuyerName(
+                    buyerName != null && !buyerName.isEmpty() ? buyerName : "Customer #" + order.getUserId());
             invoiceRequest.setBuyerAddress("Address on file");
             invoiceRequest.setSellerName("RAWCTRL Store");
             invoiceRequest.setSellerAddress("Istanbul, Turkey");

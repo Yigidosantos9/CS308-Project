@@ -179,16 +179,20 @@ public class OrderClient {
         }
     }
 
-    public byte[] getOrderInvoice(Long orderId) {
-        log.debug("Calling order service: GET /orders/{}/invoice", orderId);
+    public byte[] getOrderInvoice(Long orderId, String buyerName) {
+        log.debug("Calling order service: GET /orders/{}/invoice?buyerName={}", orderId, buyerName);
 
         try {
+            UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromPath("/orders/{orderId}/invoice");
+            if (buyerName != null && !buyerName.isEmpty()) {
+                uriBuilder.queryParam("buyerName", buyerName);
+            }
+
             ResponseEntity<byte[]> response = orderRestTemplate.exchange(
-                    "/orders/{orderId}/invoice",
+                    uriBuilder.buildAndExpand(orderId).toUriString(),
                     HttpMethod.GET,
                     null,
-                    byte[].class,
-                    orderId);
+                    byte[].class);
             return response.getBody();
         } catch (RestClientException e) {
             log.error("Error calling order service for invoice", e);

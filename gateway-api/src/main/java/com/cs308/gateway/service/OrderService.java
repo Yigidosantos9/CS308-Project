@@ -17,12 +17,15 @@ public class OrderService {
     private final OrderClient orderClient;
     private final ProductClient productClient;
     private final InvoiceEmailService invoiceEmailService;
+    private final AuthService authService;
 
     public OrderService(OrderClient orderClient, ProductClient productClient,
-            @org.springframework.context.annotation.Lazy InvoiceEmailService invoiceEmailService) {
+            @org.springframework.context.annotation.Lazy InvoiceEmailService invoiceEmailService,
+            @org.springframework.context.annotation.Lazy AuthService authService) {
         this.orderClient = orderClient;
         this.productClient = productClient;
         this.invoiceEmailService = invoiceEmailService;
+        this.authService = authService;
     }
 
     public Order createOrder(Long userId, String userEmail, CreateOrderRequest request) {
@@ -71,7 +74,23 @@ public class OrderService {
         try {
             if (userEmail != null && !userEmail.isEmpty()) {
                 log.info("Fetching invoice PDF for order {} to send email to {}", order.getId(), userEmail);
-                byte[] pdfBytes = orderClient.getOrderInvoice(order.getId());
+
+                String buyerName = null;
+                try {
+                    com.cs308.gateway.model.auth.response.UserDetails user = authService.getUserById(userId);
+                    if (user != null) {
+                        buyerName = (user.getFirstName() != null ? user.getFirstName() : "") + " " +
+                                (user.getLastName() != null ? user.getLastName() : "");
+                        buyerName = buyerName.trim();
+                        if (buyerName.isEmpty()) {
+                            buyerName = null;
+                        }
+                    }
+                } catch (Exception e) {
+                    log.warn("Failed to fetch user details for invoice name, using default", e);
+                }
+
+                byte[] pdfBytes = orderClient.getOrderInvoice(order.getId(), buyerName);
                 // Use order ID as invoice number for now since we don't have the invoice object
                 invoiceEmailService.sendInvoiceEmail(userEmail, pdfBytes, String.valueOf(order.getId()));
             }
@@ -104,7 +123,7 @@ public class OrderService {
 
     public byte[] getOrderInvoice(Long orderId) {
         log.info("Processing get order invoice for orderId: {}", orderId);
-        return orderClient.getOrderInvoice(orderId);
+        return orderClient.getOrderInvoice(orderId, null);
     }
 
     public void updateOrderStatus(Long orderId, String status) {
