@@ -119,7 +119,7 @@ public class InvoicePdfService {
                 .sum();
         double taxAmount = subTotal * Optional.ofNullable(request.getTaxRate()).orElse(0.0);
         double shipping = Optional.ofNullable(request.getShippingFee()).orElse(0.0);
-        double total = subTotal + shipping;
+        double total = subTotal  + taxAmount +shipping;
 
         float startX = MARGIN + 320;
         y = writeText(content, PDType1Font.HELVETICA_BOLD, 12, startX, y, "Summary");
