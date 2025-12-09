@@ -20,11 +20,15 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/orders")
-@RequiredArgsConstructor
 public class OrderController {
 
     private final OrderService orderService;
     private final InvoicePdfService invoicePdfService;
+
+    public OrderController(OrderService orderService, InvoicePdfService invoicePdfService) {
+        this.orderService = orderService;
+        this.invoicePdfService = invoicePdfService;
+    }
 
     @GetMapping
     public ResponseEntity<List<Order>> getOrders(@RequestParam Long userId) {
