@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -137,7 +138,6 @@ class CartServiceTest {
         Product product = buildProduct(productId, 50.0, 0);
 
         when(productRepository.findById(productId)).thenReturn(Optional.of(product));
-        when(cartRepository.findByUserId(userId)).thenReturn(Optional.empty());
 
         OutOfStockException ex = assertThrows(OutOfStockException.class,
                 () -> cartService.addToCart(userId, productId, 1));
@@ -145,7 +145,7 @@ class CartServiceTest {
         assertTrue(ex.getMessage().toLowerCase().contains("out of stock"));
 
         verify(productRepository).findById(productId);
-        verify(cartRepository).findByUserId(userId);
+        verifyNoInteractions(cartRepository);
     }
 
     @Test
