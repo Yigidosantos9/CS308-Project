@@ -94,4 +94,21 @@ public class AuthClient {
             throw new RuntimeException("Failed to connect to auth service", e);
         }
     }
+
+    public UserDetails getUserById(Long userId) {
+        log.debug("Calling auth service: GET /membership/users/{}", userId);
+
+        try {
+            ResponseEntity<UserDetails> response = restTemplate.getForEntity(
+                    "/membership/users/" + userId,
+                    UserDetails.class);
+            return response.getBody();
+        } catch (HttpClientErrorException e) {
+            log.error("HTTP error calling auth service get user: {}", e.getStatusCode(), e);
+            throw new RuntimeException("Failed to get user details: " + e.getMessage(), e);
+        } catch (RestClientException e) {
+            log.error("Error calling auth service get user", e);
+            throw new RuntimeException("Failed to connect to auth service", e);
+        }
+    }
 }

@@ -21,7 +21,7 @@ public class AuthService {
     public LoginResponse login(LoginRequest request, Long guestUserId) {
         log.info("Processing login request for email: {}", request.getEmail());
         LoginResponse response = authClient.login(request);
-        
+
         // If login successful and guestUserId provided, merge carts
         if (response.getToken() != null && guestUserId != null) {
             try {
@@ -37,7 +37,7 @@ public class AuthService {
                 // Don't fail login if cart merge fails
             }
         }
-        
+
         return response;
     }
 
@@ -54,5 +54,9 @@ public class AuthService {
         log.info("Processing token verification request");
         return authClient.verifyToken(token);
     }
-}
 
+    public UserDetails getUserById(Long userId) {
+        log.info("Processing get user by id request: {}", userId);
+        return authClient.getUserById(userId);
+    }
+}

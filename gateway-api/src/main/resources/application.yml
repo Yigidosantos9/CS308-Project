@@ -7,16 +7,16 @@ spring:
   main:
     web-application-type: reactive
   mail:
-    host: localhost
-    port: 1025
-    username: user
-    password: password
+    host: sandbox.smtp.mailtrap.io
+    port: 2525
+    username: 7244b101344f65
+    password: e9cea1581e8ee5
     properties:
       mail:
         smtp:
-          auth: false
+          auth: true
           starttls:
-            enable: false
+            enable: true
   
   cloud:
     gateway:

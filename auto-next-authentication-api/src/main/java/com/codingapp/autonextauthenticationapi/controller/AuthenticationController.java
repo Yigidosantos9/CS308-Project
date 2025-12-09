@@ -39,4 +39,9 @@ public class AuthenticationController {
         return authenticationService.verifyToken(request.getToken());
     }
 
+    @GetMapping("/users/{userId}")
+    public UserDetails getUserById(@PathVariable Long userId) {
+        return authenticationService.getUserById(userId);
+    }
+
 }

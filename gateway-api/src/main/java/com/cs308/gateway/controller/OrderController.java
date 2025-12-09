@@ -32,10 +32,11 @@ public class OrderController {
             @AuthenticationPrincipal SecurityContext securityContext,
             @RequestBody(required = false) com.cs308.gateway.model.product.CreateOrderRequest request) {
         Long userId = securityContext.getUserId();
+        String email = securityContext.getEmail();
         log.info("BFF: Place order request received from user: {}", userId);
 
         try {
-            Order order = orderService.createOrder(userId, request);
+            Order order = orderService.createOrder(userId, email, request);
             return ResponseEntity.ok(order);
         } catch (RuntimeException e) {
             log.error("Error processing place order request", e);

@@ -111,4 +111,19 @@ public class AuthenticationService {
         }
 
     }
+
+    public UserDetails getUserById(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
+
+        return UserDetails.builder()
+                .userId(String.valueOf(user.getId()))
+                .email(user.getEmail())
+                .userType(user.getUserType())
+                .firstName(user.getFirstName())
+                .lastName(user.getSurname())
+                .phoneNumber(user.getPhoneNumber())
+                .birthDate(user.getBirthDate())
+                .build();
+    }
 }

@@ -5,7 +5,6 @@ import com.cs308.gateway.client.OrderClient;
 import com.cs308.gateway.client.ProductClient;
 import com.cs308.gateway.model.invoice.InvoiceRequest;
 import com.cs308.gateway.model.product.CreateOrderRequest;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -13,14 +12,44 @@ import java.util.List;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class OrderService {
 
     private final OrderClient orderClient;
     private final ProductClient productClient;
+    private final InvoiceEmailService invoiceEmailService;
 
-    public Order createOrder(Long userId, CreateOrderRequest request) {
+    public OrderService(OrderClient orderClient, ProductClient productClient,
+            @org.springframework.context.annotation.Lazy InvoiceEmailService invoiceEmailService) {
+        this.orderClient = orderClient;
+        this.productClient = productClient;
+        this.invoiceEmailService = invoiceEmailService;
+    }
+
+    public Order createOrder(Long userId, String userEmail, CreateOrderRequest request) {
         log.info("Processing create order request for userId: {}", userId);
+
+        // Populate prices from product service
+        double totalPrice = 0.0;
+        if (request != null && request.getItems() != null) {
+            for (CreateOrderRequest.OrderItemRequest item : request.getItems()) {
+                try {
+                    com.cs308.gateway.model.product.Product product = productClient.getProduct(item.getProductId());
+                    if (product != null) {
+                        item.setPrice(product.getPrice());
+                        if (item.getQuantity() != null) {
+                            totalPrice += product.getPrice() * item.getQuantity();
+                        }
+                    } else {
+                        log.error("Product not found for id: {}", item.getProductId());
+                        throw new RuntimeException("Product not found: " + item.getProductId());
+                    }
+                } catch (Exception e) {
+                    log.error("Failed to fetch product details for id: {}", item.getProductId(), e);
+                    throw new RuntimeException("Failed to fetch product details", e);
+                }
+            }
+            request.setTotalPrice(totalPrice);
+        }
 
         // Create order first
         Order order = orderClient.createOrder(userId, request);
@@ -36,6 +65,18 @@ public class OrderService {
                     // Continue with other items even if one fails
                 }
             }
+        }
+
+        // Send invoice email
+        try {
+            if (userEmail != null && !userEmail.isEmpty()) {
+                log.info("Fetching invoice PDF for order {} to send email to {}", order.getId(), userEmail);
+                byte[] pdfBytes = orderClient.getOrderInvoice(order.getId());
+                // Use order ID as invoice number for now since we don't have the invoice object
+                invoiceEmailService.sendInvoiceEmail(userEmail, pdfBytes, String.valueOf(order.getId()));
+            }
+        } catch (Exception e) {
+            log.error("Failed to send invoice email for order " + order.getId(), e);
         }
 
         return order;
