@@ -45,12 +45,30 @@ const Profile = () => {
   // Payment Methods state
   const [payments, setPayments] = useState([]);
   const [showAddPayment, setShowAddPayment] = useState(false);
+  const [editingPaymentIndex, setEditingPaymentIndex] = useState(null);
   const [newPayment, setNewPayment] = useState({
     cardNumber: '',
     expiry: '',
     cvv: '',
     cardholderName: '',
   });
+
+  // Persist payment methods locally (mock)
+  useEffect(() => {
+    const stored = localStorage.getItem('payments');
+    if (stored) {
+      try {
+        setPayments(JSON.parse(stored));
+      } catch (e) {
+        console.error('Failed to parse payments from storage', e);
+      }
+    }
+  }, []);
+
+  const persistPayments = (nextPayments) => {
+    setPayments(nextPayments);
+    localStorage.setItem('payments', JSON.stringify(nextPayments));
+  };
 
   const toggles = [
     { label: 'Email Notifications', enabled: true },
@@ -511,9 +529,34 @@ const Profile = () => {
           </div>
           <p className="text-lg font-bold tracking-[0.2em]">{`**** ${card.last4}`}</p>
           <p className="text-sm text-gray-600">Expires {card.expiry}</p>
+          <p className="text-xs text-gray-500 truncate">Name: {card.cardholderName || '—'}</p>
           <div className="flex gap-3 text-sm font-semibold">
-            <button className="underline underline-offset-4">Edit</button>
-            <button className="underline underline-offset-4">
+            <button
+              onClick={() => {
+                setShowAddPayment(true);
+                setEditingPaymentIndex(payments.findIndex((p) => p.last4 === card.last4));
+                setNewPayment({
+                  cardNumber: card.fullNumber || '',
+                  expiry: card.expiry || '',
+                  cvv: card.cvv || '',
+                  cardholderName: card.cardholderName || '',
+                });
+              }}
+              className="underline underline-offset-4"
+            >
+              Edit
+            </button>
+            <button
+              onClick={() => {
+                persistPayments(
+                  payments.map((p) => ({
+                    ...p,
+                    primary: p.last4 === card.last4,
+                  }))
+                );
+              }}
+              className="underline underline-offset-4"
+            >
               Set primary
             </button>
           </div>
@@ -523,7 +566,7 @@ const Profile = () => {
       {/* Add Payment Button or Form */}
       {showAddPayment ? (
         <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-          <h3 className="mb-3 text-lg font-bold">Add New Card</h3>
+          <h3 className="mb-3 text-lg font-bold">{editingPaymentIndex !== null ? 'Edit Card' : 'Add New Card'}</h3>
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -534,14 +577,35 @@ const Profile = () => {
               else if (firstDigit === '5') brand = 'Mastercard';
               else if (firstDigit === '3') brand = 'Amex';
 
-              const newCard = {
-                brand,
-                last4: newPayment.cardNumber.slice(-4),
-                expiry: newPayment.expiry,
-                primary: payments.length === 0,
-              };
-              setPayments([...payments, newCard]);
+              if (editingPaymentIndex !== null) {
+                const updated = payments.map((p, idx) => {
+                  if (idx !== editingPaymentIndex) return p;
+                  return {
+                    ...p,
+                    brand: newPayment.cardNumber ? brand : p.brand,
+                    last4: newPayment.cardNumber ? newPayment.cardNumber.slice(-4) : p.last4,
+                    fullNumber: newPayment.cardNumber || p.fullNumber || '',
+                    expiry: newPayment.expiry || p.expiry,
+                    cvv: newPayment.cvv || p.cvv || '',
+                    cardholderName: newPayment.cardholderName || p.cardholderName || '',
+                  };
+                });
+                persistPayments(updated);
+              } else {
+                const newCard = {
+                  brand,
+                  last4: newPayment.cardNumber.slice(-4),
+                  fullNumber: newPayment.cardNumber,
+                  expiry: newPayment.expiry,
+                  cvv: newPayment.cvv,
+                  cardholderName: newPayment.cardholderName,
+                  primary: payments.length === 0,
+                };
+                persistPayments([...payments, newCard]);
+              }
+
               setShowAddPayment(false);
+              setEditingPaymentIndex(null);
               setNewPayment({ cardNumber: '', expiry: '', cvv: '', cardholderName: '' });
             }}
             className="space-y-3"
@@ -579,14 +643,16 @@ const Profile = () => {
                 maxLength={5}
                 required
               />
-              <input
-                type="text"
-                placeholder="CVV"
-                className="w-20 rounded-lg border border-gray-200 px-3 py-2 text-sm"
-                value={newPayment.cvv}
-                onChange={(e) => setNewPayment({ ...newPayment, cvv: e.target.value.replace(/\D/g, '').slice(0, 4) })}
-                maxLength={4}
-                required
+            <input
+              type="text"
+              placeholder="CVV"
+              inputMode="numeric"
+              type="password"
+              className="w-20 rounded-lg border border-gray-200 px-3 py-2 text-sm"
+              value={newPayment.cvv}
+              onChange={(e) => setNewPayment({ ...newPayment, cvv: e.target.value.replace(/\D/g, '').slice(0, 4) })}
+              maxLength={4}
+              required
               />
             </div>
             <div className="flex gap-2 pt-2">
@@ -598,7 +664,11 @@ const Profile = () => {
               </button>
               <button
                 type="button"
-                onClick={() => setShowAddPayment(false)}
+                onClick={() => {
+                  setShowAddPayment(false);
+                  setEditingPaymentIndex(null);
+                  setNewPayment({ cardNumber: '', expiry: '', cvv: '', cardholderName: '' });
+                }}
                 className="flex-1 rounded-lg border border-gray-200 py-2 text-sm font-bold"
               >
                 Cancel
