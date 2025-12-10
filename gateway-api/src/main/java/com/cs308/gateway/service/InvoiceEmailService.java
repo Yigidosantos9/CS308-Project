@@ -83,7 +83,7 @@ public class InvoiceEmailService {
             String body = String.format(
                     "Dear Customer,\n\n" +
                             "Your refund request for Order #%d has been approved.\n" +
-                            "Product: %s\n" +
+                            "Product(s): %s\n" +
                             "Refund Amount: $%.2f\n\n" +
                             "The amount will be credited to your original payment method within 5-7 business days.\n\n"
                             +

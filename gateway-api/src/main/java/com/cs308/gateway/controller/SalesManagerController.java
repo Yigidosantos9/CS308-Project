@@ -122,12 +122,38 @@ public class SalesManagerController {
                 com.cs308.gateway.model.auth.response.UserDetails user = authService.getUserById(order.getUserId());
 
                 if (user != null && user.getEmail() != null) {
-                    // 3. Send Email
+                    // 3. Get Product Names
+                    String productNames = "Order #" + orderId;
+                    if (order.getItems() != null && !order.getItems().isEmpty()) {
+                        try {
+                            java.util.List<String> names = new java.util.ArrayList<>();
+                            for (com.cs308.gateway.model.product.OrderItem item : order.getItems()) {
+                                try {
+                                    com.cs308.gateway.model.product.Product p = productService
+                                            .getProduct(item.getProductId());
+                                    if (p != null) {
+                                        names.add(p.getName());
+                                    } else {
+                                        names.add("Product #" + item.getProductId());
+                                    }
+                                } catch (Exception e) {
+                                    names.add("Product #" + item.getProductId());
+                                }
+                            }
+                            if (!names.isEmpty()) {
+                                productNames = String.join(", ", names);
+                            }
+                        } catch (Exception e) {
+                            log.warn("Failed to fetch product names for refund email", e);
+                        }
+                    }
+
+                    // 4. Send Email
                     RefundEmailRequest emailRequest = RefundEmailRequest.builder()
                             .to(user.getEmail())
                             .orderId(orderId)
                             .refundAmount(order.getTotalPrice()) // Assuming full refund for simplicity
-                            .productName("Order #" + orderId) // Placeholder
+                            .productName(productNames)
                             .build();
 
                     invoiceEmailService.sendRefundEmail(emailRequest);

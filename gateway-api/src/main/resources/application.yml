@@ -7,10 +7,23 @@ spring:
   main:
     web-application-type: reactive
   mail:
-    host: sandbox.smtp.mailtrap.io
-    port: 2525
-    username: 7244b101344f65
-    password: e9cea1581e8ee5
+    # Mailtrap Configuration (Default)
+    # host: sandbox.smtp.mailtrap.io
+    # port: 2525
+    # username: 7244b101344f65
+    # password: e9cea1581e8ee5
+    # properties:
+    #   mail:
+    #     smtp:
+    #       auth: true
+    #       starttls:
+    #         enable: true
+
+    # Gmail Configuration (Uncomment to use)
+    host: smtp.gmail.com
+    port: 587
+    username: YOUR_EMAIL_ADDRESS@gmail.com
+    password: YOUR_APP_PASSWORD
     properties:
       mail:
         smtp:
