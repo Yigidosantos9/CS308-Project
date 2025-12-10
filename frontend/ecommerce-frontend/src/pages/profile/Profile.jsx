@@ -16,7 +16,7 @@ import {
   ChevronDown,
 } from 'lucide-react';
 import { useShop } from '../../context/ShopContext';
-import { authService, orderService, addressService } from '../../services/api';
+import { authService, orderService, addressService, productService } from '../../services/api'; // 🔹 ADDED productService
 
 const tabs = [
   'Profile',
@@ -100,21 +100,54 @@ const Profile = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  const fetchOrders = async () => {
+  const fetchOrders = async () => { // 🔹 UPDATED
     try {
       const data = await orderService.getOrders(user.userId);
-      const formattedOrders = data.map((order) => ({
-        id: order.id,
-        orderDate: order.orderDate,
-        totalPrice: order.totalPrice,
-        status: order.status,
-        items: order.items || [],
-      }));
-      setOrders(formattedOrders);
+
+      // 🔹 Simple in-memory cache so we don't refetch the same product many times
+      const productCache = {};
+
+      const ordersWithProductNames = await Promise.all(
+        (data || []).map(async (order) => {
+          const itemsWithNames = await Promise.all(
+            (order.items || []).map(async (item) => {
+              if (!item?.productId) return item;
+
+              // If we already fetched this product once, reuse it
+              if (!productCache[item.productId]) {
+                try {
+                  const product = await productService.getProductById(item.productId);
+                  productCache[item.productId] =
+                    product?.name || `Product #${item.productId}`;
+                } catch (e) {
+                  console.error('Failed to fetch product for order item', e);
+                  productCache[item.productId] = `Product #${item.productId}`;
+                }
+              }
+
+              return {
+                ...item,
+                productName: productCache[item.productId],
+              };
+            })
+          );
+
+          return {
+            id: order.id,
+            orderDate: order.orderDate,
+            totalPrice: order.totalPrice,
+            status: order.status,
+            items: itemsWithNames,
+          };
+        })
+      );
+
+      setOrders(ordersWithProductNames);
     } catch (err) {
       console.error('Failed to fetch orders', err);
     }
   };
+
 
   // Calculate dynamic stats based on actual orders
   const completedOrders = orders.filter((o) => o.status === 'DELIVERED').length;
@@ -362,7 +395,6 @@ const Profile = () => {
               </div>
             </div>
 
-            {/* Order Details - Expandable */}
             {expandedOrderId === order.id && (
               <div className="border-t border-gray-200 bg-gray-50 p-5">
                 <h4 className="font-semibold mb-3">Order Items</h4>
