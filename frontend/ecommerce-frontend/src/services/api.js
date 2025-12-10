@@ -282,42 +282,51 @@ export const orderService = {
   }
 };
 
+// 🔹 UPDATED addressService in api.js
 export const addressService = {
-  getAddresses: async () => {
+  getAddresses: async (userId) => {
     try {
-      const response = await api.get('/addresses');
+      const response = await api.get('/addresses', {
+        params: { userId }, // 🔹 CHANGED
+      });
       return response.data;
     } catch (error) {
       console.error("Error fetching addresses:", error);
       throw error;
     }
   },
-  addAddress: async (addressData) => {
+  addAddress: async (addressData, userId) => {
     try {
-      const response = await api.post('/addresses', addressData);
+      const response = await api.post('/addresses', addressData, {
+        params: { userId }, // 🔹 CHANGED
+      });
       return response.data;
     } catch (error) {
       console.error("Error adding address:", error);
       throw error;
     }
   },
-  updateAddress: async (addressId, addressData) => {
+  updateAddress: async (addressId, addressData, userId) => {
     try {
-      const response = await api.put(`/addresses/${addressId}`, addressData);
+      const response = await api.put(`/addresses/${addressId}`, addressData, {
+        params: { userId }, // 🔹 CHANGED
+      });
       return response.data;
     } catch (error) {
       console.error("Error updating address:", error);
       throw error;
     }
   },
-  deleteAddress: async (addressId) => {
+  deleteAddress: async (addressId, userId) => {
     try {
-      await api.delete(`/addresses/${addressId}`);
+      await api.delete(`/addresses/${addressId}`, {
+        params: { userId }, // 🔹 CHANGED
+      });
     } catch (error) {
       console.error("Error deleting address:", error);
       throw error;
     }
-  }
+  },
 };
 
 export default api;
