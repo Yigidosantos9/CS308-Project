@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useShop } from '../../context/ShopContext';
-import { orderService } from '../../services/api';
+import { orderService, addressService } from '../../services/api';
 import { CreditCard, MapPin, Check } from 'lucide-react';
 
 const Checkout = () => {
@@ -10,6 +10,44 @@ const Checkout = () => {
     const [loading, setLoading] = useState(false);
     const [orderComplete, setOrderComplete] = useState(false);
     const [orderId, setOrderId] = useState(null);
+    const [addresses, setAddresses] = useState([]);
+    const [selectedAddressId, setSelectedAddressId] = useState(null);
+    const [payments, setPayments] = useState([]);
+    const [selectedPaymentIndex, setSelectedPaymentIndex] = useState(0);
+
+    useEffect(() => {
+        if (!user) {
+            navigate('/login');
+            return;
+        }
+        const fetchAddresses = async () => {
+            try {
+                const data = await addressService.getAddresses();
+                setAddresses(data || []);
+                if (data && data.length > 0) {
+                    setSelectedAddressId(data[0].id);
+                }
+            } catch (e) {
+                console.error('Failed to load addresses', e);
+            }
+        };
+        fetchAddresses();
+
+        // Load payment methods from localStorage (same store as profile)
+        const stored = localStorage.getItem('payments');
+        if (stored) {
+            try {
+                const parsed = JSON.parse(stored);
+                setPayments(parsed);
+                if (parsed.length > 0) {
+                    const primaryIndex = parsed.findIndex((p) => p.primary);
+                    setSelectedPaymentIndex(primaryIndex >= 0 ? primaryIndex : 0);
+                }
+            } catch (e) {
+                console.error('Failed to parse payments', e);
+            }
+        }
+    }, [user, navigate]);
 
     const total = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
 
@@ -105,7 +143,29 @@ const Checkout = () => {
                                 <MapPin className="w-5 h-5" />
                                 <h2 className="text-xl font-bold">Shipping Address</h2>
                             </div>
-                            <p className="text-gray-600">Default address will be used. You can manage addresses in your profile.</p>
+                            {addresses.length === 0 ? (
+                                <p className="text-gray-600">No saved addresses. Please add one in your profile.</p>
+                            ) : (
+                                <div className="space-y-3">
+                                    {addresses.map((addr) => (
+                                        <label key={addr.id} className="flex items-start gap-3 cursor-pointer">
+                                            <input
+                                                type="radio"
+                                                name="address"
+                                                checked={selectedAddressId === addr.id}
+                                                onChange={() => setSelectedAddressId(addr.id)}
+                                                className="mt-1"
+                                            />
+                                            <div>
+                                                <p className="font-semibold">{addr.title}</p>
+                                                <p className="text-sm text-gray-600">
+                                                    {addr.addressLine}, {addr.city}, {addr.country} {addr.zipCode}
+                                                </p>
+                                            </div>
+                                        </label>
+                                    ))}
+                                </div>
+                            )}
                         </div>
 
                         <div className="bg-white rounded-2xl p-6 shadow-sm">
@@ -113,10 +173,36 @@ const Checkout = () => {
                                 <CreditCard className="w-5 h-5" />
                                 <h2 className="text-xl font-bold">Payment</h2>
                             </div>
-                            <p className="text-gray-600 mb-4">Mock payment - no real transaction will occur.</p>
-                            <div className="bg-gray-100 p-4 rounded-lg">
-                                <p className="text-sm text-gray-500">Card: **** **** **** 4242</p>
-                            </div>
+                            <p className="text-gray-600 mb-4">Select a saved card. Mock payment - no real transaction.</p>
+                            {payments.length === 0 ? (
+                                <div className="bg-gray-100 p-4 rounded-lg text-sm text-gray-500">
+                                    No saved cards. Add one in your profile.
+                                </div>
+                            ) : (
+                                <div className="space-y-2">
+                                    {payments.map((card, idx) => (
+                                        <label key={`${card.last4}-${idx}`} className="flex items-center gap-3 cursor-pointer">
+                                            <input
+                                                type="radio"
+                                                name="payment"
+                                                checked={selectedPaymentIndex === idx}
+                                                onChange={() => setSelectedPaymentIndex(idx)}
+                                            />
+                                            <div className="flex flex-col">
+                                                <span className="font-semibold">
+                                                    {card.brand || 'Card'} •••• {card.last4}
+                                                </span>
+                                                <span className="text-xs text-gray-500">Expires {card.expiry || '--/--'}</span>
+                                            </div>
+                                            {card.primary && (
+                                                <span className="ml-auto text-xs px-2 py-1 rounded-full bg-black text-white">
+                                                    Primary
+                                                </span>
+                                            )}
+                                        </label>
+                                    ))}
+                                </div>
+                            )}
                         </div>
 
                         <button
