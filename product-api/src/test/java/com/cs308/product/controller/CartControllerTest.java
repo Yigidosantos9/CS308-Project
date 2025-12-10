@@ -50,7 +50,7 @@ class CartControllerTest {
 
         Cart cart = buildCart(userId);
 
-        when(cartService.addToCart(eq(userId), eq(productId), eq(qty)))
+        when(cartService.addToCart(eq(userId), eq(productId), eq(qty), eq(null)))
                 .thenReturn(cart);
 
         // WHEN - THEN
@@ -61,7 +61,7 @@ class CartControllerTest {
                 .andExpect(status().isOk());
 
         Mockito.verify(cartService, times(1))
-                .addToCart(userId, productId, qty);
+                .addToCart(userId, productId, qty, null);
     }
 
     @Test

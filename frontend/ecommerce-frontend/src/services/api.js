@@ -265,18 +265,18 @@ export const orderService = {
 };
 
 export const addressService = {
-  getAddresses: async () => {
+  getAddresses: async (userId) => {
     try {
-      const response = await api.get('/addresses');
+      const response = await api.get('/addresses', { params: { userId } });
       return response.data;
     } catch (error) {
       console.error("Error fetching addresses:", error);
       throw error;
     }
   },
-  addAddress: async (addressData) => {
+  addAddress: async (userId, addressData) => {
     try {
-      const response = await api.post('/addresses', addressData);
+      const response = await api.post('/addresses', addressData, { params: { userId } });
       return response.data;
     } catch (error) {
       console.error("Error adding address:", error);
