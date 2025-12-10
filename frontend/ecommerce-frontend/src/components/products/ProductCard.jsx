@@ -4,15 +4,11 @@ import PropTypes from 'prop-types';
 const ProductCard = ({ product }) => {
   // Helper: Use backend image if available, otherwise generate a consistent mock
   const getImage = () => {
-    if (product.imageUrl) return product.imageUrl;
-
-    const images = [
-      "https://images.unsplash.com/photo-1551028919-ac7bcb9916b9?q=80&w=800&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1515347619252-60a6bf4fffce?q=80&w=800&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1511556532299-8f662fc26c06?q=80&w=800&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1487222477894-8943e31ef7b2?q=80&w=800&auto=format&fit=crop"
-    ];
-    return images[product.id % images.length];
+    if (product.images && product.images.length > 0) {
+      return product.images[0].url;
+    }
+    // Placeholder image for products with no images
+    return "https://placehold.co/600x800/f5f5f5/a3a3a3?text=No+Image";
   };
 
   return (

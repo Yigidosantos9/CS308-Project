@@ -111,6 +111,31 @@ class ProductServiceTest {
         assertThrows(ProductNotFoundException.class, () -> service.updateProduct(123L, payload));
     }
 
+    @Test
+    void addProductSavesImages() {
+        com.cs308.product.model.CreateProductRequest request = new com.cs308.product.model.CreateProductRequest();
+        request.setName("Image Product");
+        request.setPrice(100.0);
+        request.setStock(10);
+        request.setModel("IMG-001");
+        request.setSerialNumber("IMG-SER-001");
+        request.setDescription("Desc");
+        request.setBrand("Brand");
+        request.setProductType(ProductType.JACKET);
+        request.setTargetAudience(TargetAudience.UNISEX);
+        request.setWarrantyStatus(WarrantyStatus.STANDARD);
+        request.setDistributorInfo("Dist Info");
+        request.setImageUrls(java.util.List.of("http://img1.com", "http://img2.com"));
+
+        when(repository.save(any(Product.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Product saved = service.addProduct(request);
+
+        assertEquals(2, saved.getImages().size());
+        assertEquals("http://img1.com", saved.getImages().get(0).getUrl());
+        assertEquals(saved, saved.getImages().get(0).getProduct());
+    }
+
     private Product sampleProduct(Long id) {
         return Product.builder()
                 .id(id)

@@ -28,5 +28,5 @@ public class ProductUpdateRequest {
     private String material;
     private String careInstructions;
     private Boolean active;
+    private java.util.List<String> imageUrls;
 }
-

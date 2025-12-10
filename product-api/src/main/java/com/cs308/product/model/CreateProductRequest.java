@@ -49,4 +49,6 @@ public class CreateProductRequest {
     private String careInstructions;
 
     private Boolean active = true;
+
+    private java.util.List<String> imageUrls;
 }
