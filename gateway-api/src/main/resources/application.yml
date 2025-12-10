@@ -22,8 +22,8 @@ spring:
     # Gmail Configuration (Uncomment to use)
     host: smtp.gmail.com
     port: 587
-    username: YOUR_EMAIL_ADDRESS@gmail.com
-    password: YOUR_APP_PASSWORD
+    username: ardagokmeny@gmail.com
+    password: zhcqmvzvnwqflkhd
     properties:
       mail:
         smtp:
