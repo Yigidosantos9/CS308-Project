@@ -16,9 +16,11 @@ const StarRating = ({ rating, onRate, interactive = false }) => {
           onClick={() => interactive && onRate?.(star)}
           onMouseEnter={() => interactive && setHover(star)}
           onMouseLeave={() => interactive && setHover(0)}
-          className={`text-2xl transition-colors ${interactive ? 'cursor-pointer hover:scale-110' : 'cursor-default'
-            } ${star <= (hover || rating) ? 'text-yellow-400' : 'text-gray-300'
-            }`}
+          className={`text-2xl transition-colors ${
+            interactive ? 'cursor-pointer hover:scale-110' : 'cursor-default'
+          } ${
+            star <= (hover || rating) ? 'text-yellow-400' : 'text-gray-300'
+          }`}
         >
           ★
         </button>
@@ -105,9 +107,10 @@ const ProductDetails = () => {
       try {
         const orders = await orderService.getOrders(user.userId);
         // Check if any DELIVERED order contains this product
-        const hasDeliveredProduct = orders.some(order =>
-          order.status === 'DELIVERED' &&
-          order.items?.some(item => item.productId === parseInt(id))
+        const hasDeliveredProduct = orders.some(
+          (order) =>
+            order.status === 'DELIVERED' &&
+            order.items?.some((item) => item.productId === parseInt(id))
         );
         setCanReview(hasDeliveredProduct);
       } catch (error) {
@@ -160,7 +163,10 @@ const ProductDetails = () => {
       setShowReviewForm(false);
     } catch (error) {
       console.error('Error submitting review:', error);
-      setReviewError(error.response?.data?.message || 'Failed to submit review. Please ensure you have purchased and received this product.');
+      setReviewError(
+        error.response?.data?.message ||
+          'Failed to submit review. Please ensure you have purchased and received this product.'
+      );
     } finally {
       setReviewLoading(false);
     }
@@ -168,9 +174,18 @@ const ProductDetails = () => {
 
   // Default product images for demo
   const defaultImages = [
-    { url: "https://images.unsplash.com/photo-1487222477894-8943e31ef7b2?q=80&w=1000&auto=format&fit=crop", alt: "Front View" },
-    { url: "https://images.unsplash.com/photo-1559551409-dadc959f76b8?q=80&w=1000&auto=format&fit=crop", alt: "Detail View" },
-    { url: "https://images.unsplash.com/photo-1520975954732-35dd22299614?q=80&w=1000&auto=format&fit=crop", alt: "Lifestyle View" }
+    {
+      url: 'https://images.unsplash.com/photo-1487222477894-8943e31ef7b2?q=80&w=1000&auto=format&fit=crop',
+      alt: 'Front View'
+    },
+    {
+      url: 'https://images.unsplash.com/photo-1559551409-dadc959f76b8?q=80&w=1000&auto=format&fit=crop',
+      alt: 'Detail View'
+    },
+    {
+      url: 'https://images.unsplash.com/photo-1520975954732-35dd22299614?q=80&w=1000&auto=format&fit=crop',
+      alt: 'Lifestyle View'
+    }
   ];
 
   if (loading) {
@@ -183,34 +198,49 @@ const ProductDetails = () => {
 
   const displayProduct = product || {
     id: id,
-    name: "Product",
+    name: 'Product',
     price: 0,
-    description: "Loading...",
+    description: 'Loading...',
     stock: 0,
-    sizes: ["S", "M", "L", "XL"],
+    sizes: ['S', 'M', 'L', 'XL'],
     images: defaultImages
   };
 
   const images = displayProduct.images?.length > 0 ? displayProduct.images : defaultImages;
   const currentImage = selectedImage || images[0]?.url;
 
+  // 🔥 Low-stock message logic
+  const stock = displayProduct.stock ?? 0;
+  let stockMessage = '';
+  let stockClass = '';
+
+  if (stock === 0) {
+    stockMessage = 'Out of Stock';
+    stockClass = 'text-red-600';
+  } else if (stock > 0 && stock <= 3) {
+    stockMessage = `Low stock – only ${stock} left`;
+    stockClass = 'text-red-600';
+  } else {
+    stockMessage = `${stock} in stock`;
+    stockClass = 'text-green-600';
+  }
+
   return (
     <div className="min-h-screen bg-[#F5F5F5]">
       <div className="p-4 md:p-10 lg:p-20">
         {/* Main Grid Container */}
         <div className="flex flex-col md:flex-row gap-10 max-w-7xl mx-auto">
-
           {/* LEFT: Thumbnails & Main Image */}
           <div className="flex-1 flex gap-6">
-
             {/* Vertical Thumbnails */}
             <div className="hidden md:flex flex-col gap-4 w-20">
               {images.map((img, index) => (
                 <button
                   key={index}
                   onClick={() => setSelectedImage(img.url)}
-                  className={`w-full aspect-[3/4] overflow-hidden border-2 transition-all ${currentImage === img.url ? "border-black" : "border-transparent"
-                    }`}
+                  className={`w-full aspect-[3/4] overflow-hidden border-2 transition-all ${
+                    currentImage === img.url ? 'border-black' : 'border-transparent'
+                  }`}
                 >
                   <img
                     src={img.url}
@@ -253,28 +283,26 @@ const ProductDetails = () => {
               <span className="text-2xl font-medium text-black">
                 ${(displayProduct.price || 0).toFixed(2)}
               </span>
-              <span className="text-xs text-gray-500 font-light">
-                (Tax Included)
-              </span>
+              <span className="text-xs text-gray-500 font-light">(Tax Included)</span>
             </div>
 
-            {/* Stock Status */}
-            <div className={`text-sm font-semibold ${displayProduct.stock > 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {displayProduct.stock > 0 ? `${displayProduct.stock} in stock` : 'Out of Stock'}
+            {/* Stock Status with low-stock handling */}
+            <div className={`text-sm font-semibold ${stockClass}`}>
+              {stockMessage}
             </div>
 
             {/* Sizes */}
             <div>
               <div className="flex gap-3">
-                {(displayProduct.sizes || ["S", "M", "L", "XL"]).map((size) => (
+                {(displayProduct.sizes || ['S', 'M', 'L', 'XL']).map((size) => (
                   <button
                     key={size}
                     onClick={() => setSelectedSize(size)}
-                    className={`w-12 h-12 flex items-center justify-center border border-black text-sm font-medium transition-colors
-                      ${selectedSize === size
-                        ? "bg-black text-white"
-                        : "bg-transparent text-black hover:bg-gray-100"
-                      }`}
+                    className={`w-12 h-12 flex items-center justify-center border border-black text-sm font-medium transition-colors ${
+                      selectedSize === size
+                        ? 'bg-black text-white'
+                        : 'bg-transparent text-black hover:bg-gray-100'
+                    }`}
                   >
                     {size}
                   </button>
@@ -287,13 +315,13 @@ const ProductDetails = () => {
               <button
                 onClick={() => addToCart({ ...displayProduct, selectedSize })}
                 disabled={displayProduct.stock === 0}
-                className={`w-48 py-3 px-8 text-sm font-bold uppercase tracking-wider shadow-lg transition-colors
-                  ${displayProduct.stock === 0
-                    ? "bg-gray-400 text-gray-700 cursor-not-allowed"
-                    : "bg-black text-white hover:bg-gray-800"
-                  }`}
+                className={`w-48 py-3 px-8 text-sm font-bold uppercase tracking-wider shadow-lg transition-colors ${
+                  displayProduct.stock === 0
+                    ? 'bg-gray-400 text-gray-700 cursor-not-allowed'
+                    : 'bg-black text-white hover:bg-gray-800'
+                }`}
               >
-                {displayProduct.stock === 0 ? "Out of Stock" : "Add to Cart"}
+                {displayProduct.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
               </button>
             )}
 
@@ -302,7 +330,6 @@ const ProductDetails = () => {
               {displayProduct.description}
             </p>
           </div>
-
         </div>
 
         {/* REVIEWS SECTION */}
@@ -318,16 +345,21 @@ const ProductDetails = () => {
               >
                 {showReviewForm ? 'Cancel' : 'Write a Review'}
               </button>
-            ) : user && (
-              <span className="text-sm text-gray-500">
-                You can review after ordering this product
-              </span>
+            ) : (
+              user && (
+                <span className="text-sm text-gray-500">
+                  You can review after ordering this product
+                </span>
+              )
             )}
           </div>
 
           {/* Review Form */}
           {showReviewForm && (
-            <form onSubmit={handleSubmitReview} className="bg-white rounded-xl p-6 mb-6 shadow-sm border border-gray-200">
+            <form
+              onSubmit={handleSubmitReview}
+              className="bg-white rounded-xl p-6 mb-6 shadow-sm border border-gray-200"
+            >
               <h3 className="font-semibold mb-4">Your Review</h3>
 
               <div className="mb-4">
@@ -343,7 +375,9 @@ const ProductDetails = () => {
                 <label className="block text-sm font-medium mb-2">Comment</label>
                 <textarea
                   value={newReview.comment}
-                  onChange={(e) => setNewReview({ ...newReview, comment: e.target.value })}
+                  onChange={(e) =>
+                    setNewReview({ ...newReview, comment: e.target.value })
+                  }
                   className="w-full p-3 border border-gray-200 rounded-lg text-sm resize-none focus:outline-none focus:border-black"
                   rows={4}
                   placeholder="Share your thoughts about this product..."
