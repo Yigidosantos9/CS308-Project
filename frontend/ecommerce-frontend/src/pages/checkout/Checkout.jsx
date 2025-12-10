@@ -15,7 +15,11 @@ const Checkout = () => {
     const [payments, setPayments] = useState([]);
     const [selectedPaymentIndex, setSelectedPaymentIndex] = useState(0);
 
-    // NEW: invoice state
+    // 🔹 NEW: validation errors for address & payment
+    const [addressError, setAddressError] = useState('');
+    const [paymentError, setPaymentError] = useState('');
+
+    // Invoice state (inline preview)
     const [invoiceUrl, setInvoiceUrl] = useState(null);
     const [invoiceLoading, setInvoiceLoading] = useState(false);
     const [invoiceError, setInvoiceError] = useState('');
@@ -71,8 +75,32 @@ const Checkout = () => {
             return;
         }
 
-        setLoading(true);
+        // 🔹 Reset validation + invoice errors on each attempt
+        setAddressError('');
+        setPaymentError('');
         setInvoiceError('');
+
+        // 🔹 Ensure address & payment are present and selected
+        const hasAddresses = addresses.length > 0;
+        const hasPayments = payments.length > 0;
+        const hasSelectedAddress = hasAddresses && selectedAddressId !== null;
+        const hasSelectedPayment =
+            hasPayments &&
+            selectedPaymentIndex !== null &&
+            selectedPaymentIndex >= 0 &&
+            selectedPaymentIndex < payments.length;
+
+        if (!hasSelectedAddress) {
+            setAddressError('Please select a shipping address before placing your order.');
+            return;
+        }
+
+        if (!hasSelectedPayment) {
+            setPaymentError('Please select a payment method before placing your order.');
+            return;
+        }
+
+        setLoading(true);
         try {
             // Create order
             const orderData = {
@@ -204,15 +232,24 @@ const Checkout = () => {
 
                     {/* Payment & Address */}
                     <div className="space-y-6">
+                        {/* 🔹 SHIPPING ADDRESS CARD */}
                         <div className="bg-white rounded-2xl p-6 shadow-sm">
                             <div className="flex items-center gap-2 mb-4">
                                 <MapPin className="w-5 h-5" />
                                 <h2 className="text-xl font-bold">Shipping Address</h2>
                             </div>
                             {addresses.length === 0 ? (
-                                <p className="text-gray-600">
-                                    No saved addresses. Please add one in your profile.
-                                </p>
+                                // 🔹 SHOW CTA TO GO TO PROFILE WHEN NO ADDRESS
+                                <div className="text-gray-600">
+                                    <p>No saved addresses. Please add one in your profile.</p>
+                                    <button
+                                        type="button"
+                                        onClick={() => navigate('/profile')}
+                                        className="mt-3 inline-flex items-center px-4 py-2 text-sm font-semibold rounded-lg bg-black text-white hover:bg-gray-800 transition"
+                                    >
+                                        Go to Profile to Add Address
+                                    </button>
+                                </div>
                             ) : (
                                 <div className="space-y-3">
                                     {addresses.map((addr) => (
@@ -221,7 +258,11 @@ const Checkout = () => {
                                                 type="radio"
                                                 name="address"
                                                 checked={selectedAddressId === addr.id}
-                                                onChange={() => setSelectedAddressId(addr.id)}
+                                                onChange={() => {
+                                                    setSelectedAddressId(addr.id);
+                                                    // 🔹 Clear address error when user picks one
+                                                    setAddressError('');
+                                                }}
                                                 className="mt-1"
                                             />
                                             <div>
@@ -235,8 +276,13 @@ const Checkout = () => {
                                     ))}
                                 </div>
                             )}
+                            {/* 🔹 Show address validation error */}
+                            {addressError && (
+                                <p className="mt-3 text-sm text-red-500">{addressError}</p>
+                            )}
                         </div>
 
+                        {/* 🔹 PAYMENT CARD */}
                         <div className="bg-white rounded-2xl p-6 shadow-sm">
                             <div className="flex items-center gap-2 mb-4">
                                 <CreditCard className="w-5 h-5" />
@@ -246,8 +292,16 @@ const Checkout = () => {
                                 Select a saved card. Mock payment - no real transaction.
                             </p>
                             {payments.length === 0 ? (
-                                <div className="bg-gray-100 p-4 rounded-lg text-sm text-gray-500">
-                                    No saved cards. Add one in your profile.
+                                // 🔹 SHOW CTA TO GO TO PROFILE WHEN NO CARD
+                                <div className="bg-gray-100 p-4 rounded-lg text-sm text-gray-700">
+                                    <p>No saved cards. Add one in your profile.</p>
+                                    <button
+                                        type="button"
+                                        onClick={() => navigate('/profile')}
+                                        className="mt-3 inline-flex items-center px-4 py-2 text-sm font-semibold rounded-lg bg-black text-white hover:bg-gray-800 transition"
+                                    >
+                                        Go to Profile to Add Card
+                                    </button>
                                 </div>
                             ) : (
                                 <div className="space-y-2">
@@ -260,7 +314,11 @@ const Checkout = () => {
                                                 type="radio"
                                                 name="payment"
                                                 checked={selectedPaymentIndex === idx}
-                                                onChange={() => setSelectedPaymentIndex(idx)}
+                                                onChange={() => {
+                                                    setSelectedPaymentIndex(idx);
+                                                    // 🔹 Clear payment error when user picks one
+                                                    setPaymentError('');
+                                                }}
                                             />
                                             <div className="flex flex-col">
                                                 <span className="font-semibold">
@@ -271,13 +329,17 @@ const Checkout = () => {
                                                 </span>
                                             </div>
                                             {card.primary && (
-                                                <span className="ml-auto text-xs px-2 py-1 rounded-full bg-black text-white">
+                                                <span className="ml-auto text-xs px-2 py-1 rounded-full bg黑 text-white">
                                                     Primary
                                                 </span>
                                             )}
                                         </label>
                                     ))}
                                 </div>
+                            )}
+                            {/* 🔹 Show payment validation error */}
+                            {paymentError && (
+                                <p className="mt-3 text-sm text-red-500">{paymentError}</p>
                             )}
                         </div>
 
