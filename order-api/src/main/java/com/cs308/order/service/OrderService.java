@@ -18,11 +18,6 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
 
-    // Fallback explicit constructor for environments where Lombok processors are unavailable
-    public OrderService(OrderRepository orderRepository) {
-        this.orderRepository = orderRepository;
-    }
-
     public List<Order> getOrdersByUserId(Long userId) {
         return orderRepository.findByUserId(userId);
     }

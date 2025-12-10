@@ -20,18 +20,12 @@ public class AddressController {
     private final OrderClient orderClient;
 
     @PostMapping
-    public ResponseEntity<Address> addAddress(@RequestBody AddressRequest request,
-                                              @RequestParam(required = false) Long userId) {
-        Long actualUserId = SecurityContext.getContext().getUserId() != null
-                ? SecurityContext.getContext().getUserId()
-                : userId;
-        log.info("BFF: Add address request received - userId: {}", actualUserId);
+    public ResponseEntity<Address> addAddress(@RequestBody AddressRequest request) {
+        Long userId = SecurityContext.getContext().getUserId();
+        log.info("BFF: Add address request received - userId: {}", userId);
 
         try {
-            if (actualUserId == null) {
-                return ResponseEntity.badRequest().build();
-            }
-            Address address = orderClient.addAddress(actualUserId, request);
+            Address address = orderClient.addAddress(userId, request);
             return ResponseEntity.ok(address);
         } catch (RuntimeException e) {
             log.error("Error processing add address request", e);
@@ -40,17 +34,12 @@ public class AddressController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Address>> getAddresses(@RequestParam(required = false) Long userId) {
-        Long actualUserId = SecurityContext.getContext().getUserId() != null
-                ? SecurityContext.getContext().getUserId()
-                : userId;
-        log.info("BFF: Get addresses request received - userId: {}", actualUserId);
+    public ResponseEntity<List<Address>> getAddresses() {
+        Long userId = SecurityContext.getContext().getUserId();
+        log.info("BFF: Get addresses request received - userId: {}", userId);
 
         try {
-            if (actualUserId == null) {
-                return ResponseEntity.badRequest().build();
-            }
-            List<Address> addresses = orderClient.getAddresses(actualUserId);
+            List<Address> addresses = orderClient.getAddresses(userId);
             return ResponseEntity.ok(addresses);
         } catch (RuntimeException e) {
             log.error("Error processing get addresses request", e);

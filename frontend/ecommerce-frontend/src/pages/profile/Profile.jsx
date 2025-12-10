@@ -121,7 +121,7 @@ const Profile = () => {
   });
 
   useEffect(() => {
-    if (activeTab === 'Addresses' && user?.userId) {
+    if (activeTab === 'Addresses' && user?.id) {
       fetchAddresses();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -129,7 +129,7 @@ const Profile = () => {
 
   const fetchAddresses = async () => {
     try {
-      const data = await addressService.getAddresses(user?.userId);
+      const data = await addressService.getAddresses();
       setAddresses(data);
     } catch (err) {
       console.error('Failed to fetch addresses', err);
@@ -139,7 +139,7 @@ const Profile = () => {
   const handleAddAddress = async (e) => {
     e.preventDefault();
     try {
-      await addressService.addAddress(user?.userId, newAddress);
+      await addressService.addAddress(newAddress);
       setShowAddAddress(false);
       setNewAddress({
         title: '',
