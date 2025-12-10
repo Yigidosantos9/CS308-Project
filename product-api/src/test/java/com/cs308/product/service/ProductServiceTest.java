@@ -48,7 +48,9 @@ class ProductServiceTest {
     void restoreStockIncreasesQuantity() {
         Product product = sampleProduct(10L);
         product.setStock(5);
-        repository.saveAll(List.of(product));
+
+        when(repository.findById(10L)).thenReturn(Optional.of(product));
+        when(repository.save(any(Product.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         StockRestoreRequest request = StockRestoreRequest.builder()
                 .productId(10L)
