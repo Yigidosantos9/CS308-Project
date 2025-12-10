@@ -81,6 +81,11 @@ export const ShopProvider = ({ children }) => {
           console.log('Cart merge skipped or failed:', mergeErr);
         }
       }
+
+      // Explicitly load cart AFTER potential merge to ensure we get the updated state
+      // This fixes the race condition where the initial useEffect might fetch an empty cart before merge completes
+      await loadCart(userData.userId);
+
     } catch (error) {
       console.error('Token verification failed:', error);
 
