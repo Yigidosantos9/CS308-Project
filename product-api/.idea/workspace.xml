@@ -94,7 +94,7 @@
       <recent name="com.cs308.product.service" />
     </key>
   </component>
-  <component name="RunManager" selected="Spring Boot.ProductServiceApplication">
+  <component name="RunManager" selected="JUnit.CartServiceTest">
     <configuration name="CartServiceTest" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
       <module name="product-api" />
       <extension name="coverage">

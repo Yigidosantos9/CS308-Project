@@ -14,6 +14,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.ArrayList;
 
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -25,94 +26,93 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(CartController.class)
 class CartControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+        @Autowired
+        private MockMvc mockMvc;
 
-    @MockitoBean
-    private CartService cartService;
+        @MockitoBean
+        private CartService cartService;
 
-    private Cart buildCart(Long userId) {
-        Cart cart = new Cart();
-        cart.setId(1L);
-        cart.setUserId(userId);
-        cart.setItems(new ArrayList<>());
-        cart.setTotalPrice(0.0);
-        cart.setTotalQuantity(0);
-        return cart;
-    }
+        private Cart buildCart(Long userId) {
+                Cart cart = new Cart();
+                cart.setId(1L);
+                cart.setUserId(userId);
+                cart.setItems(new ArrayList<>());
+                cart.setTotalPrice(0.0);
+                cart.setTotalQuantity(0);
+                return cart;
+        }
 
-    @Test
-    void addToCart_shouldCallServiceAndReturnOk() throws Exception {
-        // GIVEN
-        Long userId = 10L;
-        Long productId = 5L;
-        int qty = 2;
+        @Test
+        void addToCart_shouldCallServiceAndReturnOk() throws Exception {
+                // GIVEN
+                Long userId = 10L;
+                Long productId = 5L;
+                int qty = 2;
 
-        Cart cart = buildCart(userId);
+                Cart cart = buildCart(userId);
 
-        when(cartService.addToCart(eq(userId), eq(productId), eq(qty)))
-                .thenReturn(cart);
+                when(cartService.addToCart(eq(userId), eq(productId), eq(qty), isNull()))
+                                .thenReturn(cart);
 
-        // WHEN - THEN
-        mockMvc.perform(post("/cart/add")
-                        .param("userId", String.valueOf(userId))
-                        .param("productId", String.valueOf(productId))
-                        .param("quantity", String.valueOf(qty)))
-                .andExpect(status().isOk());
+                // WHEN - THEN
+                mockMvc.perform(post("/cart/add")
+                                .param("userId", String.valueOf(userId))
+                                .param("productId", String.valueOf(productId))
+                                .param("quantity", String.valueOf(qty)))
+                                .andExpect(status().isOk());
 
-        Mockito.verify(cartService, times(1))
-                .addToCart(userId, productId, qty);
-    }
+                Mockito.verify(cartService, times(1))
+                                .addToCart(userId, productId, qty, null);
+        }
 
-    @Test
-    void getCart_shouldCallServiceAndReturnOk() throws Exception {
-        // GIVEN
-        Long userId = 10L;
-        Cart cart = buildCart(userId);
+        @Test
+        void getCart_shouldCallServiceAndReturnOk() throws Exception {
+                // GIVEN
+                Long userId = 10L;
+                Cart cart = buildCart(userId);
 
-        when(cartService.getCart(eq(userId))).thenReturn(cart);
+                when(cartService.getCart(eq(userId))).thenReturn(cart);
 
-        // WHEN - THEN
-        mockMvc.perform(get("/cart")
-                        .param("userId", String.valueOf(userId)))
-                .andExpect(status().isOk());
+                // WHEN - THEN
+                mockMvc.perform(get("/cart")
+                                .param("userId", String.valueOf(userId)))
+                                .andExpect(status().isOk());
 
-        Mockito.verify(cartService, times(1))
-                .getCart(userId);
-    }
+                Mockito.verify(cartService, times(1))
+                                .getCart(userId);
+        }
 
-    @Test
-    void removeFromCart_shouldCallServiceAndReturnOk() throws Exception {
-        // GIVEN
-        Long userId = 10L;
-        Long productId = 5L;
-        Cart cart = buildCart(userId);
+        @Test
+        void removeFromCart_shouldCallServiceAndReturnOk() throws Exception {
+                // GIVEN
+                Long userId = 10L;
+                Long productId = 5L;
+                Cart cart = buildCart(userId);
 
-        when(cartService.removeFromCart(eq(userId), eq(productId))).thenReturn(cart);
+                when(cartService.removeFromCart(eq(userId), eq(productId))).thenReturn(cart);
 
-        // WHEN - THEN
-        mockMvc.perform(delete("/cart/remove")
-                        .param("userId", String.valueOf(userId))
-                        .param("productId", String.valueOf(productId)))
-                .andExpect(status().isOk());
+                // WHEN - THEN
+                mockMvc.perform(delete("/cart/remove")
+                                .param("userId", String.valueOf(userId))
+                                .param("productId", String.valueOf(productId)))
+                                .andExpect(status().isOk());
 
-        Mockito.verify(cartService, times(1))
-                .removeFromCart(userId, productId);
-    }
+                Mockito.verify(cartService, times(1))
+                                .removeFromCart(userId, productId);
+        }
 
-    @Test
-    void clearCart_shouldCallServiceAndReturnOk() throws Exception {
-        Long userId = 10L;
-        Cart cart = buildCart(userId);
+        @Test
+        void clearCart_shouldCallServiceAndReturnOk() throws Exception {
+                Long userId = 10L;
+                Cart cart = buildCart(userId);
 
-        when(cartService.clearCart(eq(userId))).thenReturn(cart);
+                when(cartService.clearCart(eq(userId))).thenReturn(cart);
 
-        mockMvc.perform(delete("/cart/clear")
-                        .param("userId", String.valueOf(userId)))
-                .andExpect(status().isOk());
+                mockMvc.perform(delete("/cart/clear")
+                                .param("userId", String.valueOf(userId)))
+                                .andExpect(status().isOk());
 
-        Mockito.verify(cartService, times(1)).clearCart(userId);
-    }
-
+                Mockito.verify(cartService, times(1)).clearCart(userId);
+        }
 
 }
