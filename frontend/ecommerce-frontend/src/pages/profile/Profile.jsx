@@ -111,7 +111,8 @@ const Profile = () => {
   ];
 
   const [addresses, setAddresses] = useState([]);
-  const [showAddAddress, setShowAddAddress] = useState(false);
+  const [showAddAddress] = useState(true);
+  const [editingAddressId, setEditingAddressId] = useState(null);
   const [newAddress, setNewAddress] = useState({
     title: '',
     addressLine: '',
@@ -120,8 +121,12 @@ const Profile = () => {
     zipCode: '',
   });
 
+  const handleAddressChange = (field, value) => {
+    setNewAddress((prev) => ({ ...prev, [field]: value }));
+  };
+
   useEffect(() => {
-    if (activeTab === 'Addresses' && user?.id) {
+    if (activeTab === 'Addresses' && user?.userId) {
       fetchAddresses();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -139,8 +144,12 @@ const Profile = () => {
   const handleAddAddress = async (e) => {
     e.preventDefault();
     try {
-      await addressService.addAddress(newAddress);
-      setShowAddAddress(false);
+      if (editingAddressId) {
+        await addressService.updateAddress(editingAddressId, newAddress);
+      } else {
+        await addressService.addAddress(newAddress);
+      }
+      setEditingAddressId(null);
       setNewAddress({
         title: '',
         addressLine: '',
@@ -161,6 +170,28 @@ const Profile = () => {
     } catch (err) {
       console.error('Failed to delete address', err);
     }
+  };
+
+  const startEditingAddress = (address) => {
+    setEditingAddressId(address.id);
+    setNewAddress({
+      title: address.title || '',
+      addressLine: address.addressLine || '',
+      city: address.city || '',
+      country: address.country || '',
+      zipCode: address.zipCode || '',
+    });
+  };
+
+  const resetAddressForm = () => {
+    setEditingAddressId(null);
+    setNewAddress({
+      title: '',
+      addressLine: '',
+      city: '',
+      country: '',
+      zipCode: '',
+    });
   };
 
   // LOGOUT HANDLER
@@ -370,7 +401,12 @@ const Profile = () => {
               {address.city}, {address.country} {address.zipCode}
             </p>
             <div className="mt-4 flex gap-3 text-sm font-semibold text-black">
-              <button className="underline underline-offset-4">Edit</button>
+              <button
+                onClick={() => startEditingAddress(address)}
+                className="underline underline-offset-4"
+              >
+                Edit
+              </button>
               <button
                 onClick={() => handleDeleteAddress(address.id)}
                 className="underline underline-offset-4 text-red-600"
@@ -381,90 +417,74 @@ const Profile = () => {
           </div>
         ))}
 
-        {!showAddAddress ? (
-          <button
-            onClick={() => setShowAddAddress(true)}
-            className="flex h-full min-h-[140px] flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-gray-300 bg-white/50 text-sm font-semibold text-gray-700 transition hover:border-black hover:text-black"
-          >
-            + Add new address
-          </button>
-        ) : (
-          <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-            <h3 className="mb-4 text-sm font-bold uppercase tracking-wide">
-              New Address
-            </h3>
-            <form onSubmit={handleAddAddress} className="space-y-3">
+        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+          <h3 className="mb-4 text-sm font-bold uppercase tracking-wide">
+            {editingAddressId ? 'Edit Address' : 'New Address'}
+          </h3>
+          <form onSubmit={handleAddAddress} className="space-y-3">
+            <input
+              placeholder="Title (e.g. Home)"
+              className="w-full rounded-lg border border-gray-200 p-2 text-sm"
+              value={newAddress.title}
+              onChange={(e) => handleAddressChange('title', e.target.value)}
+              autoComplete="off"
+              required
+            />
+            <input
+              placeholder="Address Line"
+              className="w-full rounded-lg border border-gray-200 p-2 text-sm"
+              value={newAddress.addressLine}
+              onChange={(e) => handleAddressChange('addressLine', e.target.value)}
+              autoComplete="off"
+              required
+            />
+            <div className="grid grid-cols-2 gap-2">
               <input
-                placeholder="Title (e.g. Home)"
+                placeholder="City"
                 className="w-full rounded-lg border border-gray-200 p-2 text-sm"
-                value={newAddress.title}
-                onChange={(e) =>
-                  setNewAddress({ ...newAddress, title: e.target.value })
-                }
+                value={newAddress.city}
+                onChange={(e) => handleAddressChange('city', e.target.value)}
+                autoComplete="off"
                 required
               />
               <input
-                placeholder="Address Line"
+                placeholder="Zip Code"
                 className="w-full rounded-lg border border-gray-200 p-2 text-sm"
-                value={newAddress.addressLine}
-                onChange={(e) =>
-                  setNewAddress({
-                    ...newAddress,
-                    addressLine: e.target.value,
-                  })
-                }
+                value={newAddress.zipCode}
+                onChange={(e) => handleAddressChange('zipCode', e.target.value.replace(/\D/g, '').slice(0, 5))}
+                inputMode="numeric"
+                pattern="[0-9]{5}"
+                minLength={5}
+                maxLength={5}
+                autoComplete="off"
                 required
               />
-              <div className="grid grid-cols-2 gap-2">
-                <input
-                  placeholder="City"
-                  className="w-full rounded-lg border border-gray-200 p-2 text-sm"
-                  value={newAddress.city}
-                  onChange={(e) =>
-                    setNewAddress({ ...newAddress, city: e.target.value })
-                  }
-                  required
-                />
-                <input
-                  placeholder="Zip Code"
-                  className="w-full rounded-lg border border-gray-200 p-2 text-sm"
-                  value={newAddress.zipCode}
-                  onChange={(e) =>
-                    setNewAddress({
-                      ...newAddress,
-                      zipCode: e.target.value,
-                    })
-                  }
-                  required
-                />
-              </div>
-              <input
-                placeholder="Country"
-                className="w-full rounded-lg border border-gray-200 p-2 text-sm"
-                value={newAddress.country}
-                onChange={(e) =>
-                  setNewAddress({ ...newAddress, country: e.target.value })
-                }
-                required
-              />
-              <div className="flex gap-2 pt-2">
-                <button
-                  type="submit"
-                  className="flex-1 rounded-lg bg-black py-2 text-sm font-bold text-white"
-                >
-                  Save
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowAddAddress(false)}
-                  className="flex-1 rounded-lg border border-gray-200 py-2 text-sm font-bold"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        )}
+            </div>
+            <input
+              placeholder="Country"
+              className="w-full rounded-lg border border-gray-200 p-2 text-sm"
+              value={newAddress.country}
+              onChange={(e) => handleAddressChange('country', e.target.value)}
+              autoComplete="off"
+              required
+            />
+            <div className="flex gap-2 pt-2">
+              <button
+                type="submit"
+                className="flex-1 rounded-lg bg-black py-2 text-sm font-bold text-white"
+              >
+                {editingAddressId ? 'Update' : 'Save'}
+              </button>
+              <button
+                type="button"
+                onClick={resetAddressForm}
+                className="flex-1 rounded-lg border border-gray-200 py-2 text-sm font-bold"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );
@@ -670,7 +690,7 @@ const Profile = () => {
       case 'Orders':
         return <OrdersContent />;
       case 'Addresses':
-        return <AddressesContent />;
+        return AddressesContent();
       case 'Payment Methods':
         return PaymentContent();
       case 'Security / Password':

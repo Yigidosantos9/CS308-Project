@@ -283,6 +283,15 @@ export const addressService = {
       throw error;
     }
   },
+  updateAddress: async (addressId, addressData) => {
+    try {
+      const response = await api.put(`/addresses/${addressId}`, addressData);
+      return response.data;
+    } catch (error) {
+      console.error("Error updating address:", error);
+      throw error;
+    }
+  },
   deleteAddress: async (addressId) => {
     try {
       await api.delete(`/addresses/${addressId}`);

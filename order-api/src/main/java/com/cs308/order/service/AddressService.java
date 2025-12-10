@@ -36,4 +36,17 @@ public class AddressService {
     public void deleteAddress(Long addressId) {
         addressRepository.deleteById(addressId);
     }
+
+    public Address updateAddress(Long addressId, AddressRequest request) {
+        Address address = addressRepository.findById(addressId)
+                .orElseThrow(() -> new IllegalArgumentException("Address not found: " + addressId));
+
+        address.setTitle(request.getTitle());
+        address.setAddressLine(request.getAddressLine());
+        address.setCity(request.getCity());
+        address.setCountry(request.getCountry());
+        address.setZipCode(request.getZipCode());
+
+        return addressRepository.save(address);
+    }
 }

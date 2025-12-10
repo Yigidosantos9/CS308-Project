@@ -6,7 +6,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientException;
@@ -115,7 +118,7 @@ public class OrderClient {
         log.debug("Calling order service: POST /addresses - userId: {}", userId);
 
         try {
-            String uri = UriComponentsBuilder.fromPath("/addresses")
+            String uri = UriComponentsBuilder.fromPath("/api/addresses")
                     .queryParam("userId", userId)
                     .toUriString();
 
@@ -126,11 +129,36 @@ public class OrderClient {
         }
     }
 
+    public com.cs308.gateway.model.address.Address updateAddress(Long addressId,
+            com.cs308.gateway.model.address.AddressRequest request) {
+        log.debug("Calling order service: PUT /addresses/{}", addressId);
+
+        try {
+            String uri = UriComponentsBuilder.fromPath("/api/addresses/{addressId}")
+                    .buildAndExpand(addressId)
+                    .toUriString();
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+
+            ResponseEntity<com.cs308.gateway.model.address.Address> response = orderRestTemplate.exchange(
+                    uri,
+                    HttpMethod.PUT,
+                    new HttpEntity<>(request, headers),
+                    com.cs308.gateway.model.address.Address.class);
+
+            return response.getBody();
+        } catch (RestClientException e) {
+            log.error("Error calling order service for update address", e);
+            throw new RuntimeException("Failed to update address", e);
+        }
+    }
+
     public List<com.cs308.gateway.model.address.Address> getAddresses(Long userId) {
         log.debug("Calling order service: GET /addresses - userId: {}", userId);
 
         try {
-            String uri = UriComponentsBuilder.fromPath("/addresses")
+            String uri = UriComponentsBuilder.fromPath("/api/addresses")
                     .queryParam("userId", userId)
                     .toUriString();
 
@@ -152,7 +180,7 @@ public class OrderClient {
         log.debug("Calling order service: DELETE /addresses/{}", addressId);
 
         try {
-            String uri = UriComponentsBuilder.fromPath("/addresses/{addressId}")
+            String uri = UriComponentsBuilder.fromPath("/api/addresses/{addressId}")
                     .buildAndExpand(addressId)
                     .toUriString();
 
