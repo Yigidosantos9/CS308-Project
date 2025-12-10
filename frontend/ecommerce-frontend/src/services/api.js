@@ -207,6 +207,7 @@ export const orderService = {
       throw error;
     }
   },
+
   createOrder: async (orderData) => {
     try {
       // Send order data in body with userId as query param
@@ -220,6 +221,8 @@ export const orderService = {
       throw error;
     }
   },
+
+  // Existing: download invoice as a file (used on Profile page)
   getInvoice: async (orderId) => {
     try {
       const response = await api.get(`/orders/${orderId}/invoice`, {
@@ -240,6 +243,20 @@ export const orderService = {
       throw error;
     }
   },
+
+  // NEW: return raw blob so Checkout can render PDF inline in an <iframe>
+  getInvoiceBlob: async (orderId) => {
+    try {
+      const response = await api.get(`/orders/${orderId}/invoice`, {
+        responseType: 'blob'
+      });
+      return response.data; // PDF blob
+    } catch (error) {
+      console.error("Error fetching invoice blob:", error);
+      throw error;
+    }
+  },
+
   // Product Manager: Get all orders
   getAllOrders: async () => {
     try {
@@ -250,6 +267,7 @@ export const orderService = {
       throw error;
     }
   },
+
   // Product Manager: Update order status
   updateOrderStatus: async (orderId, status) => {
     try {
