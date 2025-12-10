@@ -431,44 +431,132 @@ const Profile = () => {
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-2">
         {addresses.map((address) => (
-          <div
-            key={address.id}
-            className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm"
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <MapPin className="h-4 w-4" />
-                <p className="text-sm font-semibold uppercase tracking-wide">
-                  {address.title}
-                </p>
+          editingAddressId === address.id ? (
+            // 🔹 NEW: Inline edit form on the clicked card
+            <div
+              key={address.id}
+              className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm"
+            >
+              <h3 className="mb-4 text-sm font-bold uppercase tracking-wide">
+                Edit Address
+              </h3>
+              <form onSubmit={handleAddAddress} className="space-y-3">
+                <input
+                  placeholder="Title (e.g. Home)"
+                  className="w-full rounded-lg border border-gray-200 p-2 text-sm"
+                  value={newAddress.title}
+                  onChange={(e) => handleAddressChange('title', e.target.value)}
+                  autoComplete="off"
+                  required
+                />
+                <input
+                  placeholder="Address Line"
+                  className="w-full rounded-lg border border-gray-200 p-2 text-sm"
+                  value={newAddress.addressLine}
+                  onChange={(e) =>
+                    handleAddressChange('addressLine', e.target.value)
+                  }
+                  autoComplete="off"
+                  required
+                />
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    placeholder="City"
+                    className="w-full rounded-lg border border-gray-200 p-2 text-sm"
+                    value={newAddress.city}
+                    onChange={(e) =>
+                      handleAddressChange('city', e.target.value)
+                    }
+                    autoComplete="off"
+                    required
+                  />
+                  <input
+                    placeholder="Zip Code"
+                    className="w-full rounded-lg border border-gray-200 p-2 text-sm"
+                    value={newAddress.zipCode}
+                    onChange={(e) =>
+                      handleAddressChange(
+                        'zipCode',
+                        e.target.value.replace(/\D/g, '').slice(0, 5)
+                      )
+                    }
+                    inputMode="numeric"
+                    pattern="[0-9]{5}"
+                    minLength={5}
+                    maxLength={5}
+                    autoComplete="off"
+                    required
+                  />
+                </div>
+                <input
+                  placeholder="Country"
+                  className="w-full rounded-lg border border-gray-200 p-2 text-sm"
+                  value={newAddress.country}
+                  onChange={(e) =>
+                    handleAddressChange('country', e.target.value)
+                  }
+                  autoComplete="off"
+                  required
+                />
+                <div className="flex gap-2 pt-2">
+                  <button
+                    type="submit"
+                    className="flex-1 rounded-lg bg-black py-2 text-sm font-bold text-white"
+                  >
+                    Update
+                  </button>
+                  <button
+                    type="button"
+                    onClick={resetAddressForm} // 🔹 CHANGED: closes inline edit & resets form
+                    className="flex-1 rounded-lg border border-gray-200 py-2 text-sm font-bold"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          ) : (
+            // 🔹 UNCHANGED: normal read-only card
+            <div
+              key={address.id}
+              className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4" />
+                  <p className="text-sm font-semibold uppercase tracking-wide">
+                    {address.title}
+                  </p>
+                </div>
+              </div>
+              <p className="mt-3 text-sm text-gray-700 leading-relaxed">
+                {address.addressLine}
+                <br />
+                {address.city}, {address.country} {address.zipCode}
+              </p>
+              <div className="mt-4 flex gap-3 text-sm font-semibold text-black">
+                <button
+                  onClick={() => startEditingAddress(address)} // uses existing logic
+                  className="underline underline-offset-4"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => handleDeleteAddress(address.id)}
+                  className="underline underline-offset-4 text-red-600"
+                >
+                  Delete
+                </button>
               </div>
             </div>
-            <p className="mt-3 text-sm text-gray-700 leading-relaxed">
-              {address.addressLine}
-              <br />
-              {address.city}, {address.country} {address.zipCode}
-            </p>
-            <div className="mt-4 flex gap-3 text-sm font-semibold text-black">
-              <button
-                onClick={() => startEditingAddress(address)}
-                className="underline underline-offset-4"
-              >
-                Edit
-              </button>
-              <button
-                onClick={() => handleDeleteAddress(address.id)}
-                className="underline underline-offset-4 text-red-600"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
+          )
         ))}
-
-        {showAddAddress && (
+  
+        {/* 🔹 CHANGED: Show "New Address" card ONLY when not editing */}
+        {showAddAddress && !editingAddressId && (
           <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
             <h3 className="mb-4 text-sm font-bold uppercase tracking-wide">
-              {editingAddressId ? 'Edit Address' : 'New Address'}
+              New Address
             </h3>
             <form onSubmit={handleAddAddress} className="space-y-3">
               <input
@@ -533,7 +621,7 @@ const Profile = () => {
                   type="submit"
                   className="flex-1 rounded-lg bg-black py-2 text-sm font-bold text-white"
                 >
-                  {editingAddressId ? 'Update' : 'Save'}
+                  Save
                 </button>
                 <button
                   type="button"
@@ -549,7 +637,7 @@ const Profile = () => {
       </div>
     </div>
   );
-
+  
   const PaymentContent = () => (
     <div className="grid gap-4 md:grid-cols-2">
       {payments.map((card) => (
