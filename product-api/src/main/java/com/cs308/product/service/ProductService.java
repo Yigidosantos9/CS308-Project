@@ -142,7 +142,8 @@ public class ProductService {
 
     /**
      * search(): applies filters and sorts.
-     * Default sort (including "relevance") = Name A–Z.
+     * - Default sort (including "relevance") = Name A–Z.
+     * - "ratingDesc"/"ratingAsc" use custom ORDER BY that handles unrated products.
      */
     public List<Product> search(ProductFilterRequest filter) {
         // No filter object at all => just return all sorted A–Z
@@ -156,33 +157,14 @@ public class ProductService {
                 ? "nameAsc"
                 : filter.getSort();
 
-        Sort sort;
-
-        if ("priceAsc".equalsIgnoreCase(sortParam)) {
-            sort = Sort.by(Sort.Direction.ASC, "price");
-        } else if ("priceDesc".equalsIgnoreCase(sortParam)) {
-            sort = Sort.by(Sort.Direction.DESC, "price");
-        } else if ("newest".equalsIgnoreCase(sortParam)) {
-            sort = Sort.by(Sort.Direction.DESC, "createdAt");
-        } else if ("popularity".equalsIgnoreCase(sortParam)) {
-            sort = Sort.by(Sort.Direction.DESC, "salesCount");
-        } else if ("nameAsc".equalsIgnoreCase(sortParam)) {
-            // A–Z (case-sensitive at DB level, but fine for your case)
-            sort = Sort.by(Sort.Direction.ASC, "name");
-        } else if ("nameDesc".equalsIgnoreCase(sortParam)) {
-            // Z–A
-            sort = Sort.by(Sort.Direction.DESC, "name");
-        } else {
-            // Any unknown sort (including "relevance") => fallback to A–Z
-            sort = Sort.by(Sort.Direction.ASC, "name");
-        }
-
+        // Resolve enums from filter
         com.cs308.product.domain.enums.ProductType productType = null;
         if (filter.getCategory() != null && !filter.getCategory().isBlank()) {
             try {
                 productType = com.cs308.product.domain.enums.ProductType
                         .valueOf(filter.getCategory().toUpperCase());
             } catch (IllegalArgumentException e) {
+                // Unknown category -> no results
                 return List.of();
             }
         }
@@ -215,13 +197,61 @@ public class ProductService {
                 ? "%" + filter.getDescription().toLowerCase() + "%"
                 : null;
 
+        // 🔥 Special handling for rating-based sorts:
+        // - rated products first (reviewCount > 0)
+        // - then unrated products (reviewCount == 0)
+        // - among rated: order by averageRating & reviewCount
+        if ("ratingDesc".equalsIgnoreCase(sortParam)) {
+            // Highest rated → lowest, unrated last
+            return productRepository.searchOrderByRatingDesc(
+                    qPattern,
+                    productType,
+                    targetAudience,
+                    color,
+                    descriptionPattern
+            );
+        } else if ("ratingAsc".equalsIgnoreCase(sortParam)) {
+            // Lowest rated → highest, unrated last
+            return productRepository.searchOrderByRatingAsc(
+                    qPattern,
+                    productType,
+                    targetAudience,
+                    color,
+                    descriptionPattern
+            );
+        }
+
+        // --- All other sorts use the generic search() + Sort ---
+
+        Sort sort;
+
+        if ("priceAsc".equalsIgnoreCase(sortParam)) {
+            sort = Sort.by(Sort.Direction.ASC, "price");
+        } else if ("priceDesc".equalsIgnoreCase(sortParam)) {
+            sort = Sort.by(Sort.Direction.DESC, "price");
+        } else if ("newest".equalsIgnoreCase(sortParam)) {
+            sort = Sort.by(Sort.Direction.DESC, "createdAt");
+        } else if ("popularity".equalsIgnoreCase(sortParam)) {
+            sort = Sort.by(Sort.Direction.DESC, "salesCount");
+        } else if ("nameAsc".equalsIgnoreCase(sortParam) || "relevance".equalsIgnoreCase(sortParam)) {
+            // A–Z (also used for "relevance")
+            sort = Sort.by(Sort.Direction.ASC, "name");
+        } else if ("nameDesc".equalsIgnoreCase(sortParam)) {
+            // Z–A
+            sort = Sort.by(Sort.Direction.DESC, "name");
+        } else {
+            // Any unknown sort => fallback to A–Z
+            sort = Sort.by(Sort.Direction.ASC, "name");
+        }
+
         return productRepository.search(
                 qPattern,
                 productType,
                 targetAudience,
                 color,
                 descriptionPattern,
-                sort);
+                sort
+        );
     }
 
     public void delete(Long id) {
