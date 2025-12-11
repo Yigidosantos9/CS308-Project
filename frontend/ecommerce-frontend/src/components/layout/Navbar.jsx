@@ -40,11 +40,11 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="bg-[#F5F5F5] py-6 px-8 sticky top-0 z-50">
+    <nav className="bg-[#F5F5F5] py-6 px-8 sticky top-0 z-50 shadow-sm">
       <div className="container mx-auto flex justify-between items-center">
 
         {/* 1. Logo */}
-        <Link to="/" className="text-4xl font-black tracking-tighter uppercase">
+        <Link to="/" className="text-4xl font-black tracking-tighter uppercase bg-black text-white px-3 py-1">
           RAWCTRL
         </Link>
 

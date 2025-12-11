@@ -6,7 +6,7 @@ import { Filter, X } from 'lucide-react';
 
 const Shop = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  
+
   // State
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -46,7 +46,7 @@ const Shop = () => {
   // Handler to update URL params
   const handleFilterChange = (key, value) => {
     const newParams = new URLSearchParams(searchParams);
-    
+
     // FIX: If changing category, CLEAR the search query to avoid conflicting filters
     if (key === 'category') {
       newParams.delete('q');
@@ -58,13 +58,13 @@ const Shop = () => {
       newParams.delete(key);
     }
     setSearchParams(newParams);
-    setIsMobileFiltersOpen(false); 
+    setIsMobileFiltersOpen(false);
   };
 
   return (
     <div className="bg-[#F5F5F5] min-h-screen pt-8 pb-20">
       <div className="container mx-auto px-4 md:px-12">
-        
+
         {/* Header */}
         <div className="flex justify-between items-end mb-8 border-b border-gray-300 pb-4">
           <div>
@@ -75,9 +75,9 @@ const Shop = () => {
               {products.length} Items Found
             </p>
           </div>
-          
+
           {/* Mobile Filter Toggle */}
-          <button 
+          <button
             className="md:hidden flex items-center gap-2 font-bold text-sm"
             onClick={() => setIsMobileFiltersOpen(true)}
           >
@@ -86,10 +86,10 @@ const Shop = () => {
         </div>
 
         <div className="flex flex-col md:flex-row gap-12">
-          
+
           {/* SIDEBAR FILTERS */}
           <div className={`
-            fixed inset-0 bg-white z-50 p-6 transform transition-transform duration-300 md:relative md:transform-none md:bg-transparent md:p-0 md:w-64 md:block
+            fixed inset-0 bg-white z-40 p-6 transform transition-transform duration-300 md:relative md:transform-none md:bg-transparent md:p-0 md:w-64 md:block
             ${isMobileFiltersOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
           `}>
             {/* Mobile Close Button */}
@@ -106,13 +106,12 @@ const Shop = () => {
               <ul className="space-y-3 text-sm text-gray-600">
                 {['All', 'Jeans', 'Sweatshirts', 'Accessories'].map((cat) => (
                   <li key={cat}>
-                    <button 
+                    <button
                       onClick={() => handleFilterChange('category', cat === 'All' ? '' : cat.toLowerCase())}
-                      className={`hover:text-black transition-colors ${
-                        (currentCategory === cat.toLowerCase() || (cat === 'All' && !currentCategory)) 
-                        ? 'text-black font-bold underline' 
+                      className={`hover:text-black transition-colors ${(currentCategory === cat.toLowerCase() || (cat === 'All' && !currentCategory))
+                        ? 'text-black font-bold underline'
                         : ''
-                      }`}
+                        }`}
                     >
                       {cat}
                     </button>
@@ -124,20 +123,21 @@ const Shop = () => {
             {/* Sort */}
             <div>
               <h3 className="font-bold text-sm uppercase mb-4 tracking-wider">Sort By</h3>
-              <select 
+              <select
                 value={currentSort}
                 onChange={(e) => handleFilterChange('sort', e.target.value)}
                 className="w-full bg-transparent border-b border-gray-300 py-2 text-sm focus:border-black outline-none"
               >
                 <option value="relevance">Relevance</option>
+                <option value="popularity">Popularity</option>
                 <option value="priceAsc">Price: Low to High</option>
                 <option value="priceDesc">Price: High to Low</option>
                 <option value="nameAsc">Name: A - Z</option>
                 <option value="nameDesc">Name: Z - A</option>
                 <option value="newest">Newest Arrivals</option>
-    <option value="ratingDesc">Rating: High to Low</option>
-    <option value="ratingAsc">Rating: Low to High</option>
-                              </select>
+                <option value="ratingDesc">Rating: High to Low</option>
+                <option value="ratingAsc">Rating: Low to High</option>
+              </select>
             </div>
           </div>
 
@@ -152,8 +152,8 @@ const Shop = () => {
             ) : error ? (
               <div className="text-center py-20 text-gray-500">
                 <p>{error}</p>
-                <button 
-                  onClick={() => window.location.reload()} 
+                <button
+                  onClick={() => window.location.reload()}
                   className="mt-4 text-black underline hover:no-underline"
                 >
                   Try Again
@@ -164,7 +164,7 @@ const Shop = () => {
                 <h3 className="text-xl font-bold mb-2">No products found.</h3>
                 <p className="text-gray-500">Try changing your filters or search term.</p>
                 {searchQuery && (
-                  <button 
+                  <button
                     onClick={() => {
                       const newParams = new URLSearchParams(searchParams);
                       newParams.delete('q');
