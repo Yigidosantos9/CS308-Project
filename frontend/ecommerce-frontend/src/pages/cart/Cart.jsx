@@ -38,14 +38,16 @@ const Cart = () => {
 
                     {/* Product Info */}
                     <div className="flex-grow pt-2">
-                      <h3 className="font-bold text-lg text-black leading-tight mb-2">
-                        {item.name}
-                      </h3>
+                      <Link to={`/product/${item.id}`}>
+                        <h3 className="font-bold text-lg text-black leading-tight mb-2 hover:underline cursor-pointer">
+                          {item.name}
+                        </h3>
+                      </Link>
                       <p className="text-gray-600 text-sm uppercase tracking-wide mb-1">
-                        BEDEN: {item.size || 'N/A'}
+                        SIZE: {item.size || 'N/A'}
                       </p>
                       <p className="text-gray-600 text-sm mb-4">
-                        Adet: <span className="font-semibold text-black">{item.quantity || 1}</span>
+                        Qty: <span className="font-semibold text-black">{item.quantity || 1}</span>
                       </p>
 
                       {/* Remove Button (Optional) */}

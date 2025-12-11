@@ -5,28 +5,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="654f1a8e-c5fd-4cb5-929e-c485d23f36cf" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/../frontend/ecommerce-frontend/src/App.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/ecommerce-frontend/src/App.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/ecommerce-frontend/src/components/layout/Navbar.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/ecommerce-frontend/src/components/layout/Navbar.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/ecommerce-frontend/src/context/ShopContext.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/ecommerce-frontend/src/context/ShopContext.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/ecommerce-frontend/src/pages/ProductDetails.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/ecommerce-frontend/src/pages/ProductDetails.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/ecommerce-frontend/src/pages/cart/Cart.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/ecommerce-frontend/src/pages/cart/Cart.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/ecommerce-frontend/src/services/api.js" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/ecommerce-frontend/src/services/api.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/client/OrderClient.java" beforeDir="false" afterPath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/client/OrderClient.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/client/ProductClient.java" beforeDir="false" afterPath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/client/ProductClient.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/controller/CartController.java" beforeDir="false" afterPath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/controller/CartController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/controller/OrderController.java" beforeDir="false" afterPath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/controller/OrderController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/model/product/CartItem.java" beforeDir="false" afterPath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/model/product/CartItem.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/model/product/OrderItem.java" beforeDir="false" afterPath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/model/product/OrderItem.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/model/product/enums/OrderStatus.java" beforeDir="false" afterPath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/model/product/enums/OrderStatus.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/service/OrderService.java" beforeDir="false" afterPath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/service/OrderService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/service/ProductService.java" beforeDir="false" afterPath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/service/ProductService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../order-api/src/main/java/com/cs308/order/controller/OrderController.java" beforeDir="false" afterPath="$PROJECT_DIR$/../order-api/src/main/java/com/cs308/order/controller/OrderController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../order-api/src/main/java/com/cs308/order/model/enums/OrderStatus.java" beforeDir="false" afterPath="$PROJECT_DIR$/../order-api/src/main/java/com/cs308/order/model/enums/OrderStatus.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../order-api/src/main/java/com/cs308/order/service/OrderService.java" beforeDir="false" afterPath="$PROJECT_DIR$/../order-api/src/main/java/com/cs308/order/service/OrderService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/ecommerce-frontend/src/pages/auth/Register.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/ecommerce-frontend/src/pages/auth/Register.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/ecommerce-frontend/src/pages/profile/Profile.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/ecommerce-frontend/src/pages/profile/Profile.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/service/AuthService.java" beforeDir="false" afterPath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/service/AuthService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/cs308/product/controller/CartController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cs308/product/controller/CartController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/cs308/product/domain/CartItem.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cs308/product/domain/CartItem.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/cs308/product/service/CartService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cs308/product/service/CartService.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -94,7 +77,7 @@
       <recent name="com.cs308.product.service" />
     </key>
   </component>
-  <component name="RunManager" selected="JUnit.CartServiceTest">
+  <component name="RunManager" selected="Spring Boot.ProductServiceApplication">
     <configuration name="CartServiceTest" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
       <module name="product-api" />
       <extension name="coverage">
@@ -163,6 +146,8 @@
       <workItem from="1764834855970" duration="804000" />
       <workItem from="1764861267800" duration="9599000" />
       <workItem from="1765104498796" duration="9135000" />
+      <workItem from="1765434200752" duration="99000" />
+      <workItem from="1765434409471" duration="614000" />
     </task>
     <servers />
   </component>

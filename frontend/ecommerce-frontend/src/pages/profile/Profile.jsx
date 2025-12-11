@@ -348,7 +348,7 @@ const Profile = () => {
           <p className="mt-4 text-gray-600">No orders yet</p>
         </div>
       ) : (
-        orders.map((order) => (
+        [...orders].sort((a, b) => new Date(b.orderDate) - new Date(a.orderDate)).map((order) => (
           <div
             key={order.id}
             className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden"
@@ -361,9 +361,8 @@ const Profile = () => {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <ChevronDown
-                    className={`h-5 w-5 text-gray-400 transition-transform ${
-                      expandedOrderId === order.id ? 'rotate-180' : ''
-                    }`}
+                    className={`h-5 w-5 text-gray-400 transition-transform ${expandedOrderId === order.id ? 'rotate-180' : ''
+                      }`}
                   />
                   <div>
                     <p className="font-bold">Order #{order.id}</p>
@@ -379,15 +378,14 @@ const Profile = () => {
                       order.totalAmount?.toFixed(2)}
                   </p>
                   <span
-                    className={`inline-block rounded-full px-3 py-1 text-xs font-medium ${
-                      order.status === 'DELIVERED'
-                        ? 'bg-green-100 text-green-800'
-                        : order.status === 'PROCESSING'
+                    className={`inline-block rounded-full px-3 py-1 text-xs font-medium ${order.status === 'DELIVERED'
+                      ? 'bg-green-100 text-green-800'
+                      : order.status === 'PROCESSING'
                         ? 'bg-yellow-100 text-yellow-800'
                         : order.status === 'IN_TRANSIT'
-                        ? 'bg-blue-100 text-blue-800'
-                        : 'bg-gray-100 text-gray-800'
-                    }`}
+                          ? 'bg-blue-100 text-blue-800'
+                          : 'bg-gray-100 text-gray-800'
+                      }`}
                   >
                     {order.status}
                   </span>
@@ -418,14 +416,15 @@ const Profile = () => {
                       return (
                         <div
                           key={index}
-                          className="flex items-center justify-between bg-white rounded-lg p-3 border border-gray-100"
+                          className="flex items-center justify-between bg-white rounded-lg p-3 border border-gray-100 cursor-pointer hover:bg-gray-50 transition"
+                          onClick={() => navigate(`/product/${item.productId}`)}
                         >
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center">
                               <Package className="h-5 w-5 text-gray-500" />
                             </div>
                             <div>
-                              <p className="font-medium">{itemName}</p>
+                              <p className="font-medium hover:underline">{itemName}</p>
                               <p className="text-sm text-gray-500">
                                 Qty: {item.quantity}
                               </p>
@@ -583,7 +582,7 @@ const Profile = () => {
             </div>
           )
         ))}
-  
+
         {/* 🔹 CHANGED: Show "New Address" card ONLY when not editing */}
         {showAddAddress && !editingAddressId && (
           <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
@@ -669,7 +668,7 @@ const Profile = () => {
       </div>
     </div>
   );
-  
+
   const PaymentContent = () => (
     <div className="grid gap-4 md:grid-cols-2">
       {payments.map((card) => (
@@ -988,7 +987,7 @@ const Profile = () => {
                   {formState.firstName || 'User'} {formState.lastName}
                 </p>
                 <p className="text-sm text-white/70">
-                  RAWCTRL member • Istanbul
+                  RAWCTRL member
                 </p>
               </div>
             </div>
@@ -1000,7 +999,7 @@ const Profile = () => {
                 Priority shipping
               </span>
               <span className="rounded-full bg-white/20 px-3 py-1 text-sm font-medium text-white">
-                Spend: $1.2k
+                Spend: ${orders.reduce((sum, order) => sum + (order.totalPrice || 0), 0).toFixed(0)}
               </span>
             </div>
           </div>
@@ -1017,11 +1016,10 @@ const Profile = () => {
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
-                    className={`flex items-center justify-between rounded-xl px-3 py-2 text-sm font-semibold transition ${
-                      activeTab === tab
-                        ? 'bg-black text-white shadow'
-                        : 'text-gray-700 hover:bg-gray-100'
-                    }`}
+                    className={`flex items-center justify-between rounded-xl px-3 py-2 text-sm font-semibold transition ${activeTab === tab
+                      ? 'bg-black text-white shadow'
+                      : 'text-gray-700 hover:bg-gray-100'
+                      }`}
                   >
                     <span>{tab}</span>
                     {activeTab === tab && (
@@ -1036,9 +1034,8 @@ const Profile = () => {
               {stats.map((stat) => (
                 <div
                   key={stat.label}
-                  className={`rounded-xl p-3 ${
-                    stat.highlight ? 'bg-black text-white' : 'bg-gray-50'
-                  }`}
+                  className={`rounded-xl p-3 ${stat.highlight ? 'bg-black text-white' : 'bg-gray-50'
+                    }`}
                 >
                   <p className="text-xs uppercase tracking-[0.2em] text-gray-500/90">
                     {stat.label}
