@@ -54,8 +54,12 @@ const ReviewCard = ({ review, reviewerNames }) => {
         </div>
         <span className="text-xs text-gray-500">{date}</span>
       </div>
-      <StarRating rating={review.rating} />
-      <p className="mt-2 text-sm text-gray-700">{review.comment}</p>
+      {review.rating != null && review.rating > 0 && (
+        <StarRating rating={review.rating} />
+      )}
+      {review.comment && (
+        <p className="mt-2 text-sm text-gray-700">{review.comment}</p>
+      )}
     </div>
   );
 };
@@ -485,16 +489,34 @@ const ProductDetails = () => {
               <h3 className="font-semibold mb-4">Your Review</h3>
 
               <div className="mb-4">
-                <label className="block text-sm font-medium mb-2">Rating</label>
-                <StarRating
-                  rating={newReview.rating}
-                  onRate={(rating) => setNewReview({ ...newReview, rating })}
-                  interactive
-                />
+                <label className="block text-sm font-medium mb-2">
+                  Rating <span className="text-gray-400 font-normal">(optional)</span>
+                </label>
+                <div className="flex items-center gap-3">
+                  <StarRating
+                    rating={newReview.rating}
+                    onRate={(rating) => setNewReview({ ...newReview, rating })}
+                    interactive
+                  />
+                  {newReview.rating > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setNewReview({ ...newReview, rating: 0 })}
+                      className="text-xs text-gray-500 hover:text-red-500 transition-colors"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+                <p className="text-xs text-gray-400 mt-1">
+                  Rating submissions are displayed immediately.
+                </p>
               </div>
 
               <div className="mb-4">
-                <label className="block text-sm font-medium mb-2">Comment</label>
+                <label className="block text-sm font-medium mb-2">
+                  Comment <span className="text-gray-400 font-normal">(optional)</span>
+                </label>
                 <textarea
                   value={newReview.comment}
                   onChange={(e) =>
@@ -504,21 +526,35 @@ const ProductDetails = () => {
                   rows={4}
                   placeholder="Share your thoughts about this product..."
                 />
+                <p className="text-xs text-gray-400 mt-1">
+                  Comments require Product Manager approval before being displayed.
+                </p>
               </div>
 
               {reviewError && (
                 <p className="text-red-500 text-sm mb-4">{reviewError}</p>
               )}
 
-              <button
-                type="submit"
-                disabled={reviewLoading}
-                className="px-6 py-3 bg-black text-white font-semibold rounded-lg hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-              >
-                {reviewLoading ? 'Submitting...' : 'Submit Review'}
-              </button>
+              <div className="flex items-center gap-4">
+                <button
+                  type="submit"
+                  disabled={reviewLoading || (newReview.rating === 0 && !newReview.comment.trim())}
+                  className="px-6 py-3 bg-black text-white font-semibold rounded-lg hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                >
+                  {reviewLoading ? 'Submitting...' : 'Submit Review'}
+                </button>
+                <span className="text-xs text-gray-500">
+                  {newReview.rating > 0 && newReview.comment.trim()
+                    ? 'Rating + Comment (comment needs approval)'
+                    : newReview.rating > 0
+                      ? 'Rating only (instant)'
+                      : newReview.comment.trim()
+                        ? 'Comment only (needs approval)'
+                        : 'Enter rating or comment'}
+                </span>
+              </div>
 
-              <p className="text-xs text-gray-500 mt-2">
+              <p className="text-xs text-gray-500 mt-4">
                 Note: You can only review products you have purchased and received.
               </p>
             </form>

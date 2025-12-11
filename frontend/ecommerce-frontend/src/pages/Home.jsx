@@ -149,11 +149,15 @@ const Home = () => {
                     <span className="text-sm font-medium text-gray-900 truncate">
                       {products[review.productId]?.name || `Product #${review.productId}`}
                     </span>
-                    <StarRating rating={review.rating} />
+                    {review.rating != null && review.rating > 0 && (
+                      <StarRating rating={review.rating} />
+                    )}
                   </div>
-                  <p className="text-gray-600 text-sm line-clamp-3">
-                    "{review.comment}"
-                  </p>
+                  {review.comment && (
+                    <p className="text-gray-600 text-sm line-clamp-3">
+                      "{review.comment}"
+                    </p>
+                  )}
                   <div className="mt-3 flex items-center justify-between text-xs text-gray-400">
                     <span>
                       {reviewerNames[review.userId] ||

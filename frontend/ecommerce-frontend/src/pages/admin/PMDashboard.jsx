@@ -332,15 +332,22 @@ const PMDashboard = () => {
                                                         (review.userId ? `User #${review.userId}` : 'User')}
                                                 </span>
                                             </div>
-                                            <div className="flex items-center gap-1 mb-2">
-                                                {[1, 2, 3, 4, 5].map(star => (
-                                                    <Star
-                                                        key={star}
-                                                        className={`h-4 w-4 ${star <= review.rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`}
-                                                    />
-                                                ))}
-                                            </div>
-                                            <p className="text-gray-700">{review.comment}</p>
+                                            {review.rating != null && review.rating > 0 && (
+                                                <div className="flex items-center gap-1 mb-2">
+                                                    {[1, 2, 3, 4, 5].map(star => (
+                                                        <Star
+                                                            key={star}
+                                                            className={`h-4 w-4 ${star <= review.rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            )}
+                                            {review.comment && (
+                                                <p className="text-gray-700">{review.comment}</p>
+                                            )}
+                                            {!review.rating && !review.comment && (
+                                                <p className="text-gray-400 italic">No content</p>
+                                            )}
                                             <p className="text-xs text-gray-400 mt-2">
                                                 {new Date(review.createdAt).toLocaleDateString()}
                                             </p>
