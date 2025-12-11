@@ -24,6 +24,10 @@ const Checkout = () => {
     const [invoiceLoading, setInvoiceLoading] = useState(false);
     const [invoiceError, setInvoiceError] = useState('');
 
+    // 🔹 NEW: per-user payments storage key
+    const getPaymentsStorageKey = () =>
+        user?.userId ? `payments_${user.userId}` : 'payments_guest';
+
     useEffect(() => {
         if (!user) {
             navigate('/login');
@@ -33,9 +37,11 @@ const Checkout = () => {
             navigate('/cart', { replace: true });
             return;
         }
+
         const fetchAddresses = async () => {
             try {
-                const data = await addressService.getAddresses();
+                // 🔹 UPDATED: pass userId to match addressService API
+                const data = await addressService.getAddresses(user.userId);
                 setAddresses(data || []);
                 if (data && data.length > 0) {
                     setSelectedAddressId(data[0].id);
@@ -46,8 +52,9 @@ const Checkout = () => {
         };
         fetchAddresses();
 
-        // Load payment methods from localStorage (same store as profile)
-        const stored = localStorage.getItem('payments');
+        // 🔹 UPDATED: Load payment methods from localStorage scoped to current user
+        const key = getPaymentsStorageKey();
+        const stored = localStorage.getItem(key);
         if (stored) {
             try {
                 const parsed = JSON.parse(stored);
@@ -55,10 +62,17 @@ const Checkout = () => {
                 if (parsed.length > 0) {
                     const primaryIndex = parsed.findIndex((p) => p.primary);
                     setSelectedPaymentIndex(primaryIndex >= 0 ? primaryIndex : 0);
+                } else {
+                    setSelectedPaymentIndex(0);
                 }
             } catch (e) {
                 console.error('Failed to parse payments', e);
+                setPayments([]);
+                setSelectedPaymentIndex(0);
             }
+        } else {
+            setPayments([]);
+            setSelectedPaymentIndex(0);
         }
     }, [user, navigate, cart, orderComplete]);
 
@@ -333,7 +347,7 @@ const Checkout = () => {
                                                 </span>
                                             </div>
                                             {card.primary && (
-                                                <span className="ml-auto text-xs px-2 py-1 rounded-full bg黑 text-white">
+                                                <span className="ml-auto text-xs px-2 py-1 rounded-full bg-black text-white">
                                                     Primary
                                                 </span>
                                             )}

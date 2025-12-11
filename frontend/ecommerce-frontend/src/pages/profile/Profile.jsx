@@ -54,21 +54,58 @@ const Profile = () => {
   });
   const [paymentError, setPaymentError] = useState('');
 
-  // Persist payment methods locally (mock)
+  // 🔹 Per-user payments key helper
+  const getPaymentsStorageKey = () =>
+    user?.userId ? `payments_${user.userId}` : 'payments_guest';
+
+  // 🔹 Load payment methods for the CURRENT user only
   useEffect(() => {
-    const stored = localStorage.getItem('payments');
+    if (!user?.userId) {
+      setPayments([]);
+      setShowAddPayment(false);
+      setEditingPaymentIndex(null);
+      setPaymentError('');
+      setNewPayment({
+        cardNumber: '',
+        expiry: '',
+        cvv: '',
+        cardholderName: '',
+      });
+      return;
+    }
+
+    const key = getPaymentsStorageKey();
+    const stored = localStorage.getItem(key);
     if (stored) {
       try {
         setPayments(JSON.parse(stored));
       } catch (e) {
         console.error('Failed to parse payments from storage', e);
+        setPayments([]);
       }
+    } else {
+      setPayments([]);
     }
-  }, []);
 
+    // Reset form UI when user changes
+    setShowAddPayment(false);
+    setEditingPaymentIndex(null);
+    setPaymentError('');
+    setNewPayment({
+      cardNumber: '',
+      expiry: '',
+      cvv: '',
+      cardholderName: '',
+    });
+  }, [user?.userId]);
+
+  // 🔹 Persist payment methods per user
   const persistPayments = (nextPayments) => {
     setPayments(nextPayments);
-    localStorage.setItem('payments', JSON.stringify(nextPayments));
+    const key = getPaymentsStorageKey();
+    if (key) {
+      localStorage.setItem(key, JSON.stringify(nextPayments));
+    }
   };
 
   const validateExpiry = (expiry) => {
@@ -442,14 +479,14 @@ const Profile = () => {
                 {order.items && order.items.length > 0 ? (
                   <div className="space-y-3">
                     {order.items.map((item, index) => {
-                      // 🔹 NEW: Prefer product name; fall back to Product #id
+                      // 🔹 Prefer product name; fall back to Product #id
                       const itemName =
                         item.productName ||
                         item.name ||
                         item.product?.name ||
                         `Product #${item.productId}`;
 
-                      // 🔹 NEW: safer line total calculation
+                      // 🔹 safer line total calculation
                       const lineTotal =
                         item.price ??
                         (item.unitPrice && item.quantity
@@ -506,7 +543,7 @@ const Profile = () => {
       <div className="grid gap-4 md:grid-cols-2">
         {addresses.map((address) => (
           editingAddressId === address.id ? (
-            // 🔹 NEW: Inline edit form on the clicked card
+            // 🔹 Inline edit form on the clicked card
             <div
               key={address.id}
               className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm"
@@ -581,7 +618,7 @@ const Profile = () => {
                   </button>
                   <button
                     type="button"
-                    onClick={resetAddressForm} // 🔹 CHANGED: closes inline edit & resets form
+                    onClick={resetAddressForm}
                     className="flex-1 rounded-lg border border-gray-200 py-2 text-sm font-bold"
                   >
                     Cancel
@@ -590,7 +627,7 @@ const Profile = () => {
               </form>
             </div>
           ) : (
-            // 🔹 UNCHANGED: normal read-only card
+            // 🔹 normal read-only card
             <div
               key={address.id}
               className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm"
@@ -610,7 +647,7 @@ const Profile = () => {
               </p>
               <div className="mt-4 flex gap-3 text-sm font-semibold text-black">
                 <button
-                  onClick={() => startEditingAddress(address)} // uses existing logic
+                  onClick={() => startEditingAddress(address)}
                   className="underline underline-offset-4"
                 >
                   Edit
@@ -626,7 +663,7 @@ const Profile = () => {
           )
         ))}
 
-        {/* 🔹 CHANGED: Show "New Address" card ONLY when not editing */}
+        {/* New Address card ONLY when not editing */}
         {showAddAddress && !editingAddressId && (
           <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
             <h3 className="mb-4 text-sm font-bold uppercase tracking-wide">
