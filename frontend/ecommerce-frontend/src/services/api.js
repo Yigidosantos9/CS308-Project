@@ -102,6 +102,16 @@ export const authService = {
     localStorage.removeItem('user');
   },
 
+  getUserById: async (userId) => {
+    try {
+      const response = await api.get(`/auth/user/${userId}`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching user ${userId}:`, error);
+      return null;
+    }
+  },
+
   getToken: () => {
     return localStorage.getItem('authToken');
   },

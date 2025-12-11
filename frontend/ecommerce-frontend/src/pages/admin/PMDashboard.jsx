@@ -324,7 +324,13 @@ const PMDashboard = () => {
                                         <div className="flex-1">
                                             <div className="flex items-center gap-3 mb-2">
                                                 <span className="font-semibold">Product #{review.productId}</span>
-                                                <span className="text-sm text-gray-500">by User #{review.userId}</span>
+                                                <span className="text-sm text-gray-500">
+                                                    by {review.userName ||
+                                                        review.username ||
+                                                        review.reviewerName ||
+                                                        review.reviewerFullName ||
+                                                        (review.userId ? `User #${review.userId}` : 'User')}
+                                                </span>
                                             </div>
                                             <div className="flex items-center gap-1 mb-2">
                                                 {[1, 2, 3, 4, 5].map(star => (

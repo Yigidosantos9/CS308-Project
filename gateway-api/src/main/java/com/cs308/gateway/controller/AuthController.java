@@ -61,4 +61,19 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
     }
+
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<UserDetails> getUserById(@PathVariable Long userId) {
+        log.info("BFF: Get user by id request received for userId: {}", userId);
+        try {
+            UserDetails user = authService.getUserById(userId);
+            if (user == null) {
+                return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.ok(user);
+        } catch (RuntimeException e) {
+            log.error("Error processing get user by id request", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
 }

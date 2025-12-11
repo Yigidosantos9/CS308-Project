@@ -52,6 +52,7 @@ const Profile = () => {
     cvv: '',
     cardholderName: '',
   });
+  const [paymentError, setPaymentError] = useState('');
 
   // Persist payment methods locally (mock)
   useEffect(() => {
@@ -68,6 +69,39 @@ const Profile = () => {
   const persistPayments = (nextPayments) => {
     setPayments(nextPayments);
     localStorage.setItem('payments', JSON.stringify(nextPayments));
+  };
+
+  const validateExpiry = (expiry) => {
+    if (!expiry || expiry.length < 4) {
+      return { valid: false, message: 'Please enter expiry as MM/YY.' };
+    }
+
+    const [mm, yy] = expiry.split('/');
+    if (!mm || !yy || mm.length !== 2 || yy.length !== 2) {
+      return { valid: false, message: 'Please enter expiry as MM/YY.' };
+    }
+
+    const month = parseInt(mm, 10);
+    const year = parseInt(yy, 10);
+    if (Number.isNaN(month) || Number.isNaN(year) || month < 1 || month > 12) {
+      return { valid: false, message: 'Enter a real month between 01 and 12.' };
+    }
+
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth() + 1; // JS months are 0-based
+    const fullYear = 2000 + year;
+    const maxAllowedYear = currentYear + 20; // Guard against nonsense future dates
+
+    if (fullYear > maxAllowedYear) {
+      return { valid: false, message: 'Expiry year is too far in the future.' };
+    }
+
+    if (fullYear < currentYear || (fullYear === currentYear && month < currentMonth)) {
+      return { valid: false, message: 'Card is expired. Use a future date.' };
+    }
+
+    return { valid: true };
   };
 
   const toggles = [
@@ -150,14 +184,23 @@ const Profile = () => {
 
 
   // Calculate dynamic stats based on actual orders
-  const completedOrders = orders.filter((o) => o.status === 'DELIVERED').length;
-  const totalOrders = orders.length;
+  const statusCounts = orders.reduce(
+    (acc, order) => {
+      const status = (order.status || '').toUpperCase();
+      if (status === 'DELIVERED') acc.completed += 1;
+      else if (status === 'PREPARING') acc.preparing += 1;
+      else if (status === 'SHIPPED' || status === 'IN_TRANSIT') acc.shipped += 1;
+      return acc;
+    },
+    { completed: 0, preparing: 0, shipped: 0 }
+  );
 
   const stats = [
-    { label: 'Total Orders', value: String(totalOrders), highlight: true },
-    { label: 'Completed', value: String(completedOrders) },
-    { label: 'Preparing', value: String(orders.filter((o) => o.status === 'PREPARING').length) },
-    { label: 'Shipped', value: String(orders.filter((o) => o.status === 'SHIPPED').length) },
+    { label: 'Total Orders', value: String(orders.length), highlight: true },
+    { label: 'Delivered', value: String(statusCounts.completed) },
+    { label: 'Preparing', value: String(statusCounts.preparing) },
+    // Include in-transit orders in this bucket so counts match the list badges
+    { label: 'In Transit', value: String(statusCounts.shipped) },
   ];
 
   const [addresses, setAddresses] = useState([]);
@@ -701,6 +744,7 @@ const Profile = () => {
                 setEditingPaymentIndex(
                   payments.findIndex((p) => p.last4 === card.last4)
                 );
+                setPaymentError('');
                 setNewPayment({
                   cardNumber: card.fullNumber || '',
                   expiry: card.expiry || '',
@@ -738,6 +782,13 @@ const Profile = () => {
           <form
             onSubmit={(e) => {
               e.preventDefault();
+              const expiryCheck = validateExpiry(newPayment.expiry);
+              if (!expiryCheck.valid) {
+                setPaymentError(expiryCheck.message);
+                return;
+              }
+              setPaymentError('');
+
               // Detect card brand from first digit
               const firstDigit = newPayment.cardNumber.charAt(0);
               let brand = 'Card';
@@ -777,6 +828,7 @@ const Profile = () => {
 
               setShowAddPayment(false);
               setEditingPaymentIndex(null);
+              setPaymentError('');
               setNewPayment({
                 cardNumber: '',
                 expiry: '',
@@ -826,6 +878,7 @@ const Profile = () => {
                   if (value.length >= 2) {
                     value = value.slice(0, 2) + '/' + value.slice(2, 4);
                   }
+                  setPaymentError('');
                   setNewPayment({ ...newPayment, expiry: value });
                 }}
                 maxLength={5}
@@ -859,6 +912,7 @@ const Profile = () => {
                 onClick={() => {
                   setShowAddPayment(false);
                   setEditingPaymentIndex(null);
+                  setPaymentError('');
                   setNewPayment({
                     cardNumber: '',
                     expiry: '',
@@ -871,11 +925,17 @@ const Profile = () => {
                 Cancel
               </button>
             </div>
+            {paymentError && (
+              <p className="text-sm text-red-500">{paymentError}</p>
+            )}
           </form>
         </div>
       ) : (
         <button
-          onClick={() => setShowAddPayment(true)}
+          onClick={() => {
+            setPaymentError('');
+            setShowAddPayment(true);
+          }}
           className="flex h-full min-h-[160px] flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-gray-300 bg-white/50 text-sm font-semibold text-gray-700 transition hover:border-black hover:text-black"
         >
           + Add payment method

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useShop } from '../context/ShopContext';
-import { productService, reviewService, orderService } from '../services/api';
+import { productService, reviewService, orderService, authService } from '../services/api';
 
 const StarRating = ({ rating, onRate, interactive = false }) => {
   const [hover, setHover] = useState(0);
@@ -27,21 +27,30 @@ const StarRating = ({ rating, onRate, interactive = false }) => {
   );
 };
 
-const ReviewCard = ({ review }) => {
+const ReviewCard = ({ review, reviewerNames }) => {
   const date = new Date(review.createdAt).toLocaleDateString('en-GB', {
     day: '2-digit',
     month: 'short',
     year: 'numeric'
   });
 
+  const displayName =
+    reviewerNames?.[review.userId] ||
+    review.userName ||
+    review.username ||
+    review.reviewerName ||
+    review.reviewerFullName ||
+    (review.userId ? `User #${review.userId}` : 'User');
+  const initials = displayName.trim().charAt(0).toUpperCase() || 'U';
+
   return (
     <div className="border-b border-gray-200 pb-4 last:border-none">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-black text-white rounded-full flex items-center justify-center text-sm font-bold">
-            U
+            {initials}
           </div>
-          <span className="font-semibold text-sm">User #{review.userId}</span>
+          <span className="font-semibold text-sm">{displayName}</span>
         </div>
         <span className="text-xs text-gray-500">{date}</span>
       </div>
@@ -75,6 +84,7 @@ const ProductDetails = () => {
   const [reviewLoading, setReviewLoading] = useState(false);
   const [reviewError, setReviewError] = useState('');
   const [canReview, setCanReview] = useState(false); // User has DELIVERED order with this product
+  const [reviewerNames, setReviewerNames] = useState({});
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -97,8 +107,28 @@ const ProductDetails = () => {
           reviewService.getProductReviews(id),
           reviewService.getProductReviewStats(id)
         ]);
-        setReviews(reviewsData || []);
+        const safeReviews = reviewsData || [];
+        setReviews(safeReviews);
         setReviewStats(statsData || { averageRating: 0, reviewCount: 0 });
+
+        // Fetch reviewer names for display, but tolerate failures
+        const uniqueIds = Array.from(
+          new Set(safeReviews.map((r) => r.userId).filter(Boolean))
+        );
+        if (uniqueIds.length > 0) {
+          const entries = await Promise.all(
+            uniqueIds.map(async (uid) => {
+              try {
+                const user = await authService.getUserById(uid);
+                const fullName = [user?.firstName, user?.lastName].filter(Boolean).join(' ').trim();
+                return [uid, fullName || user?.email || user?.username || `User #${uid}`];
+              } catch {
+                return [uid, `User #${uid}`];
+              }
+            })
+          );
+          setReviewerNames((prev) => ({ ...prev, ...Object.fromEntries(entries) }));
+        }
       } catch (error) {
         console.error('Error fetching reviews:', error);
       }
@@ -479,7 +509,7 @@ const ProductDetails = () => {
             {reviews.length > 0 ? (
               <div className="space-y-4">
                 {reviews.map((review) => (
-                  <ReviewCard key={review.id} review={review} />
+                  <ReviewCard key={review.id} review={review} reviewerNames={reviewerNames} />
                 ))}
               </div>
             ) : (

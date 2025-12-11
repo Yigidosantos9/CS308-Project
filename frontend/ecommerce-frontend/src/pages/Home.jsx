@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ArrowRight, ChevronRight, Star } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { reviewService, productService } from '../services/api';
+import { reviewService, productService, authService } from '../services/api';
 
 const categories = [
   {
@@ -39,12 +39,13 @@ const Home = () => {
   const [recentReviews, setRecentReviews] = useState([]);
   const [products, setProducts] = useState({});
   const [loadingReviews, setLoadingReviews] = useState(true);
+  const [reviewerNames, setReviewerNames] = useState({});
 
   useEffect(() => {
     const fetchRecentReviews = async () => {
       try {
-        const reviews = await reviewService.getRecentReviews();
-        setRecentReviews(reviews || []);
+        const reviews = (await reviewService.getRecentReviews()) || [];
+        setRecentReviews(reviews);
 
         // Fetch product names for reviews
         const productIds = [...new Set(reviews.map(r => r.productId))];
@@ -58,6 +59,23 @@ const Home = () => {
           }
         }
         setProducts(productData);
+
+        // Fetch reviewer names
+        const uniqueUserIds = [...new Set(reviews.map((r) => r.userId).filter(Boolean))];
+        if (uniqueUserIds.length > 0) {
+          const nameEntries = await Promise.all(
+            uniqueUserIds.map(async (uid) => {
+              try {
+                const user = await authService.getUserById(uid);
+                const fullName = [user?.firstName, user?.lastName].filter(Boolean).join(' ').trim();
+                return [uid, fullName || user?.email || user?.username || `User #${uid}`];
+              } catch {
+                return [uid, `User #${uid}`];
+              }
+            })
+          );
+          setReviewerNames(Object.fromEntries(nameEntries));
+        }
       } catch (error) {
         console.error('Error fetching recent reviews:', error);
       } finally {
@@ -126,7 +144,14 @@ const Home = () => {
                     "{review.comment}"
                   </p>
                   <div className="mt-3 flex items-center justify-between text-xs text-gray-400">
-                    <span>User #{review.userId}</span>
+                    <span>
+                      {reviewerNames[review.userId] ||
+                        review.userName ||
+                        review.username ||
+                        review.reviewerName ||
+                        review.reviewerFullName ||
+                        (review.userId ? `User #${review.userId}` : 'User')}
+                    </span>
                     <span>
                       {new Date(review.createdAt).toLocaleDateString('en-GB', {
                         day: '2-digit',

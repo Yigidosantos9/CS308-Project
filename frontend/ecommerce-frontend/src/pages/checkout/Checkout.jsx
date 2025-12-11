@@ -29,6 +29,10 @@ const Checkout = () => {
             navigate('/login');
             return;
         }
+        if (!orderComplete && cart.length === 0) {
+            navigate('/cart', { replace: true });
+            return;
+        }
         const fetchAddresses = async () => {
             try {
                 const data = await addressService.getAddresses();
@@ -56,7 +60,7 @@ const Checkout = () => {
                 console.error('Failed to parse payments', e);
             }
         }
-    }, [user, navigate]);
+    }, [user, navigate, cart, orderComplete]);
 
     // Clean up invoice URL when component unmounts or order changes
     useEffect(() => {
