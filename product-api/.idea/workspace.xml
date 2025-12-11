@@ -5,11 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="654f1a8e-c5fd-4cb5-929e-c485d23f36cf" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/../frontend/ecommerce-frontend/src/pages/auth/Register.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/ecommerce-frontend/src/pages/auth/Register.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/ecommerce-frontend/src/pages/profile/Profile.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/ecommerce-frontend/src/pages/profile/Profile.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/service/AuthService.java" beforeDir="false" afterPath="$PROJECT_DIR$/../gateway-api/src/main/java/com/cs308/gateway/service/AuthService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/ecommerce-frontend/src/context/ShopContext.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/ecommerce-frontend/src/context/ShopContext.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/ecommerce-frontend/src/pages/cart/Cart.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/ecommerce-frontend/src/pages/cart/Cart.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/ecommerce-frontend/src/services/api.js" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/ecommerce-frontend/src/services/api.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

@@ -1,12 +1,42 @@
 import { useShop } from '../../context/ShopContext';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Plus, Minus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Cart = () => {
-  const { cart, removeFromCart } = useShop();
+  const { cart, removeFromCart, updateQuantity } = useShop();
 
-  // Calculate Total Price
+  // Calculate Prices (product prices are VAT included)
+  const VAT_RATE = 0.18; // 18% VAT
   const total = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  const subtotal = total / (1 + VAT_RATE); // Price without VAT
+  const vatAmount = total - subtotal; // VAT amount
+
+  // Calculate total quantity per product (across all sizes)
+  const getTotalProductQuantity = (productId) => {
+    return cart
+      .filter(item => item.id === productId)
+      .reduce((sum, item) => sum + (item.quantity || 1), 0);
+  };
+
+  // Get remaining stock for a product
+  const getRemainingStock = (item) => {
+    const totalInCart = getTotalProductQuantity(item.id);
+    const currentItemQty = item.quantity || 1;
+    // Remaining = stock - (total in cart - this item's quantity)
+    return item.stock - (totalInCart - currentItemQty);
+  };
+
+  const handleQuantityChange = (item, delta) => {
+    const newQuantity = (item.quantity || 1) + delta;
+    const totalOtherSizes = getTotalProductQuantity(item.id) - (item.quantity || 1);
+    const maxAllowed = item.stock - totalOtherSizes;
+
+    // Check stock limit across all sizes
+    if (newQuantity > maxAllowed) {
+      return; // Can't exceed stock
+    }
+    updateQuantity(item.id, newQuantity, item.size, item.stock);
+  };
 
   return (
     <div className="min-h-screen bg-[#F5F5F5] py-12 px-4 md:px-12">
@@ -24,50 +54,78 @@ const Cart = () => {
               </div>
             ) : (
               <div className="flex flex-col gap-8">
-                {cart.map((item, index) => (
-                  <div key={`${item.id}-${item.size}-${index}`} className="flex gap-6 items-start">
+                {cart.map((item, index) => {
+                  const remainingStock = getRemainingStock(item);
+                  const canIncrease = remainingStock > 0;
 
-                    {/* Product Image */}
-                    <div className="w-24 h-32 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400 text-xs flex-shrink-0">
-                      {item.images && item.images.length > 0 ? (
-                        <img src={item.images[0].url} alt={item.name} className="object-cover rounded-lg w-full h-full" />
-                      ) : (
-                        <>-{item.name}</>
-                      )}
+                  return (
+                    <div key={`${item.id}-${item.size}-${index}`} className="flex gap-6 items-start">
+
+                      {/* Product Image */}
+                      <div className="w-24 h-32 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400 text-xs flex-shrink-0">
+                        {item.images && item.images.length > 0 ? (
+                          <img src={item.images[0].url} alt={item.name} className="object-cover rounded-lg w-full h-full" />
+                        ) : (
+                          <>-{item.name}</>
+                        )}
+                      </div>
+
+                      {/* Product Info */}
+                      <div className="flex-grow pt-2">
+                        <Link to={`/product/${item.id}`}>
+                          <h3 className="font-bold text-lg text-black leading-tight mb-2 hover:underline cursor-pointer">
+                            {item.name}
+                          </h3>
+                        </Link>
+                        <p className="text-gray-600 text-sm uppercase tracking-wide mb-1">
+                          SIZE: {item.size || 'N/A'}
+                        </p>
+
+                        {/* Quantity Controls */}
+                        <div className="flex items-center gap-3 mb-4">
+                          <span className="text-gray-600 text-sm">Qty:</span>
+                          <div className="flex items-center border border-gray-300 rounded-lg">
+                            <button
+                              onClick={() => handleQuantityChange(item, -1)}
+                              disabled={(item.quantity || 1) <= 1}
+                              className="p-2 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                            >
+                              <Minus size={14} />
+                            </button>
+                            <span className="px-3 font-semibold text-black min-w-[32px] text-center">
+                              {item.quantity || 1}
+                            </span>
+                            <button
+                              onClick={() => handleQuantityChange(item, 1)}
+                              disabled={!canIncrease}
+                              className="p-2 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                            >
+                              <Plus size={14} />
+                            </button>
+                          </div>
+                          <span className={`text-xs ${remainingStock <= 0 ? 'text-red-500' : 'text-gray-400'}`}>
+                            ({remainingStock > 0 ? `${remainingStock} more available` : 'max reached'})
+                          </span>
+                        </div>
+
+                        {/* Remove Button */}
+                        <button
+                          onClick={() => removeFromCart(item.id, item.size)}
+                          className="text-xs text-red-500 hover:text-red-700 flex items-center gap-1"
+                        >
+                          <Trash2 size={14} /> Remove
+                        </button>
+                      </div>
+
+                      {/* Price */}
+                      <div className="pt-2 text-right">
+                        <p className="font-bold text-lg">{(item.price * (item.quantity || 1)).toFixed(2)} $</p>
+                        {(item.quantity || 1) > 1 && (
+                          <p className="text-gray-500 text-xs">{item.quantity} × {item.price.toFixed(2)} $</p>
+                        )}
+                      </div>
                     </div>
-
-                    {/* Product Info */}
-                    <div className="flex-grow pt-2">
-                      <Link to={`/product/${item.id}`}>
-                        <h3 className="font-bold text-lg text-black leading-tight mb-2 hover:underline cursor-pointer">
-                          {item.name}
-                        </h3>
-                      </Link>
-                      <p className="text-gray-600 text-sm uppercase tracking-wide mb-1">
-                        SIZE: {item.size || 'N/A'}
-                      </p>
-                      <p className="text-gray-600 text-sm mb-4">
-                        Qty: <span className="font-semibold text-black">{item.quantity || 1}</span>
-                      </p>
-
-                      {/* Remove Button (Optional) */}
-                      <button
-                        onClick={() => removeFromCart(item.id, item.size)}
-                        className="text-xs text-red-500 hover:text-red-700 flex items-center gap-1"
-                      >
-                        <Trash2 size={14} /> Remove
-                      </button>
-                    </div>
-
-                    {/* Price */}
-                    <div className="pt-2 text-right">
-                      <p className="font-bold text-lg">{(item.price * (item.quantity || 1)).toFixed(2)} $</p>
-                      {(item.quantity || 1) > 1 && (
-                        <p className="text-gray-500 text-xs">{item.quantity} × {item.price.toFixed(2)} $</p>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                  ))}
               </div>
             )}
           </div>
@@ -85,9 +143,13 @@ const Cart = () => {
               <div className="space-y-4 mb-8">
                 <div className="flex justify-between text-lg font-medium text-gray-100">
                   <span>SUBTOTAL:</span>
-                  <span>{total.toFixed(2)} $</span>
+                  <span>{subtotal.toFixed(2)} $</span>
                 </div>
-                <div className="flex justify-between text-lg font-bold text-white">
+                <div className="flex justify-between text-lg font-medium text-gray-100">
+                  <span>VAT (18%):</span>
+                  <span>{vatAmount.toFixed(2)} $</span>
+                </div>
+                <div className="border-t border-white/30 pt-4 flex justify-between text-lg font-bold text-white">
                   <span>TOTAL:</span>
                   <span>{total.toFixed(2)} $</span>
                 </div>

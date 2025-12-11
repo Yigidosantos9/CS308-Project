@@ -16,11 +16,9 @@ const StarRating = ({ rating, onRate, interactive = false }) => {
           onClick={() => interactive && onRate?.(star)}
           onMouseEnter={() => interactive && setHover(star)}
           onMouseLeave={() => interactive && setHover(0)}
-          className={`text-2xl transition-colors ${
-            interactive ? 'cursor-pointer hover:scale-110' : 'cursor-default'
-          } ${
-            star <= (hover || rating) ? 'text-yellow-400' : 'text-gray-300'
-          }`}
+          className={`text-2xl transition-colors ${interactive ? 'cursor-pointer hover:scale-110' : 'cursor-default'
+            } ${star <= (hover || rating) ? 'text-yellow-400' : 'text-gray-300'
+            }`}
         >
           ★
         </button>
@@ -55,11 +53,19 @@ const ReviewCard = ({ review }) => {
 
 const ProductDetails = () => {
   const { id } = useParams();
-  const { addToCart, user } = useShop();
+  const { addToCart, user, cart } = useShop();
   const [product, setProduct] = useState(null);
   const [selectedSize, setSelectedSize] = useState('');
   const [selectedImage, setSelectedImage] = useState('');
+  const [selectedQuantity, setSelectedQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
+
+  // Calculate total quantity of this product already in cart (across all sizes)
+  const getCartQuantityForProduct = (productId) => {
+    return cart
+      .filter(item => item.id === productId)
+      .reduce((sum, item) => sum + (item.quantity || 1), 0);
+  };
 
   // Review state
   const [reviews, setReviews] = useState([]);
@@ -165,7 +171,7 @@ const ProductDetails = () => {
       console.error('Error submitting review:', error);
       setReviewError(
         error.response?.data?.message ||
-          'Failed to submit review. Please ensure you have purchased and received this product.'
+        'Failed to submit review. Please ensure you have purchased and received this product.'
       );
     } finally {
       setReviewLoading(false);
@@ -238,9 +244,8 @@ const ProductDetails = () => {
                 <button
                   key={index}
                   onClick={() => setSelectedImage(img.url)}
-                  className={`w-full aspect-[3/4] overflow-hidden border-2 transition-all ${
-                    currentImage === img.url ? 'border-black' : 'border-transparent'
-                  }`}
+                  className={`w-full aspect-[3/4] overflow-hidden border-2 transition-all ${currentImage === img.url ? 'border-black' : 'border-transparent'
+                    }`}
                 >
                   <img
                     src={img.url}
@@ -298,11 +303,10 @@ const ProductDetails = () => {
                   <button
                     key={size}
                     onClick={() => setSelectedSize(size)}
-                    className={`w-12 h-12 flex items-center justify-center border border-black text-sm font-medium transition-colors ${
-                      selectedSize === size
-                        ? 'bg-black text-white'
-                        : 'bg-transparent text-black hover:bg-gray-100'
-                    }`}
+                    className={`w-12 h-12 flex items-center justify-center border border-black text-sm font-medium transition-colors ${selectedSize === size
+                      ? 'bg-black text-white'
+                      : 'bg-transparent text-black hover:bg-gray-100'
+                      }`}
                   >
                     {size}
                   </button>
@@ -310,20 +314,74 @@ const ProductDetails = () => {
               </div>
             </div>
 
+            {/* Quantity Selector */}
+            {user?.userType !== 'PRODUCT_MANAGER' && displayProduct.stock > 0 && (() => {
+              const inCartQuantity = getCartQuantityForProduct(displayProduct.id);
+              const availableToAdd = displayProduct.stock - inCartQuantity;
+              const maxQuantity = Math.max(0, availableToAdd);
+
+              if (maxQuantity <= 0) {
+                return (
+                  <div className="text-sm text-red-600 font-medium">
+                    All available stock is in your cart
+                  </div>
+                );
+              }
+
+              return (
+                <div className="flex items-center gap-4">
+                  <span className="text-sm font-medium text-gray-700">Quantity:</span>
+                  <div className="flex items-center border border-black rounded-lg">
+                    <button
+                      onClick={() => setSelectedQuantity(Math.max(1, selectedQuantity - 1))}
+                      disabled={selectedQuantity <= 1}
+                      className="w-10 h-10 flex items-center justify-center hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-lg font-bold"
+                    >
+                      −
+                    </button>
+                    <span className="w-12 text-center font-semibold text-lg">
+                      {Math.min(selectedQuantity, maxQuantity)}
+                    </span>
+                    <button
+                      onClick={() => setSelectedQuantity(Math.min(maxQuantity, selectedQuantity + 1))}
+                      disabled={selectedQuantity >= maxQuantity}
+                      className="w-10 h-10 flex items-center justify-center hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-lg font-bold"
+                    >
+                      +
+                    </button>
+                  </div>
+                  <span className="text-xs text-gray-400">
+                    ({inCartQuantity > 0 ? `${inCartQuantity} in cart, ` : ''}{maxQuantity} available)
+                  </span>
+                </div>
+              );
+            })()}
+
             {/* Add to Cart Button - Hidden for Product Manager */}
-            {user?.userType !== 'PRODUCT_MANAGER' && (
-              <button
-                onClick={() => addToCart({ ...displayProduct, selectedSize })}
-                disabled={displayProduct.stock === 0}
-                className={`w-48 py-3 px-8 text-sm font-bold uppercase tracking-wider shadow-lg transition-colors ${
-                  displayProduct.stock === 0
+            {user?.userType !== 'PRODUCT_MANAGER' && (() => {
+              const inCartQuantity = getCartQuantityForProduct(displayProduct.id);
+              const availableToAdd = displayProduct.stock - inCartQuantity;
+              const isDisabled = displayProduct.stock === 0 || availableToAdd <= 0;
+
+              return (
+                <button
+                  onClick={() => {
+                    const actualQty = Math.min(selectedQuantity, availableToAdd);
+                    if (actualQty > 0) {
+                      addToCart({ ...displayProduct, selectedSize }, actualQty);
+                      setSelectedQuantity(1);
+                    }
+                  }}
+                  disabled={isDisabled}
+                  className={`w-48 py-3 px-8 text-sm font-bold uppercase tracking-wider shadow-lg transition-colors ${isDisabled
                     ? 'bg-gray-400 text-gray-700 cursor-not-allowed'
                     : 'bg-black text-white hover:bg-gray-800'
-                }`}
-              >
-                {displayProduct.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
-              </button>
-            )}
+                    }`}
+                >
+                  {displayProduct.stock === 0 ? 'Out of Stock' : availableToAdd <= 0 ? 'Max in Cart' : `Add to Cart${selectedQuantity > 1 ? ` (${Math.min(selectedQuantity, availableToAdd)})` : ''}`}
+                </button>
+              );
+            })()}
 
             {/* Description */}
             <p className="text-gray-600 text-sm leading-relaxed mt-4">

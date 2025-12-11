@@ -194,6 +194,15 @@ export const cartService = {
     return await api.delete(`/cart/clear`, {
       params: { userId }
     });
+  },
+
+  // Update quantity - uses addToCart with delta quantity
+  updateQuantity: async (userId, productId, quantity, size) => {
+    const params = { userId, productId, quantity };
+    if (size) {
+      params.size = size;
+    }
+    return await api.post(`/cart/add`, null, { params });
   }
 };
 
