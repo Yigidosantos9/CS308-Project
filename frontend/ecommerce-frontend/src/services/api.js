@@ -153,6 +153,16 @@ export const reviewService = {
   // PM: Disapprove/delete a review
   disapproveReview: async (reviewId) => {
     return await api.delete(`/reviews/${reviewId}`);
+  },
+  // Get recent approved reviews for home page
+  getRecentReviews: async () => {
+    try {
+      const response = await api.get('/reviews/recent');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching recent reviews:', error);
+      return [];
+    }
   }
 };
 

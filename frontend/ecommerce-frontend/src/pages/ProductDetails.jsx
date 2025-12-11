@@ -106,18 +106,30 @@ const ProductDetails = () => {
 
     // Check if user can review (has DELIVERED order with this product)
     const checkCanReview = async () => {
+      console.log('checkCanReview called, user:', user);
       if (!user?.userId) {
+        console.log('No userId, setting canReview to false');
         setCanReview(false);
         return;
       }
       try {
+        console.log('Fetching orders for userId:', user.userId);
         const orders = await orderService.getOrders(user.userId);
+        console.log('Orders received:', orders);
+        console.log('Looking for productId:', parseInt(id));
+
         // Check if any DELIVERED order contains this product
         const hasDeliveredProduct = orders.some(
-          (order) =>
-            order.status === 'DELIVERED' &&
-            order.items?.some((item) => item.productId === parseInt(id))
+          (order) => {
+            console.log('Checking order:', order.id, 'status:', order.status, 'items:', order.items);
+            return order.status === 'DELIVERED' &&
+              order.items?.some((item) => {
+                console.log('Checking item productId:', item.productId, 'vs target:', parseInt(id));
+                return item.productId === parseInt(id);
+              });
+          }
         );
+        console.log('hasDeliveredProduct:', hasDeliveredProduct);
         setCanReview(hasDeliveredProduct);
       } catch (error) {
         console.error('Error checking order status:', error);
@@ -138,12 +150,13 @@ const ProductDetails = () => {
       setReviewError('Please login to submit a review');
       return;
     }
-    if (newReview.rating === 0) {
-      setReviewError('Please select a rating');
-      return;
-    }
-    if (!newReview.comment.trim()) {
-      setReviewError('Please enter a comment');
+
+    // At least one of rating or comment must be provided
+    const hasRating = newReview.rating > 0;
+    const hasComment = newReview.comment.trim().length > 0;
+
+    if (!hasRating && !hasComment) {
+      setReviewError('Please provide at least a rating or a comment');
       return;
     }
 
@@ -151,11 +164,25 @@ const ProductDetails = () => {
     setReviewError('');
 
     try {
-      await reviewService.addReview({
+      // Build request - send null for empty fields
+      const reviewRequest = {
         productId: parseInt(id),
-        rating: newReview.rating,
-        comment: newReview.comment
-      });
+        rating: hasRating ? newReview.rating : null,
+        comment: hasComment ? newReview.comment.trim() : null
+      };
+
+      await reviewService.addReview(reviewRequest);
+
+      // Show success message based on what was submitted
+      let successMessage = '';
+      if (hasRating && hasComment) {
+        successMessage = 'Rating submitted! Your comment is pending approval.';
+      } else if (hasRating) {
+        successMessage = 'Rating submitted successfully!';
+      } else {
+        successMessage = 'Comment submitted! Pending Product Manager approval.';
+      }
+      alert(successMessage);
 
       // Refresh reviews after submission
       const [reviewsData, statsData] = await Promise.all([
@@ -382,7 +409,6 @@ const ProductDetails = () => {
                 </button>
               );
             })()}
-
             {/* Description */}
             <p className="text-gray-600 text-sm leading-relaxed mt-4">
               {displayProduct.description}
