@@ -37,18 +37,31 @@ const Login = () => {
         await checkAuth(); // Update global user state
         navigate('/shop'); // Redirect to shop page
       } else {
-        setError('Login failed. Please check your credentials.');
+        // 🔹 If we get a response but no token, treat as bad credentials
+        setError('Email or password is incorrect.');
       }
     } catch (err) {
       console.error('Login form error:', err);
-      let errorMessage = 'Login failed. Please try again.';
+
+      // 🔹 Default error message
+      let errorMessage = 'Email or password is incorrect.';
 
       if (err.code === 'ERR_NETWORK' || err.message?.includes('Network Error')) {
         errorMessage = 'Cannot connect to server. Please ensure the gateway API is running on port 8080.';
       } else if (err.response?.data) {
-        errorMessage = typeof err.response.data === 'string'
-          ? err.response.data
-          : err.response.data.message || JSON.stringify(err.response.data);
+        const data = err.response.data;
+
+        // 🔹 If backend returned { "token": null } or similar, show friendly message
+        if (typeof data === 'object' && data !== null && 'token' in data && data.token === null) {
+          errorMessage = 'Email or password is incorrect.';
+        } else if (typeof data === 'string') {
+          errorMessage = data;
+        } else if (data.message) {
+          errorMessage = data.message;
+        } else {
+          // 🔹 Fallback: still show a human-readable message, not raw JSON
+          errorMessage = 'Email or password is incorrect.';
+        }
       } else if (err.message) {
         errorMessage = err.message;
       }
@@ -60,8 +73,7 @@ const Login = () => {
   };
 
   return (
-    <div className="flex flex-col md:flex-row h-[calc(100vh-100px)]"> {/* Subtract navbar height approx */}
-
+    <div className="flex flex-col md:flex-row h-[calc(100vh-100px)]">
       {/* LEFT SIDE - FORM */}
       <div className="w-full md:w-1/2 flex flex-col justify-center px-8 md:px-24 lg:px-32 bg-[#F5F5F5]">
 
@@ -69,7 +81,10 @@ const Login = () => {
         <div className="flex items-center gap-4 mb-12">
           <h1 className="text-3xl font-bold tracking-tight">LOG IN</h1>
           <span className="text-3xl font-light text-gray-400">|</span>
-          <Link to="/register" className="text-3xl font-bold text-gray-400 hover:text-black transition-colors underline decoration-2 underline-offset-8 decoration-transparent hover:decoration-gray-400">
+          <Link
+            to="/register"
+            className="text-3xl font-bold text-gray-400 hover:text-black transition-colors underline decoration-2 underline-offset-8 decoration-transparent hover:decoration-gray-400"
+          >
             SIGN UP
           </Link>
         </div>
@@ -90,7 +105,6 @@ const Login = () => {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="flex flex-col gap-6 w-full max-w-md">
-
           {/* Custom Input: Email */}
           <div className="relative group">
             <label
@@ -140,7 +154,6 @@ const Login = () => {
               Forgot Password?
             </a>
           </div>
-
         </form>
       </div>
 
@@ -152,7 +165,6 @@ const Login = () => {
           className="w-full h-full object-cover"
         />
       </div>
-
     </div>
   );
 };

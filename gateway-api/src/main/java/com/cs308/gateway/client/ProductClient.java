@@ -329,6 +329,22 @@ public class ProductClient {
         }
     }
 
+    public List<?> getRecentReviews() {
+        log.debug("Calling product service: GET /reviews/recent");
+
+        try {
+            ResponseEntity<List> response = restTemplate.exchange(
+                    "/reviews/recent",
+                    HttpMethod.GET,
+                    null,
+                    List.class);
+            return response.getBody();
+        } catch (RestClientException e) {
+            log.error("Error calling product service to get recent reviews", e);
+            throw new RuntimeException("Failed to get recent reviews", e);
+        }
+    }
+
     public void reduceStock(Long productId, Integer quantity) {
         log.debug("Calling product service: PUT /products/{}/stock/reduce?quantity={}", productId, quantity);
 

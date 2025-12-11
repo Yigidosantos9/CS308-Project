@@ -15,6 +15,15 @@ const Checkout = () => {
     const [payments, setPayments] = useState([]);
     const [selectedPaymentIndex, setSelectedPaymentIndex] = useState(0);
 
+    // 🔹 NEW: validation errors for address & payment
+    const [addressError, setAddressError] = useState('');
+    const [paymentError, setPaymentError] = useState('');
+
+    // Invoice state (inline preview)
+    const [invoiceUrl, setInvoiceUrl] = useState(null);
+    const [invoiceLoading, setInvoiceLoading] = useState(false);
+    const [invoiceError, setInvoiceError] = useState('');
+
     useEffect(() => {
         if (!user) {
             navigate('/login');
@@ -49,11 +58,45 @@ const Checkout = () => {
         }
     }, [user, navigate]);
 
+    // Clean up invoice URL when component unmounts or order changes
+    useEffect(() => {
+        return () => {
+            if (invoiceUrl) {
+                URL.revokeObjectURL(invoiceUrl);
+            }
+        };
+    }, [invoiceUrl]);
+
     const total = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
 
     const handlePlaceOrder = async () => {
         if (!user) {
             navigate('/login');
+            return;
+        }
+
+        // 🔹 Reset validation + invoice errors on each attempt
+        setAddressError('');
+        setPaymentError('');
+        setInvoiceError('');
+
+        // 🔹 Ensure address & payment are present and selected
+        const hasAddresses = addresses.length > 0;
+        const hasPayments = payments.length > 0;
+        const hasSelectedAddress = hasAddresses && selectedAddressId !== null;
+        const hasSelectedPayment =
+            hasPayments &&
+            selectedPaymentIndex !== null &&
+            selectedPaymentIndex >= 0 &&
+            selectedPaymentIndex < payments.length;
+
+        if (!hasSelectedAddress) {
+            setAddressError('Please select a shipping address before placing your order.');
+            return;
+        }
+
+        if (!hasSelectedPayment) {
+            setPaymentError('Please select a payment method before placing your order.');
             return;
         }
 
@@ -72,12 +115,26 @@ const Checkout = () => {
             };
 
             const response = await orderService.createOrder(orderData);
-            setOrderId(response.id);
+            const createdOrderId = response.id;
+            setOrderId(createdOrderId);
             setOrderComplete(true);
 
             // Clear cart after successful order
             if (clearCart) {
                 clearCart();
+            }
+
+            // Fetch invoice PDF as blob and create URL
+            try {
+                setInvoiceLoading(true);
+                const pdfBlob = await orderService.getInvoiceBlob(createdOrderId);
+                const url = URL.createObjectURL(pdfBlob);
+                setInvoiceUrl(url);
+            } catch (err) {
+                console.error('Failed to load invoice for inline display', err);
+                setInvoiceError('Failed to load the invoice preview. You can still download it later from your profile.');
+            } finally {
+                setInvoiceLoading(false);
             }
         } catch (error) {
             console.error('Order failed:', error);
@@ -90,19 +147,52 @@ const Checkout = () => {
     if (orderComplete) {
         return (
             <div className="min-h-screen bg-[#F5F5F5] py-12 px-4 flex items-center justify-center">
-                <div className="bg-white rounded-2xl p-8 shadow-lg text-center max-w-md">
+                <div className="bg-white rounded-2xl p-8 shadow-lg text-center max-w-2xl w-full">
                     <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
                         <Check className="w-8 h-8 text-white" />
                     </div>
                     <h2 className="text-2xl font-bold mb-2">Order Placed Successfully!</h2>
-                    <p className="text-gray-600 mb-4">Order #{orderId}</p>
-                    <p className="text-gray-500 mb-6">Thank you for your purchase. You will receive a confirmation email shortly.</p>
+                    <p className="text-gray-600 mb-1">Order #{orderId}</p>
+                    <p className="text-gray-500 mb-6">
+                        Thank you for your purchase. You will receive a confirmation email shortly.
+                    </p>
+
                     <button
                         onClick={() => navigate('/profile')}
-                        className="bg-black text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-800 transition"
+                        className="bg-black text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-800 transition mb-6"
                     >
                         View My Orders
                     </button>
+
+                    {/* INLINE INVOICE PREVIEW */}
+                    <div className="text-left">
+                        <h3 className="text-lg font-semibold mb-3">Invoice</h3>
+                        {invoiceLoading && (
+                            <div className="flex items-center justify-center h-32 text-gray-500 text-sm">
+                                Loading invoice...
+                            </div>
+                        )}
+                        {invoiceError && (
+                            <p className="text-sm text-red-500 mb-3">
+                                {invoiceError}
+                            </p>
+                        )}
+                        {invoiceUrl && !invoiceLoading && (
+                            <div className="border rounded-lg overflow-hidden">
+                                <iframe
+                                    src={invoiceUrl}
+                                    title="Invoice PDF"
+                                    className="w-full"
+                                    style={{ height: '480px' }}
+                                />
+                            </div>
+                        )}
+                        {!invoiceUrl && !invoiceLoading && !invoiceError && (
+                            <p className="text-sm text-gray-500">
+                                Invoice will be available shortly. You can also view and download it from your profile page under Orders.
+                            </p>
+                        )}
+                    </div>
                 </div>
             </div>
         );
@@ -122,9 +212,13 @@ const Checkout = () => {
                                 <div key={idx} className="flex justify-between items-center border-b pb-3">
                                     <div>
                                         <p className="font-medium">{item.name}</p>
-                                        <p className="text-sm text-gray-500">Size: {item.size} • Qty: {item.quantity}</p>
+                                        <p className="text-sm text-gray-500">
+                                            Size: {item.size} • Qty: {item.quantity}
+                                        </p>
                                     </div>
-                                    <p className="font-bold">{(item.price * item.quantity).toFixed(2)} $</p>
+                                    <p className="font-bold">
+                                        {(item.price * item.quantity).toFixed(2)} $
+                                    </p>
                                 </div>
                             ))}
                         </div>
@@ -138,13 +232,24 @@ const Checkout = () => {
 
                     {/* Payment & Address */}
                     <div className="space-y-6">
+                        {/* 🔹 SHIPPING ADDRESS CARD */}
                         <div className="bg-white rounded-2xl p-6 shadow-sm">
                             <div className="flex items-center gap-2 mb-4">
                                 <MapPin className="w-5 h-5" />
                                 <h2 className="text-xl font-bold">Shipping Address</h2>
                             </div>
                             {addresses.length === 0 ? (
-                                <p className="text-gray-600">No saved addresses. Please add one in your profile.</p>
+                                // 🔹 SHOW CTA TO GO TO PROFILE WHEN NO ADDRESS
+                                <div className="text-gray-600">
+                                    <p>No saved addresses. Please add one in your profile.</p>
+                                    <button
+                                        type="button"
+                                        onClick={() => navigate('/profile')}
+                                        className="mt-3 inline-flex items-center px-4 py-2 text-sm font-semibold rounded-lg bg-black text-white hover:bg-gray-800 transition"
+                                    >
+                                        Go to Profile to Add Address
+                                    </button>
+                                </div>
                             ) : (
                                 <div className="space-y-3">
                                     {addresses.map((addr) => (
@@ -153,55 +258,88 @@ const Checkout = () => {
                                                 type="radio"
                                                 name="address"
                                                 checked={selectedAddressId === addr.id}
-                                                onChange={() => setSelectedAddressId(addr.id)}
+                                                onChange={() => {
+                                                    setSelectedAddressId(addr.id);
+                                                    // 🔹 Clear address error when user picks one
+                                                    setAddressError('');
+                                                }}
                                                 className="mt-1"
                                             />
                                             <div>
                                                 <p className="font-semibold">{addr.title}</p>
                                                 <p className="text-sm text-gray-600">
-                                                    {addr.addressLine}, {addr.city}, {addr.country} {addr.zipCode}
+                                                    {addr.addressLine}, {addr.city}, {addr.country}{' '}
+                                                    {addr.zipCode}
                                                 </p>
                                             </div>
                                         </label>
                                     ))}
                                 </div>
                             )}
+                            {/* 🔹 Show address validation error */}
+                            {addressError && (
+                                <p className="mt-3 text-sm text-red-500">{addressError}</p>
+                            )}
                         </div>
 
+                        {/* 🔹 PAYMENT CARD */}
                         <div className="bg-white rounded-2xl p-6 shadow-sm">
                             <div className="flex items-center gap-2 mb-4">
                                 <CreditCard className="w-5 h-5" />
                                 <h2 className="text-xl font-bold">Payment</h2>
                             </div>
-                            <p className="text-gray-600 mb-4">Select a saved card. Mock payment - no real transaction.</p>
+                            <p className="text-gray-600 mb-4">
+                                Select a saved card. Mock payment - no real transaction.
+                            </p>
                             {payments.length === 0 ? (
-                                <div className="bg-gray-100 p-4 rounded-lg text-sm text-gray-500">
-                                    No saved cards. Add one in your profile.
+                                // 🔹 SHOW CTA TO GO TO PROFILE WHEN NO CARD
+                                <div className="bg-gray-100 p-4 rounded-lg text-sm text-gray-700">
+                                    <p>No saved cards. Add one in your profile.</p>
+                                    <button
+                                        type="button"
+                                        onClick={() => navigate('/profile')}
+                                        className="mt-3 inline-flex items-center px-4 py-2 text-sm font-semibold rounded-lg bg-black text-white hover:bg-gray-800 transition"
+                                    >
+                                        Go to Profile to Add Card
+                                    </button>
                                 </div>
                             ) : (
                                 <div className="space-y-2">
                                     {payments.map((card, idx) => (
-                                        <label key={`${card.last4}-${idx}`} className="flex items-center gap-3 cursor-pointer">
+                                        <label
+                                            key={`${card.last4}-${idx}`}
+                                            className="flex items-center gap-3 cursor-pointer"
+                                        >
                                             <input
                                                 type="radio"
                                                 name="payment"
                                                 checked={selectedPaymentIndex === idx}
-                                                onChange={() => setSelectedPaymentIndex(idx)}
+                                                onChange={() => {
+                                                    setSelectedPaymentIndex(idx);
+                                                    // 🔹 Clear payment error when user picks one
+                                                    setPaymentError('');
+                                                }}
                                             />
                                             <div className="flex flex-col">
                                                 <span className="font-semibold">
                                                     {card.brand || 'Card'} •••• {card.last4}
                                                 </span>
-                                                <span className="text-xs text-gray-500">Expires {card.expiry || '--/--'}</span>
+                                                <span className="text-xs text-gray-500">
+                                                    Expires {card.expiry || '--/--'}
+                                                </span>
                                             </div>
                                             {card.primary && (
-                                                <span className="ml-auto text-xs px-2 py-1 rounded-full bg-black text-white">
+                                                <span className="ml-auto text-xs px-2 py-1 rounded-full bg黑 text-white">
                                                     Primary
                                                 </span>
                                             )}
                                         </label>
                                     ))}
                                 </div>
+                            )}
+                            {/* 🔹 Show payment validation error */}
+                            {paymentError && (
+                                <p className="mt-3 text-sm text-red-500">{paymentError}</p>
                             )}
                         </div>
 

@@ -133,7 +133,7 @@ export const ShopProvider = ({ children }) => {
     }
   };
 
-  const addToCart = async (product) => {
+  const addToCart = async (product, quantity = 1) => {
     // Frontend guard: do not even attempt to add out-of-stock items
     if (product.stock === 0) {
       showToast('This product is out of stock!', 'error');
@@ -144,10 +144,10 @@ export const ShopProvider = ({ children }) => {
 
     try {
       // Call backend first; rely on cart snapshot from server
-      // Pass selectedSize if available
-      await cartService.addToCart(effectiveUserId, product.id, 1, product.selectedSize);
+      // Pass quantity and selectedSize if available
+      await cartService.addToCart(effectiveUserId, product.id, quantity, product.selectedSize);
       await loadCart(effectiveUserId);
-      showToast('Added to cart! ✓', 'success');
+      showToast(`Added ${quantity > 1 ? quantity + ' items' : ''} to cart! ✓`, 'success');
     } catch (err) {
       console.error('Failed to add to cart API:', err);
 
@@ -186,6 +186,38 @@ export const ShopProvider = ({ children }) => {
     }
   };
 
+  // Update quantity with stock check
+  const updateQuantity = async (productId, newQuantity, size, stock) => {
+    if (newQuantity < 1) {
+      return; // Don't allow less than 1
+    }
+    if (newQuantity > stock) {
+      showToast(`Only ${stock} items in stock!`, 'error');
+      return;
+    }
+
+    const effectiveUserId = getEffectiveUserId();
+    const currentItem = cart.find(item => item.id === productId && item.size === size);
+    const currentQty = currentItem?.quantity || 0;
+    const delta = newQuantity - currentQty;
+
+    if (delta === 0) return;
+
+    try {
+      await cartService.updateQuantity(effectiveUserId, productId, delta, size);
+      await loadCart(effectiveUserId);
+    } catch (err) {
+      console.error('Failed to update quantity:', err);
+      const apiError = err?.response?.data;
+      if (apiError?.error === 'out_of_stock') {
+        showToast('Not enough stock available!', 'error');
+      } else {
+        showToast('Failed to update quantity', 'error');
+      }
+      await loadCart(effectiveUserId);
+    }
+  };
+
   // Logout function
   const logout = () => {
     localStorage.removeItem('authToken');
@@ -202,6 +234,7 @@ export const ShopProvider = ({ children }) => {
         addToCart,
         removeFromCart,
         clearCart,
+        updateQuantity,
         setUser,
         checkAuth,
         logout,

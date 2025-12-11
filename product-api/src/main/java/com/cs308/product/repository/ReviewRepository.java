@@ -33,13 +33,24 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     Optional<Review> findByProductIdAndUserId(Long productId, Long userId);
 
     /**
-     * Calculate average rating for a product (only approved reviews)
+     * Calculate average rating for a product (only non-null ratings)
      */
-    @Query("SELECT COALESCE(AVG(r.rating), 0) FROM Review r WHERE r.productId = :productId AND r.approved = true")
+    @Query("SELECT COALESCE(AVG(r.rating), 0) FROM Review r WHERE r.productId = :productId AND r.rating IS NOT NULL")
     Double calculateAverageRating(@Param("productId") Long productId);
 
     /**
-     * Count approved reviews for a product
+     * Count reviews with ratings for a product
+     */
+    @Query("SELECT COUNT(r) FROM Review r WHERE r.productId = :productId AND r.rating IS NOT NULL")
+    long countByProductIdAndRatingIsNotNull(@Param("productId") Long productId);
+
+    /**
+     * Count approved reviews (for comment count display)
      */
     long countByProductIdAndApprovedTrue(Long productId);
+
+    /**
+     * Get recent approved reviews for home page display
+     */
+    List<Review> findTop10ByApprovedTrueAndCommentIsNotNullOrderByCreatedAtDesc();
 }

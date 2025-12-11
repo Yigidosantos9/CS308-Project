@@ -45,6 +45,11 @@ public class ReviewController {
         return ResponseEntity.ok(reviewService.getPendingReviews());
     }
 
+    @GetMapping("/recent")
+    public ResponseEntity<List<ReviewResponse>> getRecentReviews() {
+        return ResponseEntity.ok(reviewService.getRecentApprovedReviews());
+    }
+
     @PutMapping("/{reviewId}/approve")
     public ResponseEntity<ReviewResponse> approveReview(@PathVariable Long reviewId) {
         return ResponseEntity.ok(reviewService.approveReview(reviewId));

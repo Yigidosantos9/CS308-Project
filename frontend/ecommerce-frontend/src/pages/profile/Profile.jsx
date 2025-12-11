@@ -16,7 +16,7 @@ import {
   ChevronDown,
 } from 'lucide-react';
 import { useShop } from '../../context/ShopContext';
-import { authService, orderService, addressService } from '../../services/api';
+import { authService, orderService, addressService, productService } from '../../services/api'; // 🔹 ADDED productService
 
 const tabs = [
   'Profile',
@@ -90,7 +90,6 @@ const Profile = () => {
     }
   }, [user]);
 
-
   const [orders, setOrders] = useState([]);
 
   // Fetch orders when profile loads to calculate stats
@@ -101,31 +100,64 @@ const Profile = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  const fetchOrders = async () => {
+  const fetchOrders = async () => { // 🔹 UPDATED
     try {
       const data = await orderService.getOrders(user.userId);
-      const formattedOrders = data.map((order) => ({
-        id: order.id,
-        orderDate: order.orderDate,
-        totalPrice: order.totalPrice,
-        status: order.status,
-        items: order.items || [],
-      }));
-      setOrders(formattedOrders);
+
+      // 🔹 Simple in-memory cache so we don't refetch the same product many times
+      const productCache = {};
+
+      const ordersWithProductNames = await Promise.all(
+        (data || []).map(async (order) => {
+          const itemsWithNames = await Promise.all(
+            (order.items || []).map(async (item) => {
+              if (!item?.productId) return item;
+
+              // If we already fetched this product once, reuse it
+              if (!productCache[item.productId]) {
+                try {
+                  const product = await productService.getProductById(item.productId);
+                  productCache[item.productId] =
+                    product?.name || `Product #${item.productId}`;
+                } catch (e) {
+                  console.error('Failed to fetch product for order item', e);
+                  productCache[item.productId] = `Product #${item.productId}`;
+                }
+              }
+
+              return {
+                ...item,
+                productName: productCache[item.productId],
+              };
+            })
+          );
+
+          return {
+            id: order.id,
+            orderDate: order.orderDate,
+            totalPrice: order.totalPrice,
+            status: order.status,
+            items: itemsWithNames,
+          };
+        })
+      );
+
+      setOrders(ordersWithProductNames);
     } catch (err) {
       console.error('Failed to fetch orders', err);
     }
   };
 
+
   // Calculate dynamic stats based on actual orders
-  const completedOrders = orders.filter(o => o.status === 'DELIVERED').length;
+  const completedOrders = orders.filter((o) => o.status === 'DELIVERED').length;
   const totalOrders = orders.length;
 
   const stats = [
     { label: 'Total Orders', value: String(totalOrders), highlight: true },
     { label: 'Completed', value: String(completedOrders) },
-    { label: 'Preparing', value: String(orders.filter(o => o.status === 'PREPARING').length) },
-    { label: 'Shipped', value: String(orders.filter(o => o.status === 'SHIPPED').length) },
+    { label: 'Preparing', value: String(orders.filter((o) => o.status === 'PREPARING').length) },
+    { label: 'Shipped', value: String(orders.filter((o) => o.status === 'SHIPPED').length) },
   ];
 
   const [addresses, setAddresses] = useState([]);
@@ -152,8 +184,9 @@ const Profile = () => {
 
   const fetchAddresses = async () => {
     try {
-      const data = await addressService.getAddresses();
-      setAddresses(data);
+      // 🔹 CHANGED: pass userId to match backend expectations
+      const data = await addressService.getAddresses(user.userId);
+      setAddresses(data || []);
     } catch (err) {
       console.error('Failed to fetch addresses', err);
     }
@@ -162,11 +195,19 @@ const Profile = () => {
   const handleAddAddress = async (e) => {
     e.preventDefault();
     try {
-      if (editingAddressId) {
-        await addressService.updateAddress(editingAddressId, newAddress);
-      } else {
-        await addressService.addAddress(newAddress);
+      if (!user?.userId) {
+        console.error('No userId available when saving address');
+        return;
       }
+
+      if (editingAddressId) {
+        // 🔹 CHANGED: pass userId to update
+        await addressService.updateAddress(editingAddressId, newAddress, user.userId);
+      } else {
+        // 🔹 CHANGED: pass userId to add
+        await addressService.addAddress(newAddress, user.userId);
+      }
+
       setEditingAddressId(null);
       setNewAddress({
         title: '',
@@ -175,7 +216,8 @@ const Profile = () => {
         country: '',
         zipCode: '',
       });
-      fetchAddresses();
+
+      await fetchAddresses(); // 🔹 CHANGED: ensure refresh after save
     } catch (err) {
       console.error('Failed to add address', err);
     }
@@ -183,7 +225,8 @@ const Profile = () => {
 
   const handleDeleteAddress = async (addressId) => {
     try {
-      await addressService.deleteAddress(addressId);
+      // 🔹 CHANGED: pass userId to delete (to stay consistent with backend style)
+      await addressService.deleteAddress(addressId, user?.userId);
       fetchAddresses();
     } catch (err) {
       console.error('Failed to delete address', err);
@@ -305,7 +348,7 @@ const Profile = () => {
           <p className="mt-4 text-gray-600">No orders yet</p>
         </div>
       ) : (
-        orders.map((order) => (
+        [...orders].sort((a, b) => new Date(b.orderDate) - new Date(a.orderDate)).map((order) => (
           <div
             key={order.id}
             className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden"
@@ -350,31 +393,49 @@ const Profile = () => {
               </div>
             </div>
 
-            {/* Order Details - Expandable */}
             {expandedOrderId === order.id && (
               <div className="border-t border-gray-200 bg-gray-50 p-5">
                 <h4 className="font-semibold mb-3">Order Items</h4>
                 {order.items && order.items.length > 0 ? (
                   <div className="space-y-3">
-                    {order.items.map((item, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between bg-white rounded-lg p-3 border border-gray-100"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center">
-                            <Package className="h-5 w-5 text-gray-500" />
+                    {order.items.map((item, index) => {
+                      // 🔹 NEW: Prefer product name; fall back to Product #id
+                      const itemName =
+                        item.productName ||
+                        item.name ||
+                        item.product?.name ||
+                        `Product #${item.productId}`;
+
+                      // 🔹 NEW: safer line total calculation
+                      const lineTotal =
+                        item.price ??
+                        (item.unitPrice && item.quantity
+                          ? item.unitPrice * item.quantity
+                          : 0);
+
+                      return (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between bg-white rounded-lg p-3 border border-gray-100 cursor-pointer hover:bg-gray-50 transition"
+                          onClick={() => navigate(`/product/${item.productId}`)}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center">
+                              <Package className="h-5 w-5 text-gray-500" />
+                            </div>
+                            <div>
+                              <p className="font-medium hover:underline">{itemName}</p>
+                              <p className="text-sm text-gray-500">
+                                Qty: {item.quantity}
+                              </p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="font-medium">Product #{item.productId}</p>
-                            <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
-                          </div>
+                          <p className="font-medium">
+                            ${lineTotal.toFixed(2)}
+                          </p>
                         </div>
-                        <p className="font-medium">
-                          ${(item.price || item.unitPrice * item.quantity)?.toFixed(2)}
-                        </p>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 ) : (
                   <p className="text-gray-500 text-sm">No items available</p>
@@ -401,108 +462,209 @@ const Profile = () => {
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-2">
         {addresses.map((address) => (
-          <div
-            key={address.id}
-            className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm"
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <MapPin className="h-4 w-4" />
-                <p className="text-sm font-semibold uppercase tracking-wide">
-                  {address.title}
-                </p>
+          editingAddressId === address.id ? (
+            // 🔹 NEW: Inline edit form on the clicked card
+            <div
+              key={address.id}
+              className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm"
+            >
+              <h3 className="mb-4 text-sm font-bold uppercase tracking-wide">
+                Edit Address
+              </h3>
+              <form onSubmit={handleAddAddress} className="space-y-3">
+                <input
+                  placeholder="Title (e.g. Home)"
+                  className="w-full rounded-lg border border-gray-200 p-2 text-sm"
+                  value={newAddress.title}
+                  onChange={(e) => handleAddressChange('title', e.target.value)}
+                  autoComplete="off"
+                  required
+                />
+                <input
+                  placeholder="Address Line"
+                  className="w-full rounded-lg border border-gray-200 p-2 text-sm"
+                  value={newAddress.addressLine}
+                  onChange={(e) =>
+                    handleAddressChange('addressLine', e.target.value)
+                  }
+                  autoComplete="off"
+                  required
+                />
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    placeholder="City"
+                    className="w-full rounded-lg border border-gray-200 p-2 text-sm"
+                    value={newAddress.city}
+                    onChange={(e) =>
+                      handleAddressChange('city', e.target.value)
+                    }
+                    autoComplete="off"
+                    required
+                  />
+                  <input
+                    placeholder="Zip Code"
+                    className="w-full rounded-lg border border-gray-200 p-2 text-sm"
+                    value={newAddress.zipCode}
+                    onChange={(e) =>
+                      handleAddressChange(
+                        'zipCode',
+                        e.target.value.replace(/\D/g, '').slice(0, 5)
+                      )
+                    }
+                    inputMode="numeric"
+                    pattern="[0-9]{5}"
+                    minLength={5}
+                    maxLength={5}
+                    autoComplete="off"
+                    required
+                  />
+                </div>
+                <input
+                  placeholder="Country"
+                  className="w-full rounded-lg border border-gray-200 p-2 text-sm"
+                  value={newAddress.country}
+                  onChange={(e) =>
+                    handleAddressChange('country', e.target.value)
+                  }
+                  autoComplete="off"
+                  required
+                />
+                <div className="flex gap-2 pt-2">
+                  <button
+                    type="submit"
+                    className="flex-1 rounded-lg bg-black py-2 text-sm font-bold text-white"
+                  >
+                    Update
+                  </button>
+                  <button
+                    type="button"
+                    onClick={resetAddressForm} // 🔹 CHANGED: closes inline edit & resets form
+                    className="flex-1 rounded-lg border border-gray-200 py-2 text-sm font-bold"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          ) : (
+            // 🔹 UNCHANGED: normal read-only card
+            <div
+              key={address.id}
+              className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4" />
+                  <p className="text-sm font-semibold uppercase tracking-wide">
+                    {address.title}
+                  </p>
+                </div>
+              </div>
+              <p className="mt-3 text-sm text-gray-700 leading-relaxed">
+                {address.addressLine}
+                <br />
+                {address.city}, {address.country} {address.zipCode}
+              </p>
+              <div className="mt-4 flex gap-3 text-sm font-semibold text-black">
+                <button
+                  onClick={() => startEditingAddress(address)} // uses existing logic
+                  className="underline underline-offset-4"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => handleDeleteAddress(address.id)}
+                  className="underline underline-offset-4 text-red-600"
+                >
+                  Delete
+                </button>
               </div>
             </div>
-            <p className="mt-3 text-sm text-gray-700 leading-relaxed">
-              {address.addressLine}
-              <br />
-              {address.city}, {address.country} {address.zipCode}
-            </p>
-            <div className="mt-4 flex gap-3 text-sm font-semibold text-black">
-              <button
-                onClick={() => startEditingAddress(address)}
-                className="underline underline-offset-4"
-              >
-                Edit
-              </button>
-              <button
-                onClick={() => handleDeleteAddress(address.id)}
-                className="underline underline-offset-4 text-red-600"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
+          )
         ))}
 
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-          <h3 className="mb-4 text-sm font-bold uppercase tracking-wide">
-            {editingAddressId ? 'Edit Address' : 'New Address'}
-          </h3>
-          <form onSubmit={handleAddAddress} className="space-y-3">
-            <input
-              placeholder="Title (e.g. Home)"
-              className="w-full rounded-lg border border-gray-200 p-2 text-sm"
-              value={newAddress.title}
-              onChange={(e) => handleAddressChange('title', e.target.value)}
-              autoComplete="off"
-              required
-            />
-            <input
-              placeholder="Address Line"
-              className="w-full rounded-lg border border-gray-200 p-2 text-sm"
-              value={newAddress.addressLine}
-              onChange={(e) => handleAddressChange('addressLine', e.target.value)}
-              autoComplete="off"
-              required
-            />
-            <div className="grid grid-cols-2 gap-2">
+        {/* 🔹 CHANGED: Show "New Address" card ONLY when not editing */}
+        {showAddAddress && !editingAddressId && (
+          <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+            <h3 className="mb-4 text-sm font-bold uppercase tracking-wide">
+              New Address
+            </h3>
+            <form onSubmit={handleAddAddress} className="space-y-3">
               <input
-                placeholder="City"
+                placeholder="Title (e.g. Home)"
                 className="w-full rounded-lg border border-gray-200 p-2 text-sm"
-                value={newAddress.city}
-                onChange={(e) => handleAddressChange('city', e.target.value)}
+                value={newAddress.title}
+                onChange={(e) => handleAddressChange('title', e.target.value)}
                 autoComplete="off"
                 required
               />
               <input
-                placeholder="Zip Code"
+                placeholder="Address Line"
                 className="w-full rounded-lg border border-gray-200 p-2 text-sm"
-                value={newAddress.zipCode}
-                onChange={(e) => handleAddressChange('zipCode', e.target.value.replace(/\D/g, '').slice(0, 5))}
-                inputMode="numeric"
-                pattern="[0-9]{5}"
-                minLength={5}
-                maxLength={5}
+                value={newAddress.addressLine}
+                onChange={(e) =>
+                  handleAddressChange('addressLine', e.target.value)
+                }
                 autoComplete="off"
                 required
               />
-            </div>
-            <input
-              placeholder="Country"
-              className="w-full rounded-lg border border-gray-200 p-2 text-sm"
-              value={newAddress.country}
-              onChange={(e) => handleAddressChange('country', e.target.value)}
-              autoComplete="off"
-              required
-            />
-            <div className="flex gap-2 pt-2">
-              <button
-                type="submit"
-                className="flex-1 rounded-lg bg-black py-2 text-sm font-bold text-white"
-              >
-                {editingAddressId ? 'Update' : 'Save'}
-              </button>
-              <button
-                type="button"
-                onClick={resetAddressForm}
-                className="flex-1 rounded-lg border border-gray-200 py-2 text-sm font-bold"
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        </div>
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  placeholder="City"
+                  className="w-full rounded-lg border border-gray-200 p-2 text-sm"
+                  value={newAddress.city}
+                  onChange={(e) =>
+                    handleAddressChange('city', e.target.value)
+                  }
+                  autoComplete="off"
+                  required
+                />
+                <input
+                  placeholder="Zip Code"
+                  className="w-full rounded-lg border border-gray-200 p-2 text-sm"
+                  value={newAddress.zipCode}
+                  onChange={(e) =>
+                    handleAddressChange(
+                      'zipCode',
+                      e.target.value.replace(/\D/g, '').slice(0, 5)
+                    )
+                  }
+                  inputMode="numeric"
+                  pattern="[0-9]{5}"
+                  minLength={5}
+                  maxLength={5}
+                  autoComplete="off"
+                  required
+                />
+              </div>
+              <input
+                placeholder="Country"
+                className="w-full rounded-lg border border-gray-200 p-2 text-sm"
+                value={newAddress.country}
+                onChange={(e) =>
+                  handleAddressChange('country', e.target.value)
+                }
+                autoComplete="off"
+                required
+              />
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="submit"
+                  className="flex-1 rounded-lg bg-black py-2 text-sm font-bold text-white"
+                >
+                  Save
+                </button>
+                <button
+                  type="button"
+                  onClick={resetAddressForm}
+                  className="flex-1 rounded-lg border border-gray-200 py-2 text-sm font-bold"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -529,12 +691,16 @@ const Profile = () => {
           </div>
           <p className="text-lg font-bold tracking-[0.2em]">{`**** ${card.last4}`}</p>
           <p className="text-sm text-gray-600">Expires {card.expiry}</p>
-          <p className="text-xs text-gray-500 truncate">Name: {card.cardholderName || '—'}</p>
+          <p className="text-xs text-gray-500 truncate">
+            Name: {card.cardholderName || '—'}
+          </p>
           <div className="flex gap-3 text-sm font-semibold">
             <button
               onClick={() => {
                 setShowAddPayment(true);
-                setEditingPaymentIndex(payments.findIndex((p) => p.last4 === card.last4));
+                setEditingPaymentIndex(
+                  payments.findIndex((p) => p.last4 === card.last4)
+                );
                 setNewPayment({
                   cardNumber: card.fullNumber || '',
                   expiry: card.expiry || '',
@@ -566,7 +732,9 @@ const Profile = () => {
       {/* Add Payment Button or Form */}
       {showAddPayment ? (
         <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-          <h3 className="mb-3 text-lg font-bold">{editingPaymentIndex !== null ? 'Edit Card' : 'Add New Card'}</h3>
+          <h3 className="mb-3 text-lg font-bold">
+            {editingPaymentIndex !== null ? 'Edit Card' : 'Add New Card'}
+          </h3>
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -583,11 +751,14 @@ const Profile = () => {
                   return {
                     ...p,
                     brand: newPayment.cardNumber ? brand : p.brand,
-                    last4: newPayment.cardNumber ? newPayment.cardNumber.slice(-4) : p.last4,
+                    last4: newPayment.cardNumber
+                      ? newPayment.cardNumber.slice(-4)
+                      : p.last4,
                     fullNumber: newPayment.cardNumber || p.fullNumber || '',
                     expiry: newPayment.expiry || p.expiry,
                     cvv: newPayment.cvv || p.cvv || '',
-                    cardholderName: newPayment.cardholderName || p.cardholderName || '',
+                    cardholderName:
+                      newPayment.cardholderName || p.cardholderName || '',
                   };
                 });
                 persistPayments(updated);
@@ -606,7 +777,12 @@ const Profile = () => {
 
               setShowAddPayment(false);
               setEditingPaymentIndex(null);
-              setNewPayment({ cardNumber: '', expiry: '', cvv: '', cardholderName: '' });
+              setNewPayment({
+                cardNumber: '',
+                expiry: '',
+                cvv: '',
+                cardholderName: '',
+              });
             }}
             className="space-y-3"
           >
@@ -615,7 +791,12 @@ const Profile = () => {
               placeholder="Cardholder Name"
               className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
               value={newPayment.cardholderName}
-              onChange={(e) => setNewPayment({ ...newPayment, cardholderName: e.target.value })}
+              onChange={(e) =>
+                setNewPayment({
+                  ...newPayment,
+                  cardholderName: e.target.value,
+                })
+              }
               required
             />
             <input
@@ -623,7 +804,14 @@ const Profile = () => {
               placeholder="Card Number"
               className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
               value={newPayment.cardNumber}
-              onChange={(e) => setNewPayment({ ...newPayment, cardNumber: e.target.value.replace(/\D/g, '').slice(0, 16) })}
+              onChange={(e) =>
+                setNewPayment({
+                  ...newPayment,
+                  cardNumber: e.target.value
+                    .replace(/\D/g, '')
+                    .slice(0, 16),
+                })
+              }
               maxLength={16}
               required
             />
@@ -643,16 +831,20 @@ const Profile = () => {
                 maxLength={5}
                 required
               />
-            <input
-              type="text"
-              placeholder="CVV"
-              inputMode="numeric"
-              type="password"
-              className="w-20 rounded-lg border border-gray-200 px-3 py-2 text-sm"
-              value={newPayment.cvv}
-              onChange={(e) => setNewPayment({ ...newPayment, cvv: e.target.value.replace(/\D/g, '').slice(0, 4) })}
-              maxLength={4}
-              required
+              <input
+                placeholder="CVV"
+                inputMode="numeric"
+                type="password"
+                className="w-20 rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                value={newPayment.cvv}
+                onChange={(e) =>
+                  setNewPayment({
+                    ...newPayment,
+                    cvv: e.target.value.replace(/\D/g, '').slice(0, 4),
+                  })
+                }
+                maxLength={4}
+                required
               />
             </div>
             <div className="flex gap-2 pt-2">
@@ -667,7 +859,12 @@ const Profile = () => {
                 onClick={() => {
                   setShowAddPayment(false);
                   setEditingPaymentIndex(null);
-                  setNewPayment({ cardNumber: '', expiry: '', cvv: '', cardholderName: '' });
+                  setNewPayment({
+                    cardNumber: '',
+                    expiry: '',
+                    cvv: '',
+                    cardholderName: '',
+                  });
                 }}
                 className="flex-1 rounded-lg border border-gray-200 py-2 text-sm font-bold"
               >
@@ -779,12 +976,8 @@ const Profile = () => {
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="flex items-center gap-4">
               <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-xl font-bold text-black shadow">
-                {formState.firstName
-                  ? formState.firstName.charAt(0)
-                  : 'U'}
-                {formState.lastName
-                  ? formState.lastName.charAt(0)
-                  : ''}
+                {formState.firstName ? formState.firstName.charAt(0) : 'U'}
+                {formState.lastName ? formState.lastName.charAt(0) : ''}
               </div>
               <div>
                 <p className="text-sm uppercase tracking-[0.2em] text-white/70">
@@ -794,7 +987,7 @@ const Profile = () => {
                   {formState.firstName || 'User'} {formState.lastName}
                 </p>
                 <p className="text-sm text-white/70">
-                  RAWCTRL member • Istanbul
+                  RAWCTRL member
                 </p>
               </div>
             </div>
@@ -806,7 +999,7 @@ const Profile = () => {
                 Priority shipping
               </span>
               <span className="rounded-full bg-white/20 px-3 py-1 text-sm font-medium text-white">
-                Spend: $1.2k
+                Spend: ${orders.reduce((sum, order) => sum + (order.totalPrice || 0), 0).toFixed(0)}
               </span>
             </div>
           </div>

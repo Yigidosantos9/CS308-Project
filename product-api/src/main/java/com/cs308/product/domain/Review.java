@@ -3,7 +3,6 @@ package com.cs308.product.domain;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -36,14 +35,12 @@ public class Review {
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
-    @NotNull
     @Min(1)
     @Max(5)
-    @Column(nullable = false)
+    @Column(nullable = true) // Rating is optional for comment-only reviews
     private Integer rating;
 
-    @NotBlank
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(columnDefinition = "TEXT")
     private String comment;
 
     @Column(nullable = false)

@@ -47,6 +47,13 @@ public class ReviewController {
         return ResponseEntity.ok(productClient.getProductReviewStats(productId));
     }
 
+    // Get recent approved reviews for home page (public, no auth needed)
+    @GetMapping("/recent")
+    public ResponseEntity<?> getRecentReviews() {
+        log.info("BFF: Get recent approved reviews");
+        return ResponseEntity.ok(productClient.getRecentReviews());
+    }
+
     // Product Manager - Get pending reviews for approval
     @GetMapping("/pending")
     public ResponseEntity<?> getPendingReviews(

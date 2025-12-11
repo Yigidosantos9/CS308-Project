@@ -23,23 +23,43 @@ public class ReviewService {
     private final ReviewRepository reviewRepository;
     private final ProductRepository productRepository;
 
-    // ... (Your existing addReview, getApprovedReviews, etc. methods remain here) ...
+    // ... (Your existing addReview, getApprovedReviews, etc. methods remain here)
+    // ...
 
     @Transactional
     public ReviewResponse addReview(Long userId, CreateReviewRequest request) {
-        Optional<Review> existingReview =
-                reviewRepository.findByProductIdAndUserId(request.getProductId(), userId);
+        // Validate: at least rating or comment must be provided
+        boolean hasRating = request.getRating() != null;
+        boolean hasComment = request.getComment() != null && !request.getComment().isBlank();
+
+        if (!hasRating && !hasComment) {
+            throw new IllegalArgumentException("At least rating or comment must be provided");
+        }
+
+        Optional<Review> existingReview = reviewRepository.findByProductIdAndUserId(request.getProductId(), userId);
         if (existingReview.isPresent()) {
             throw new IllegalStateException("You have already reviewed this product");
         }
+
+        // Approval logic:
+        // - If comment exists, require PM approval (approved = false)
+        // - If only rating (no comment), approve immediately (approved = true)
+        boolean approved = !hasComment;
+
         Review review = Review.builder()
                 .productId(request.getProductId())
                 .userId(userId)
                 .rating(request.getRating())
-                .comment(request.getComment())
-                .approved(false) 
+                .comment(hasComment ? request.getComment() : null)
+                .approved(approved)
                 .build();
         Review saved = reviewRepository.save(review);
+
+        // Update product rating only if rating was provided
+        if (hasRating) {
+            recalculateProductRating(saved.getProductId());
+        }
+
         return toResponse(saved);
     }
 
@@ -64,10 +84,10 @@ public class ReviewService {
                 .orElseThrow(() -> new IllegalArgumentException("Review not found"));
         review.setApproved(true);
         Review saved = reviewRepository.save(review);
-        
+
         // Update product table
         recalculateProductRating(saved.getProductId());
-        
+
         return toResponse(saved);
     }
 
@@ -77,7 +97,7 @@ public class ReviewService {
                 .orElseThrow(() -> new IllegalArgumentException("Review not found"));
         Long productId = review.getProductId();
         reviewRepository.delete(review);
-        
+
         // Update product table
         recalculateProductRating(productId);
     }
@@ -87,7 +107,19 @@ public class ReviewService {
     }
 
     public long getReviewCount(Long productId) {
+        return reviewRepository.countByProductIdAndRatingIsNotNull(productId);
+    }
+
+    public long getApprovedCommentCount(Long productId) {
         return reviewRepository.countByProductIdAndApprovedTrue(productId);
+    }
+
+    /**
+     * Get recent approved reviews with comments for home page
+     */
+    public List<ReviewResponse> getRecentApprovedReviews() {
+        return reviewRepository.findTop10ByApprovedTrueAndCommentIsNotNullOrderByCreatedAtDesc()
+                .stream().map(this::toResponse).collect(Collectors.toList());
     }
 
     /**
@@ -96,7 +128,7 @@ public class ReviewService {
     @Transactional
     public void recalculateProductRating(Long productId) {
         Double avg = reviewRepository.calculateAverageRating(productId);
-        long count = reviewRepository.countByProductIdAndApprovedTrue(productId);
+        long count = reviewRepository.countByProductIdAndRatingIsNotNull(productId);
 
         productRepository.findById(productId).ifPresent(product -> {
             // Handle nulls safely
@@ -111,21 +143,21 @@ public class ReviewService {
     /**
      * 🟢 NEW: Run this once to fix your database sorting
      */
-// In ReviewService.java
+    // In ReviewService.java
 
-@Transactional
-public void syncAllRatings() {
-    List<Product> allProducts = productRepository.findAll();
-    for (Product product : allProducts) {
-        Double avg = reviewRepository.calculateAverageRating(product.getId());
-        long count = reviewRepository.countByProductIdAndApprovedTrue(product.getId());
+    @Transactional
+    public void syncAllRatings() {
+        List<Product> allProducts = productRepository.findAll();
+        for (Product product : allProducts) {
+            Double avg = reviewRepository.calculateAverageRating(product.getId());
+            long count = reviewRepository.countByProductIdAndApprovedTrue(product.getId());
 
-        // Handle NULLs from DB
-        product.setAverageRating(avg != null ? avg : 0.0);
-        product.setReviewCount(count);
-        productRepository.save(product);
+            // Handle NULLs from DB
+            product.setAverageRating(avg != null ? avg : 0.0);
+            product.setReviewCount(count);
+            productRepository.save(product);
+        }
     }
-}
 
     private ReviewResponse toResponse(Review review) {
         return ReviewResponse.builder()

@@ -153,6 +153,16 @@ export const reviewService = {
   // PM: Disapprove/delete a review
   disapproveReview: async (reviewId) => {
     return await api.delete(`/reviews/${reviewId}`);
+  },
+  // Get recent approved reviews for home page
+  getRecentReviews: async () => {
+    try {
+      const response = await api.get('/reviews/recent');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching recent reviews:', error);
+      return [];
+    }
   }
 };
 
@@ -194,6 +204,15 @@ export const cartService = {
     return await api.delete(`/cart/clear`, {
       params: { userId }
     });
+  },
+
+  // Update quantity - uses addToCart with delta quantity
+  updateQuantity: async (userId, productId, quantity, size) => {
+    const params = { userId, productId, quantity };
+    if (size) {
+      params.size = size;
+    }
+    return await api.post(`/cart/add`, null, { params });
   }
 };
 
@@ -207,6 +226,7 @@ export const orderService = {
       throw error;
     }
   },
+
   createOrder: async (orderData) => {
     try {
       // Send order data in body with userId as query param
@@ -220,6 +240,8 @@ export const orderService = {
       throw error;
     }
   },
+
+  // Existing: download invoice as a file (used on Profile page)
   getInvoice: async (orderId) => {
     try {
       const response = await api.get(`/orders/${orderId}/invoice`, {
@@ -240,6 +262,20 @@ export const orderService = {
       throw error;
     }
   },
+
+  // NEW: return raw blob so Checkout can render PDF inline in an <iframe>
+  getInvoiceBlob: async (orderId) => {
+    try {
+      const response = await api.get(`/orders/${orderId}/invoice`, {
+        responseType: 'blob'
+      });
+      return response.data; // PDF blob
+    } catch (error) {
+      console.error("Error fetching invoice blob:", error);
+      throw error;
+    }
+  },
+
   // Product Manager: Get all orders
   getAllOrders: async () => {
     try {
@@ -250,6 +286,7 @@ export const orderService = {
       throw error;
     }
   },
+
   // Product Manager: Update order status
   updateOrderStatus: async (orderId, status) => {
     try {
@@ -264,42 +301,51 @@ export const orderService = {
   }
 };
 
+// 🔹 UPDATED addressService in api.js
 export const addressService = {
-  getAddresses: async () => {
+  getAddresses: async (userId) => {
     try {
-      const response = await api.get('/addresses');
+      const response = await api.get('/addresses', {
+        params: { userId }, // 🔹 CHANGED
+      });
       return response.data;
     } catch (error) {
       console.error("Error fetching addresses:", error);
       throw error;
     }
   },
-  addAddress: async (addressData) => {
+  addAddress: async (addressData, userId) => {
     try {
-      const response = await api.post('/addresses', addressData);
+      const response = await api.post('/addresses', addressData, {
+        params: { userId }, // 🔹 CHANGED
+      });
       return response.data;
     } catch (error) {
       console.error("Error adding address:", error);
       throw error;
     }
   },
-  updateAddress: async (addressId, addressData) => {
+  updateAddress: async (addressId, addressData, userId) => {
     try {
-      const response = await api.put(`/addresses/${addressId}`, addressData);
+      const response = await api.put(`/addresses/${addressId}`, addressData, {
+        params: { userId }, // 🔹 CHANGED
+      });
       return response.data;
     } catch (error) {
       console.error("Error updating address:", error);
       throw error;
     }
   },
-  deleteAddress: async (addressId) => {
+  deleteAddress: async (addressId, userId) => {
     try {
-      await api.delete(`/addresses/${addressId}`);
+      await api.delete(`/addresses/${addressId}`, {
+        params: { userId }, // 🔹 CHANGED
+      });
     } catch (error) {
       console.error("Error deleting address:", error);
       throw error;
     }
-  }
+  },
 };
 
 export default api;

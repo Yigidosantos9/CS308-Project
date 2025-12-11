@@ -10,6 +10,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.Period;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -47,6 +50,23 @@ public class AuthService {
 
     public String register(CreateUserRequest request) {
         log.info("Processing registration request for email: {}", request.getEmail());
+
+        // Validate age - must be at least 16 years old
+        if (request.getBirthDate() != null) {
+            int age = Period.between(request.getBirthDate(), LocalDate.now()).getYears();
+            if (age < 16) {
+                throw new IllegalArgumentException("You must be at least 16 years old to register.");
+            }
+        } else {
+            throw new IllegalArgumentException("Birth date is required.");
+        }
+
+        // Validate phone number - must be 10-15 digits only
+        String phoneNumber = request.getPhoneNumber();
+        if (phoneNumber == null || !phoneNumber.matches("^[0-9]{10,15}$")) {
+            throw new IllegalArgumentException("Please enter a valid phone number (10-15 digits).");
+        }
+
         return authClient.signUp(request);
     }
 
