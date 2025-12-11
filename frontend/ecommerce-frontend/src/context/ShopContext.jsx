@@ -19,11 +19,42 @@ export const ShopProvider = ({ children }) => {
   const [cart, setCart] = useState([]);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isMerging, setIsMerging] = useState(false);
   const [toast, setToast] = useState({
     show: false,
     message: '',
     type: 'success',
   });
+
+  const saveGuestSnapshot = (items) => {
+    try {
+      localStorage.setItem(
+        'guestCartSnapshot',
+        JSON.stringify(
+          items.map((item) => ({
+            id: item.id,
+            quantity: item.quantity,
+            size: item.size || item.selectedSize || null,
+          }))
+        )
+      );
+    } catch (e) {
+      console.warn('Failed to persist guest cart snapshot', e);
+    }
+  };
+
+  const loadGuestSnapshot = () => {
+    try {
+      const raw = localStorage.getItem('guestCartSnapshot');
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  };
+
+  const clearGuestSnapshot = () => {
+    localStorage.removeItem('guestCartSnapshot');
+  };
 
   // Show toast notification
   const showToast = (message, type = 'success') => {
@@ -75,16 +106,47 @@ export const ShopProvider = ({ children }) => {
       const guestId = localStorage.getItem('guestUserId');
       if (guestId) {
         try {
-          await cartService.mergeCarts(parseInt(guestId, 10), userData.userId);
+          setIsMerging(true);
+          const mergedCart = await cartService.mergeCarts(parseInt(guestId, 10), userData.userId);
+          // If merge returns cart data, hydrate immediately to avoid flicker/empty state
+          if (mergedCart?.items) {
+            const formattedCart = mergedCart.items.map((item) => ({
+              ...item.product,
+              quantity: item.quantity,
+              size: item.size,
+            }));
+            setCart(formattedCart);
+          }
           localStorage.removeItem('guestUserId'); // Clear guest ID after merge
         } catch (mergeErr) {
           console.log('Cart merge skipped or failed:', mergeErr);
+        } finally {
+          setIsMerging(false);
         }
       }
 
       // Explicitly load cart AFTER potential merge to ensure we get the updated state
       // This fixes the race condition where the initial useEffect might fetch an empty cart before merge completes
-      await loadCart(userData.userId);
+      const loadedCart = await loadCart(userData.userId);
+
+      // Fallback: if user cart is still empty but we have a guest snapshot, re-add items
+      const snapshot = loadGuestSnapshot();
+      if (snapshot.length > 0 && loadedCart.length === 0) {
+        for (const item of snapshot) {
+          try {
+            await cartService.addToCart(userData.userId, item.id, item.quantity, item.size);
+          } catch (e) {
+            console.warn('Failed to re-add snapshot item after login', e);
+          }
+        }
+        await loadCart(userData.userId);
+        clearGuestSnapshot();
+      }
+
+      // If cart finally has items, clear any leftover snapshot
+      if ((loadedCart && loadedCart.length > 0) || cart.length > 0) {
+        clearGuestSnapshot();
+      }
 
     } catch (error) {
       console.error('Token verification failed:', error);
@@ -110,9 +172,10 @@ export const ShopProvider = ({ children }) => {
 
   useEffect(() => {
     // Load cart for current user (logged in or guest)
+    if (isMerging) return;
     loadCart(getEffectiveUserId());
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [user, isMerging]);
 
   const loadCart = async (userId) => {
     try {
@@ -124,12 +187,21 @@ export const ShopProvider = ({ children }) => {
           size: item.size, // Get size from backend cart item
         }));
         setCart(formattedCart);
+        if (!user?.userId) {
+          saveGuestSnapshot(formattedCart);
+        }
+        return formattedCart;
       } else {
         setCart([]);
+        if (!user?.userId) {
+          clearGuestSnapshot();
+        }
+        return [];
       }
     } catch (err) {
       console.error('Failed to load cart:', err);
       setCart([]);
+      return [];
     }
   };
 
@@ -147,6 +219,9 @@ export const ShopProvider = ({ children }) => {
       // Pass quantity and selectedSize if available
       await cartService.addToCart(effectiveUserId, product.id, quantity, product.selectedSize);
       await loadCart(effectiveUserId);
+      if (!user?.userId) {
+        saveGuestSnapshot(cart);
+      }
       showToast(`Added ${quantity > 1 ? quantity + ' items' : ''} to cart! ✓`, 'success');
     } catch (err) {
       console.error('Failed to add to cart API:', err);

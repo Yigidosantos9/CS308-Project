@@ -49,10 +49,12 @@ export const productService = {
 };
 
 export const authService = {
-  login: async (email, password) => {
+  login: async (email, password, guestUserId) => {
     try {
       console.log('Attempting login to:', `${API_BASE_URL}/auth/login`);
-      const response = await api.post('/auth/login', { email, password });
+      const response = await api.post('/auth/login', { email, password }, {
+        params: guestUserId ? { guestUserId } : undefined,
+      });
       if (response.data?.token) {
         localStorage.setItem('authToken', response.data.token);
         // Also store user data for persistence
@@ -204,9 +206,10 @@ export const cartService = {
 
   // POST /cart/merge?guestUserId=...&userId=...
   mergeCarts: async (guestUserId, userId) => {
-    return await api.post(`/cart/merge`, null, {
+    const response = await api.post(`/cart/merge`, null, {
       params: { guestUserId, userId }
     });
+    return response.data;
   },
 
   // DELETE /cart/clear?userId=...

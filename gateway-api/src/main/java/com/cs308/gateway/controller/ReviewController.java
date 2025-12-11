@@ -26,6 +26,12 @@ public class ReviewController {
         Long userId = securityContext.getUserId();
         log.info("BFF: Add review request received from user: {}", userId);
 
+        if (securityContext.getUserType() == UserType.PRODUCT_MANAGER) {
+            log.warn("Product Manager {} attempted to submit a review. Blocking.", userId);
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Product Managers cannot submit reviews.");
+        }
+
         // TODO: Verify user has a delivered order for this product (call order-api)
         // For now, forward to product-api which will create the review
 

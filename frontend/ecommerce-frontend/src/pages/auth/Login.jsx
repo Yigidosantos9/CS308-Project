@@ -31,7 +31,12 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const response = await authService.login(formData.email, formData.password);
+      const guestId = localStorage.getItem('guestUserId');
+      const response = await authService.login(
+        formData.email,
+        formData.password,
+        guestId ? parseInt(guestId, 10) : undefined
+      );
       if (response?.token) {
         // Successfully logged in
         await checkAuth(); // Update global user state

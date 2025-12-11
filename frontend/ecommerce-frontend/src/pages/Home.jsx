@@ -40,12 +40,12 @@ const Home = () => {
   const [products, setProducts] = useState({});
   const [loadingReviews, setLoadingReviews] = useState(true);
   const [reviewerNames, setReviewerNames] = useState({});
+  const [reviewerTypes, setReviewerTypes] = useState({});
 
   useEffect(() => {
     const fetchRecentReviews = async () => {
       try {
         const reviews = (await reviewService.getRecentReviews()) || [];
-        setRecentReviews(reviews);
 
         // Fetch product names for reviews
         const productIds = [...new Set(reviews.map(r => r.productId))];
@@ -68,16 +68,27 @@ const Home = () => {
               try {
                 const user = await authService.getUserById(uid);
                 const fullName = [user?.firstName, user?.lastName].filter(Boolean).join(' ').trim();
-                return [uid, fullName || user?.email || user?.username || `User #${uid}`];
+                return [uid, fullName || user?.email || user?.username || `User #${uid}`, user?.userType];
               } catch {
-                return [uid, `User #${uid}`];
+                return [uid, `User #${uid}`, null];
               }
             })
           );
-          setReviewerNames(Object.fromEntries(nameEntries));
+          const nameMap = {};
+          const typeMap = {};
+          nameEntries.forEach(([uid, name, type]) => {
+            nameMap[uid] = name;
+            typeMap[uid] = type;
+          });
+          setReviewerNames(nameMap);
+          setReviewerTypes(typeMap);
+          setRecentReviews(reviews.filter((r) => typeMap[r.userId] !== 'PRODUCT_MANAGER'));
+        } else {
+          setRecentReviews(reviews);
         }
       } catch (error) {
         console.error('Error fetching recent reviews:', error);
+        setRecentReviews([]);
       } finally {
         setLoadingReviews(false);
       }

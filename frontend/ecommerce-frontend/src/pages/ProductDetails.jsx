@@ -85,6 +85,8 @@ const ProductDetails = () => {
   const [reviewError, setReviewError] = useState('');
   const [canReview, setCanReview] = useState(false); // User has DELIVERED order with this product
   const [reviewerNames, setReviewerNames] = useState({});
+  const [reviewerTypes, setReviewerTypes] = useState({});
+  const isProductManager = user?.userType === 'PRODUCT_MANAGER';
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -108,7 +110,6 @@ const ProductDetails = () => {
           reviewService.getProductReviewStats(id)
         ]);
         const safeReviews = reviewsData || [];
-        setReviews(safeReviews);
         setReviewStats(statsData || { averageRating: 0, reviewCount: 0 });
 
         // Fetch reviewer names for display, but tolerate failures
@@ -121,23 +122,35 @@ const ProductDetails = () => {
               try {
                 const user = await authService.getUserById(uid);
                 const fullName = [user?.firstName, user?.lastName].filter(Boolean).join(' ').trim();
-                return [uid, fullName || user?.email || user?.username || `User #${uid}`];
+                return [uid, fullName || user?.email || user?.username || `User #${uid}`, user?.userType];
               } catch {
-                return [uid, `User #${uid}`];
+                return [uid, `User #${uid}`, null];
               }
             })
           );
-          setReviewerNames((prev) => ({ ...prev, ...Object.fromEntries(entries) }));
+          const nameMap = {};
+          const typeMap = {};
+          entries.forEach(([uid, name, type]) => {
+            nameMap[uid] = name;
+            typeMap[uid] = type;
+          });
+          setReviewerNames((prev) => ({ ...prev, ...nameMap }));
+          setReviewerTypes((prev) => ({ ...prev, ...typeMap }));
+          const filteredReviews = safeReviews.filter((r) => typeMap[r.userId] !== 'PRODUCT_MANAGER');
+          setReviews(filteredReviews);
+        } else {
+          setReviews(safeReviews);
         }
       } catch (error) {
         console.error('Error fetching reviews:', error);
+        setReviews(safeReviews || []);
       }
     };
 
     // Check if user can review (has DELIVERED order with this product)
     const checkCanReview = async () => {
       console.log('checkCanReview called, user:', user);
-      if (!user?.userId) {
+      if (!user?.userId || isProductManager) {
         console.log('No userId, setting canReview to false');
         setCanReview(false);
         return;
@@ -172,12 +185,17 @@ const ProductDetails = () => {
       fetchReviews();
       checkCanReview();
     }
-  }, [id, user]);
+  }, [id, user, isProductManager]);
 
   const handleSubmitReview = async (e) => {
     e.preventDefault();
     if (!user) {
       setReviewError('Please login to submit a review');
+      return;
+    }
+
+    if (isProductManager) {
+      setReviewError('Product managers cannot submit reviews.');
       return;
     }
 
@@ -450,7 +468,9 @@ const ProductDetails = () => {
             ) : (
               user && (
                 <span className="text-sm text-gray-500">
-                  You can review after ordering this product
+                  {isProductManager
+                    ? 'Product managers cannot submit reviews.'
+                    : 'You can review after ordering this product'}
                 </span>
               )
             )}

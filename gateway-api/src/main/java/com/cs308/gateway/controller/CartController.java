@@ -128,4 +128,21 @@ public class CartController {
             return ResponseEntity.internalServerError().build();
         }
     }
+
+    // Merge guest cart into user cart (used on login)
+    @PostMapping("/merge")
+    public ResponseEntity<Cart> mergeCarts(
+            @AuthenticationPrincipal SecurityContext securityContext,
+            @RequestParam Long guestUserId,
+            @RequestParam Long userId) {
+        log.info("BFF: Merge carts request received - guestUserId: {}, userId: {}", guestUserId, userId);
+
+        try {
+            Cart cart = productService.mergeCarts(guestUserId, userId);
+            return ResponseEntity.ok(cart);
+        } catch (RuntimeException e) {
+            log.error("Error merging carts", e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
 }

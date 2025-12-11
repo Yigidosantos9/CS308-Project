@@ -135,12 +135,10 @@ public class CartService {
 
     @Transactional
     public Cart mergeCarts(Long guestUserId, Long userId) {
-        // Get guest cart (if exists)
         Cart guestCart = cartRepository.findByUserId(guestUserId).orElse(null);
 
         // If guest cart doesn't exist or is empty, nothing to merge
         if (guestCart == null || guestCart.getItems().isEmpty()) {
-            // Return user's cart (create if doesn't exist)
             return cartRepository.findByUserId(userId)
                     .orElseGet(() -> {
                         Cart newCart = new Cart();
@@ -149,55 +147,29 @@ public class CartService {
                     });
         }
 
-        // Get or create user cart
-        Cart userCart = cartRepository.findByUserId(userId)
+        // Ensure user cart exists
+        cartRepository.findByUserId(userId)
                 .orElseGet(() -> {
                     Cart newCart = new Cart();
                     newCart.setUserId(userId);
                     return cartRepository.save(newCart);
                 });
 
-        // Merge items from guest cart to user cart
+        // Move each guest item using the existing addToCart logic (handles stock, sizing, totals)
         for (CartItem guestItem : guestCart.getItems()) {
             Product product = guestItem.getProduct();
-            Long productId = product.getId();
-            int guestQuantity = guestItem.getQuantity();
+            int qty = guestItem.getQuantity();
+            String size = guestItem.getSize();
 
-            // Check if product already exists in user cart
-            CartItem existingItem = userCart.getItems().stream()
-                    .filter(i -> i.getProduct().getId().equals(productId))
-                    .findFirst()
-                    .orElse(null);
-
-            if (existingItem != null) {
-                // Merge quantities
-                int newQuantity = existingItem.getQuantity() + guestQuantity;
-                if (newQuantity > product.getStock()) {
-                    // If exceeds stock, set to max available stock
-                    newQuantity = product.getStock();
-                }
-                existingItem.setQuantity(newQuantity);
-            } else {
-                // Add new item to user cart
-                CartItem newItem = CartItem.builder()
-                        .cart(userCart)
-                        .product(product)
-                        .quantity(guestQuantity)
-                        .build();
-                userCart.addItem(newItem);
-            }
+            // Reuse addToCart to avoid duplication/stock issues
+            addToCart(userId, product.getId(), qty, size);
         }
 
-        // Recalculate totals
-        recalcTotals(userCart);
-
-        // Save user cart
-        Cart mergedCart = cartRepository.save(userCart);
-
-        // Delete guest cart
+        // After moving items, delete guest cart (orphans will cascade)
         cartRepository.delete(guestCart);
 
-        return mergedCart;
+        // Return the merged user cart
+        return cartRepository.findByUserId(userId).orElseThrow();
     }
 
     private void recalcTotals(Cart cart) {
