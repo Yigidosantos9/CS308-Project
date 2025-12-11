@@ -205,20 +205,8 @@ const ProductDetails = () => {
     }
   };
 
-  // Default product images for demo
   const defaultImages = [
-    {
-      url: 'https://images.unsplash.com/photo-1487222477894-8943e31ef7b2?q=80&w=1000&auto=format&fit=crop',
-      alt: 'Front View'
-    },
-    {
-      url: 'https://images.unsplash.com/photo-1559551409-dadc959f76b8?q=80&w=1000&auto=format&fit=crop',
-      alt: 'Detail View'
-    },
-    {
-      url: 'https://images.unsplash.com/photo-1520975954732-35dd22299614?q=80&w=1000&auto=format&fit=crop',
-      alt: 'Lifestyle View'
-    }
+    { url: "https://placehold.co/600x800/f5f5f5/a3a3a3?text=No+Image", alt: "No Image Available" }
   ];
 
   if (loading) {
@@ -235,8 +223,8 @@ const ProductDetails = () => {
     price: 0,
     description: 'Loading...',
     stock: 0,
-    sizes: ['S', 'M', 'L', 'XL'],
-    images: defaultImages
+    sizes: ["S", "M", "L", "XL"],
+    images: []
   };
 
   const images = displayProduct.images?.length > 0 ? displayProduct.images : defaultImages;

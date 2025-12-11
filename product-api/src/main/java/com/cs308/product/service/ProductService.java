@@ -1,6 +1,7 @@
 package com.cs308.product.service;
 
 import com.cs308.product.domain.Product;
+import com.cs308.product.domain.ProductImage;
 import com.cs308.product.model.ProductFilterRequest;
 import com.cs308.product.model.ProductUpdateRequest;
 import com.cs308.product.model.StockRestoreRequest;
@@ -38,6 +39,17 @@ public class ProductService {
         if (request.getActive() != null) {
             product.setActive(request.getActive());
         }
+
+        if (request.getImageUrls() != null && !request.getImageUrls().isEmpty()) {
+            List<ProductImage> images = request.getImageUrls().stream()
+                    .map(url -> ProductImage.builder()
+                            .url(url)
+                            .product(product)
+                            .build())
+                    .toList();
+            product.getImages().addAll(images);
+        }
+
         return productRepository.save(product);
     }
 
@@ -126,6 +138,18 @@ public class ProductService {
         if (request.getActive() != null) {
             target.setActive(request.getActive());
         }
+        if (request.getImageUrls() != null) {
+            target.getImages().clear();
+            if (!request.getImageUrls().isEmpty()) {
+                List<ProductImage> newImages = request.getImageUrls().stream()
+                        .map(url -> ProductImage.builder()
+                                .url(url)
+                                .product(target)
+                                .build())
+                        .toList();
+                target.getImages().addAll(newImages);
+            }
+        }
     }
 
     /**
@@ -208,8 +232,7 @@ public class ProductService {
                     productType,
                     targetAudience,
                     color,
-                    descriptionPattern
-            );
+                    descriptionPattern);
         } else if ("ratingAsc".equalsIgnoreCase(sortParam)) {
             // Lowest rated → highest, unrated last
             return productRepository.searchOrderByRatingAsc(
@@ -217,8 +240,7 @@ public class ProductService {
                     productType,
                     targetAudience,
                     color,
-                    descriptionPattern
-            );
+                    descriptionPattern);
         }
 
         // --- All other sorts use the generic search() + Sort ---
@@ -250,8 +272,7 @@ public class ProductService {
                 targetAudience,
                 color,
                 descriptionPattern,
-                sort
-        );
+                sort);
     }
 
     public void delete(Long id) {

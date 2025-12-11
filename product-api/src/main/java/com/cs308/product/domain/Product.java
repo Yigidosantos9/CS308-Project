@@ -24,13 +24,13 @@ import java.util.List;
 @ToString
 @Entity
 // ⚠️ IMPORTANT: Required for distinct() in Service to work
-@EqualsAndHashCode(onlyExplicitlyIncluded = true) 
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Table(name = "products", indexes = {
         @Index(name = "idx_products_name", columnList = "name"),
         @Index(name = "idx_products_model", columnList = "model"),
         @Index(name = "idx_products_type_audience", columnList = "product_type,target_audience"),
         // Optimized index for rating sorting
-        @Index(name = "idx_products_rating", columnList = "review_count, average_rating") 
+        @Index(name = "idx_products_rating", columnList = "review_count, average_rating")
 })
 public class Product {
 
@@ -123,4 +123,10 @@ public class Product {
     @Builder.Default
     @ToString.Exclude
     private List<ProductVariant> variants = new ArrayList<>();
+
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("id ASC")
+    @Builder.Default
+    @ToString.Exclude
+    private List<ProductImage> images = new ArrayList<>();
 }

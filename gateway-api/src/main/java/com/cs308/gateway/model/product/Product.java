@@ -62,5 +62,7 @@ public class Product {
 
     @Builder.Default
     private List<ProductVariant> variants = new ArrayList<>();
-}
 
+    @Builder.Default
+    private List<ProductImage> images = new ArrayList<>();
+}

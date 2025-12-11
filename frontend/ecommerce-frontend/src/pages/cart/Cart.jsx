@@ -62,12 +62,12 @@ const Cart = () => {
                     <div key={`${item.id}-${item.size}-${index}`} className="flex gap-6 items-start">
 
                       {/* Product Image */}
-                      <div className="w-24 h-32 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400 text-xs flex-shrink-0">
-                        {item.images && item.images.length > 0 ? (
-                          <img src={item.images[0].url} alt={item.name} className="object-cover rounded-lg w-full h-full" />
-                        ) : (
-                          <>-{item.name}</>
-                        )}
+                      <div className="w-24 h-32 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
+                        <img
+                          src={item.images && item.images.length > 0 ? item.images[0].url : "https://placehold.co/600x800/f5f5f5/a3a3a3?text=No+Image"}
+                          alt={item.name}
+                          className="object-cover w-full h-full"
+                        />
                       </div>
 
                       {/* Product Info */}
@@ -125,7 +125,8 @@ const Cart = () => {
                         )}
                       </div>
                     </div>
-                  ))}
+                  )
+                })}
               </div>
             )}
           </div>
