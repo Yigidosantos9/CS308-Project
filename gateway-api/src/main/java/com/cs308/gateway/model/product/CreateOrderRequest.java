@@ -16,6 +16,9 @@ import java.util.List;
 public class CreateOrderRequest {
     private List<OrderItemRequest> items;
     private Double totalPrice;
+    private String buyerName;
+    private String buyerAddress;
+    private String paymentMethod;
 
     @Getter
     @Setter
@@ -26,5 +29,6 @@ public class CreateOrderRequest {
         private Integer quantity;
         private Double price;
         private String size;
+        private String productName;
     }
 }

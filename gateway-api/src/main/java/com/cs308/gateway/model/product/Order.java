@@ -22,6 +22,10 @@ public class Order {
     private Long userId;
     private OrderStatus status;
     private Double totalPrice;
+    private String buyerName;
+    private String buyerAddress;
+    private String paymentMethod;
+    private String invoiceNumber;
 
     @Builder.Default
     private List<OrderItem> items = new ArrayList<>();

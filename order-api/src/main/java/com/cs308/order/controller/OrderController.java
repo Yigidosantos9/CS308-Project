@@ -40,6 +40,15 @@ public class OrderController {
         return ResponseEntity.ok(orderService.getAllOrders());
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<Order> getOrder(@PathVariable Long id, @RequestParam(required = false) Long userId) {
+        Order order = userId != null ? orderService.getOrderByIdAndUser(id, userId) : orderService.getOrderById(id);
+        if (order == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(order);
+    }
+
     @PostMapping
     public ResponseEntity<Order> createOrder(
             @RequestParam Long userId,
@@ -63,7 +72,9 @@ public class OrderController {
 
     @GetMapping(value = "/{id}/invoice", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<ByteArrayResource> getInvoice(@PathVariable Long id,
-            @RequestParam(required = false) String buyerName) {
+            @RequestParam(required = false) String buyerName,
+            @RequestParam(required = false) String buyerAddress,
+            @RequestParam(required = false) String paymentMethod) {
         try {
             Order order = orderService.getOrderById(id);
             if (order == null) {
@@ -77,20 +88,29 @@ public class OrderController {
             invoiceRequest.setIssueDate(order.getOrderDate().format(DateTimeFormatter.ISO_LOCAL_DATE));
             invoiceRequest.setDueDate(order.getOrderDate().plusDays(30).format(DateTimeFormatter.ISO_LOCAL_DATE));
             invoiceRequest.setBuyerName(
-                    buyerName != null && !buyerName.isEmpty() ? buyerName : "Customer #" + order.getUserId());
-            invoiceRequest.setBuyerAddress("Address on file");
+                    buyerName != null && !buyerName.isEmpty() ? buyerName
+                            : (order.getBuyerName() != null ? order.getBuyerName() : "Customer #" + order.getUserId()));
+            invoiceRequest.setBuyerAddress(
+                    buyerAddress != null && !buyerAddress.isEmpty() ? buyerAddress
+                            : (order.getBuyerAddress() != null ? order.getBuyerAddress() : "Address on file"));
             invoiceRequest.setSellerName("RAWCTRL Store");
             invoiceRequest.setSellerAddress("Istanbul, Turkey");
             invoiceRequest.setTaxRate(0.18); // 18% VAT
             invoiceRequest.setShippingFee(0.0);
             invoiceRequest.setCurrencySymbol("$");
+            invoiceRequest.setPaymentMethod(
+                    paymentMethod != null && !paymentMethod.isEmpty()
+                            ? paymentMethod
+                            : order.getPaymentMethod());
+            invoiceRequest.setOrderId("Order #" + order.getId());
 
             // Convert order items to invoice items
             // Prices are VAT-inclusive, so divide by 1.18 to get net price for invoice
             List<InvoiceItem> invoiceItems = order.getItems().stream()
                     .map(item -> {
                         InvoiceItem invoiceItem = new InvoiceItem();
-                        invoiceItem.setDescription("Product #" + item.getProductId());
+                        invoiceItem.setDescription(item.getProductName() != null ? item.getProductName()
+                                : "Product #" + item.getProductId());
                         invoiceItem.setQuantity(item.getQuantity());
                         // Calculate net unit price (before VAT) from VAT-inclusive price
                         Double grossUnitPrice = item.getUnitPrice() != null ? item.getUnitPrice()

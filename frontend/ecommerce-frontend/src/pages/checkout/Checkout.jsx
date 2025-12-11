@@ -93,6 +93,17 @@ const Checkout = () => {
             return;
         }
 
+        const selectedPayment = payments[selectedPaymentIndex];
+        const paymentDisplay = selectedPayment
+            ? `${selectedPayment.brand || 'Card'} •••• ${selectedPayment.last4 || ''}`.trim()
+            : '';
+        const buyerName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email || 'Customer';
+
+        const selectedAddress = addresses.find((addr) => addr.id === selectedAddressId);
+        const buyerAddress = selectedAddress
+            ? `${selectedAddress.title || ''} ${selectedAddress.addressLine || ''}, ${selectedAddress.city || ''}, ${selectedAddress.country || ''} ${selectedAddress.zipCode || ''}`.trim()
+            : '';
+
         // 🔹 Reset validation + invoice errors on each attempt
         setAddressError('');
         setPaymentError('');
@@ -127,9 +138,13 @@ const Checkout = () => {
                     productId: item.id,  // Cart items have 'id' from product spread
                     quantity: item.quantity,
                     price: item.price,
-                    size: item.selectedSize || item.size
+                    size: item.selectedSize || item.size,
+                    productName: item.name
                 })),
-                totalPrice: total
+                totalPrice: total,
+                buyerName,
+                buyerAddress,
+                paymentMethod: paymentDisplay
             };
 
             const response = await orderService.createOrder(orderData);
@@ -145,7 +160,7 @@ const Checkout = () => {
             // Fetch invoice PDF as blob and create URL
             try {
                 setInvoiceLoading(true);
-                const pdfBlob = await orderService.getInvoiceBlob(createdOrderId);
+                const pdfBlob = await orderService.getInvoiceBlob(createdOrderId, buyerName, buyerAddress, paymentDisplay);
                 const url = URL.createObjectURL(pdfBlob);
                 setInvoiceUrl(url);
             } catch (err) {

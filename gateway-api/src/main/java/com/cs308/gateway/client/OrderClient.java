@@ -63,9 +63,10 @@ public class OrderClient {
         try {
             String uri = UriComponentsBuilder.fromPath("/orders/{orderId}")
                     .queryParam("userId", userId)
+                    .buildAndExpand(orderId)
                     .toUriString();
 
-            Order order = orderRestTemplate.getForObject(uri, Order.class, orderId);
+            Order order = orderRestTemplate.getForObject(uri, Order.class);
             return order;
         } catch (RestClientException e) {
             log.error("Error calling order service for get order", e);
@@ -207,13 +208,20 @@ public class OrderClient {
         }
     }
 
-    public byte[] getOrderInvoice(Long orderId, String buyerName) {
-        log.debug("Calling order service: GET /orders/{}/invoice?buyerName={}", orderId, buyerName);
+    public byte[] getOrderInvoice(Long orderId, String buyerName, String buyerAddress, String paymentMethod) {
+        log.debug("Calling order service: GET /orders/{}/invoice?buyerName={}, buyerAddress={}, paymentMethod={}", orderId,
+                buyerName, buyerAddress, paymentMethod);
 
         try {
             UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromPath("/orders/{orderId}/invoice");
             if (buyerName != null && !buyerName.isEmpty()) {
                 uriBuilder.queryParam("buyerName", buyerName);
+            }
+            if (buyerAddress != null && !buyerAddress.isEmpty()) {
+                uriBuilder.queryParam("buyerAddress", buyerAddress);
+            }
+            if (paymentMethod != null && !paymentMethod.isEmpty()) {
+                uriBuilder.queryParam("paymentMethod", paymentMethod);
             }
 
             ResponseEntity<byte[]> response = orderRestTemplate.exchange(

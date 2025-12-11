@@ -39,6 +39,7 @@ public class OrderService {
                     com.cs308.gateway.model.product.Product product = productClient.getProduct(item.getProductId());
                     if (product != null) {
                         item.setPrice(product.getPrice());
+                        item.setProductName(product.getName());
                         if (item.getQuantity() != null) {
                             totalPrice += product.getPrice() * item.getQuantity();
                         }
@@ -90,7 +91,7 @@ public class OrderService {
                     log.warn("Failed to fetch user details for invoice name, using default", e);
                 }
 
-                byte[] pdfBytes = orderClient.getOrderInvoice(order.getId(), buyerName);
+                byte[] pdfBytes = orderClient.getOrderInvoice(order.getId(), buyerName, null, null);
                 // Use order ID as invoice number for now since we don't have the invoice object
                 invoiceEmailService.sendInvoiceEmail(userEmail, pdfBytes, String.valueOf(order.getId()));
             }
@@ -123,7 +124,27 @@ public class OrderService {
 
     public byte[] getOrderInvoice(Long orderId) {
         log.info("Processing get order invoice for orderId: {}", orderId);
-        return orderClient.getOrderInvoice(orderId, null);
+        return orderClient.getOrderInvoice(orderId, null, null, null);
+    }
+
+    public byte[] getOrderInvoice(Long orderId, String buyerAddress) {
+        log.info("Processing get order invoice for orderId: {} with buyerAddress override", orderId);
+        return orderClient.getOrderInvoice(orderId, null, buyerAddress, null);
+    }
+
+    public byte[] getOrderInvoice(Long userId, Long orderId, String buyerName, String buyerAddress, String paymentMethod) {
+        log.info("Processing get order invoice for orderId: {} with overrides", orderId);
+        Order order = orderClient.getOrder(orderId, userId);
+        String resolvedName = buyerName != null && !buyerName.isEmpty()
+                ? buyerName
+                : (order != null ? order.getBuyerName() : null);
+        String resolvedAddress = buyerAddress != null && !buyerAddress.isEmpty()
+                ? buyerAddress
+                : (order != null ? order.getBuyerAddress() : null);
+        String resolvedPayment = paymentMethod != null && !paymentMethod.isEmpty()
+                ? paymentMethod
+                : (order != null ? order.getPaymentMethod() : null);
+        return orderClient.getOrderInvoice(orderId, resolvedName, resolvedAddress, resolvedPayment);
     }
 
     public void updateOrderStatus(Long orderId, String status) {

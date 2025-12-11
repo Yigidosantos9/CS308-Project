@@ -19,6 +19,9 @@ public class OrderItem {
     @Column(name = "product_id", nullable = false)
     private Long productId;
 
+    @Column(name = "product_name")
+    private String productName;
+
     @Column(name = "quantity", nullable = false)
     private Integer quantity;
 
@@ -31,18 +34,20 @@ public class OrderItem {
     public OrderItem() {
     }
 
-    public OrderItem(Order order, Long productId, Integer quantity, Double price) {
+    public OrderItem(Order order, Long productId, String productName, Integer quantity, Double price) {
         this.order = order;
         this.productId = productId;
+        this.productName = productName;
         this.quantity = quantity;
         this.price = price; // Total price for this line item
         this.unitPrice = quantity > 0 ? price / quantity : price; // Calculate unit price from total
     }
 
     // Constructor with explicit unitPrice
-    public OrderItem(Order order, Long productId, Integer quantity, Double unitPrice, Double totalPrice) {
+    public OrderItem(Order order, Long productId, String productName, Integer quantity, Double unitPrice, Double totalPrice) {
         this.order = order;
         this.productId = productId;
+        this.productName = productName;
         this.quantity = quantity;
         this.unitPrice = unitPrice;
         this.price = totalPrice;
@@ -70,6 +75,14 @@ public class OrderItem {
 
     public void setProductId(Long productId) {
         this.productId = productId;
+    }
+
+    public String getProductName() {
+        return productName;
+    }
+
+    public void setProductName(String productName) {
+        this.productName = productName;
     }
 
     public Integer getQuantity() {

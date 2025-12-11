@@ -47,6 +47,15 @@ public class OrderService {
         return order;
     }
 
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public Order getOrderByIdAndUser(Long orderId, Long userId) {
+        Order order = orderRepository.findByIdAndUserId(orderId, userId);
+        if (order != null && order.getItems() != null) {
+            order.getItems().size();
+        }
+        return order;
+    }
+
     public Order updateOrderStatus(Long orderId, String status) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found with id: " + orderId));
@@ -65,6 +74,9 @@ public class OrderService {
         order.setUserId(userId);
         order.setOrderDate(LocalDateTime.now());
         order.setStatus(OrderStatus.PREPARING);
+        order.setBuyerName(request != null ? request.getBuyerName() : null);
+        order.setBuyerAddress(request != null ? request.getBuyerAddress() : null);
+        order.setPaymentMethod(request != null ? request.getPaymentMethod() : null);
 
         // Use actual price from request, fallback to 0 if not provided
         Double totalPrice = (request != null && request.getTotalPrice() != null)
@@ -80,6 +92,7 @@ public class OrderService {
                 OrderItem item = new OrderItem(
                         order,
                         itemReq.getProductId(),
+                        itemReq.getProductName(),
                         itemReq.getQuantity(),
                         itemReq.getPrice() * itemReq.getQuantity());
                 items.add(item);

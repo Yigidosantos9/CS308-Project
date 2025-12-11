@@ -31,6 +31,36 @@ public class InvoiceRequest {
     @NotBlank
     private String buyerAddress;
 
+    private String paymentMethod;
+
+    private String orderId;
+
+    private String buyerEmail;
+
+    public String getPaymentMethod() {
+        return paymentMethod;
+    }
+
+    public void setPaymentMethod(String paymentMethod) {
+        this.paymentMethod = paymentMethod;
+    }
+
+    public String getOrderId() {
+        return orderId;
+    }
+
+    public void setOrderId(String orderId) {
+        this.orderId = orderId;
+    }
+
+    public String getBuyerEmail() {
+        return buyerEmail;
+    }
+
+    public void setBuyerEmail(String buyerEmail) {
+        this.buyerEmail = buyerEmail;
+    }
+
     @NotNull
     private Double taxRate = 0.0;
 

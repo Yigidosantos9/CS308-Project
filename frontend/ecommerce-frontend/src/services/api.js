@@ -245,7 +245,10 @@ export const orderService = {
       // Send order data in body with userId as query param
       const response = await api.post(`/orders?userId=${orderData.userId}`, {
         items: orderData.items,
-        totalPrice: orderData.totalPrice
+        totalPrice: orderData.totalPrice,
+        buyerName: orderData.buyerName,
+        buyerAddress: orderData.buyerAddress,
+        paymentMethod: orderData.paymentMethod
       });
       return response.data;
     } catch (error) {
@@ -255,10 +258,15 @@ export const orderService = {
   },
 
   // Existing: download invoice as a file (used on Profile page)
-  getInvoice: async (orderId) => {
+  getInvoice: async (orderId, buyerName, buyerAddress, paymentMethod) => {
     try {
       const response = await api.get(`/orders/${orderId}/invoice`, {
-        responseType: 'blob'
+        responseType: 'blob',
+        params: {
+          ...(buyerName ? { buyerName } : {}),
+          ...(buyerAddress ? { buyerAddress } : {}),
+          ...(paymentMethod ? { paymentMethod } : {}),
+        }
       });
       // Create download link and trigger download
       const blob = new Blob([response.data], { type: 'application/pdf' });
@@ -277,10 +285,15 @@ export const orderService = {
   },
 
   // NEW: return raw blob so Checkout can render PDF inline in an <iframe>
-  getInvoiceBlob: async (orderId) => {
+  getInvoiceBlob: async (orderId, buyerName, buyerAddress, paymentMethod) => {
     try {
       const response = await api.get(`/orders/${orderId}/invoice`, {
-        responseType: 'blob'
+        responseType: 'blob',
+        params: {
+          ...(buyerName ? { buyerName } : {}),
+          ...(buyerAddress ? { buyerAddress } : {}),
+          ...(paymentMethod ? { paymentMethod } : {}),
+        }
       });
       return response.data; // PDF blob
     } catch (error) {

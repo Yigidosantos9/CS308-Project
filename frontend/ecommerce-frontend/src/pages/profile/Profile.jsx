@@ -405,12 +405,22 @@ const Profile = () => {
     </div>
   );
 
-  const handleDownloadInvoice = async (orderId, e) => {
-    e.stopPropagation(); // Prevent card expansion
+  const handleDownloadInvoice = async (order, e) => {
+    if (e) {
+      e.stopPropagation(); // Prevent card expansion
+      e.preventDefault();
+    }
+    console.log('Download invoice clicked', order?.id);
     try {
-      await orderService.getInvoice(orderId);
+      await orderService.getInvoice(
+        order.id,
+        order.buyerName,
+        order.buyerAddress,
+        order.paymentMethod
+      );
     } catch (error) {
       console.error('Failed to download invoice', error);
+      alert('Failed to download invoice. Please try again.');
     }
   };
 
@@ -523,8 +533,9 @@ const Profile = () => {
 
                 <div className="mt-4 pt-4 border-t border-gray-200 flex justify-end">
                   <button
-                    onClick={(e) => handleDownloadInvoice(order.id, e)}
-                    className="flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-700"
+                    type="button"
+                    onClick={(e) => handleDownloadInvoice(order, e)}
+                    className="relative z-20 pointer-events-auto flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-700"
                   >
                     <FileText className="h-4 w-4" />
                     Download Invoice
@@ -930,10 +941,10 @@ const Profile = () => {
                 onChange={(e) =>
                   setNewPayment({
                     ...newPayment,
-                    cvv: e.target.value.replace(/\D/g, '').slice(0, 4),
+                    cvv: e.target.value.replace(/\D/g, '').slice(0, 3),
                   })
                 }
-                maxLength={4}
+                maxLength={3}
                 required
               />
             </div>

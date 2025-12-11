@@ -65,12 +65,15 @@ public class OrderController {
     @RequiresRole({ UserType.CUSTOMER, UserType.PRODUCT_MANAGER })
     public ResponseEntity<ByteArrayResource> getOrderInvoice(
             @AuthenticationPrincipal SecurityContext securityContext,
-            @PathVariable Long orderId) {
+            @PathVariable Long orderId,
+            @RequestParam(required = false) String buyerName,
+            @RequestParam(required = false) String buyerAddress,
+            @RequestParam(required = false) String paymentMethod) {
         Long userId = securityContext.getUserId();
         log.info("BFF: Get invoice request - orderId: {}, userId: {}", orderId, userId);
 
         try {
-            byte[] pdfBytes = orderService.getOrderInvoice(orderId);
+            byte[] pdfBytes = orderService.getOrderInvoice(userId, orderId, buyerName, buyerAddress, paymentMethod);
 
             String filename = "invoice-order-" + orderId + ".pdf";
             ContentDisposition contentDisposition = ContentDisposition.attachment()

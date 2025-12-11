@@ -19,4 +19,6 @@ public class OrderItem {
     private Integer quantity;
     private Double unitPrice;
     private Double price; // Total price for this line item
+    private String productName;
+    private String size;
 }

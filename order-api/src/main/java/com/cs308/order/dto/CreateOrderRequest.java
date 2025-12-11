@@ -5,6 +5,9 @@ import java.util.List;
 public class CreateOrderRequest {
     private List<OrderItemRequest> items;
     private Double totalPrice;
+    private String buyerName;
+    private String buyerAddress;
+    private String paymentMethod;
 
     public CreateOrderRequest() {
     }
@@ -25,11 +28,36 @@ public class CreateOrderRequest {
         this.totalPrice = totalPrice;
     }
 
+    public String getBuyerName() {
+        return buyerName;
+    }
+
+    public void setBuyerName(String buyerName) {
+        this.buyerName = buyerName;
+    }
+
+    public String getBuyerAddress() {
+        return buyerAddress;
+    }
+
+    public void setBuyerAddress(String buyerAddress) {
+        this.buyerAddress = buyerAddress;
+    }
+
+    public String getPaymentMethod() {
+        return paymentMethod;
+    }
+
+    public void setPaymentMethod(String paymentMethod) {
+        this.paymentMethod = paymentMethod;
+    }
+
     public static class OrderItemRequest {
         private Long productId;
         private Integer quantity;
         private Double price;
         private String size;
+        private String productName;
 
         public OrderItemRequest() {
         }
@@ -64,6 +92,14 @@ public class CreateOrderRequest {
 
         public void setSize(String size) {
             this.size = size;
+        }
+
+        public String getProductName() {
+            return productName;
+        }
+
+        public void setProductName(String productName) {
+            this.productName = productName;
         }
     }
 }
