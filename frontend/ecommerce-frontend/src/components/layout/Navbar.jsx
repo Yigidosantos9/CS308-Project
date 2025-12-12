@@ -48,7 +48,7 @@ const Navbar = () => {
         </Link>
 
         {/* 2. Desktop Navigation (Hidden on Mobile) */}
-        <div className="hidden md:flex gap-8 font-medium text-sm tracking-wide">
+        <div className="hidden md:flex gap-12 font-semibold text-lg tracking-wide">
           {navLinks.map((link) => (
             <Link
               key={link.name}
