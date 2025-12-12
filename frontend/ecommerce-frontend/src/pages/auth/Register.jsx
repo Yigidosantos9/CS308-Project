@@ -53,19 +53,7 @@ const Register = () => {
       navigate('/login', { state: { message: 'Registration successful! Please log in.' } });
     } catch (err) {
       console.error('Register form error:', err);
-      let errorMessage = 'Registration failed. Please try again.';
-
-      if (err.code === 'ERR_NETWORK' || err.message?.includes('Network Error')) {
-        errorMessage = 'Cannot connect to server. Please ensure the gateway API is running on port 8080.';
-      } else if (err.response?.data) {
-        errorMessage = typeof err.response.data === 'string'
-          ? err.response.data
-          : err.response.data.message || JSON.stringify(err.response.data);
-      } else if (err.message) {
-        errorMessage = err.message;
-      }
-
-      setError(errorMessage);
+      setError('Registration failed.');
     } finally {
       setLoading(false);
     }
