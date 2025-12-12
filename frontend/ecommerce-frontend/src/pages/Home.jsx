@@ -43,9 +43,9 @@ const Home = () => {
               </div>
 
               {/* Label Box */}
-              <div className="bg-white py-5 px-6 rounded-b-xl flex justify-between items-center shadow-sm group-hover:shadow-md transition-shadow">
-                <span className="font-bold text-xl tracking-wide">{cat.title}</span>
-                <ArrowRight className="w-6 h-6 text-black group-hover:translate-x-2 transition-transform duration-300" />
+              <div className="bg-white py-6 px-8 rounded-b-xl flex justify-between items-center shadow-sm group-hover:shadow-md transition-shadow">
+                <span className="font-bold text-2xl tracking-wide">{cat.title}</span>
+                <ArrowRight className="w-7 h-7 text-black group-hover:translate-x-2 transition-transform duration-300" />
               </div>
             </Link>
           ))}

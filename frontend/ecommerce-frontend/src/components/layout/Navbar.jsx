@@ -24,10 +24,9 @@ const Navbar = () => {
   const cartItemCount = cart.reduce((total, item) => total + (item.quantity || 1), 0);
 
   const navLinks = [
-    { name: 'NEW!', path: '/shop?category=new', isRed: true },
     { name: 'JEANS', path: '/shop?category=jeans', isRed: false },
-    { name: 'SWEATSHIRTS', path: '/shop?category=sweatshirts', isRed: false },
-    { name: 'ACCESSORIES', path: '/shop?category=accessories', isRed: false },
+    { name: 'TSHIRT', path: '/shop?category=tshirt', isRed: false },
+    { name: 'DRESS', path: '/shop?category=dress', isRed: false },
   ];
 
   const handleSearch = (e) => {
@@ -49,7 +48,7 @@ const Navbar = () => {
         </Link>
 
         {/* 2. Desktop Navigation (Hidden on Mobile) */}
-        <div className="hidden md:flex gap-8 font-medium text-sm tracking-wide">
+        <div className="hidden md:flex gap-12 font-semibold text-lg tracking-wide">
           {navLinks.map((link) => (
             <Link
               key={link.name}
