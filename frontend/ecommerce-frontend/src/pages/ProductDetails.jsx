@@ -453,6 +453,39 @@ const ProductDetails = () => {
             <p className="text-gray-600 text-sm leading-relaxed mt-4">
               {displayProduct.description}
             </p>
+
+            {/* Product Specifications */}
+            <div className="mt-6 pt-4 border-t border-gray-200">
+              <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-3">Product Specifications</h3>
+              <div className="flex flex-col gap-2 text-xs text-gray-600">
+                <div className="flex justify-between border-b border-gray-100 pb-1.5">
+                  <span className="text-gray-400">Product ID:</span>
+                  <span className="font-medium text-black">{displayProduct.id}</span>
+                </div>
+                <div className="flex justify-between border-b border-gray-100 pb-1.5">
+                  <span className="text-gray-400">Model Code:</span>
+                  <span className="font-medium text-black">{displayProduct.model || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between border-b border-gray-100 pb-1.5">
+                  <span className="text-gray-400">Serial Number:</span>
+                  <span className="font-medium text-black">{displayProduct.serialNumber || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between border-b border-gray-100 pb-1.5">
+                  <span className="text-gray-400">Brand:</span>
+                  <span className="font-medium text-black">{displayProduct.brand || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between border-b border-gray-100 pb-1.5">
+                  <span className="text-gray-400">Warranty:</span>
+                  <span className="font-medium text-black">{displayProduct.warrantyStatus || 'N/A'}</span>
+                </div>
+                <div className="flex flex-col mt-1">
+                  <span className="text-gray-400 mb-1">Distributor Info:</span>
+                  <span className="font-medium text-black bg-gray-50 p-2 rounded text-[10px] leading-relaxed whitespace-pre-wrap border border-gray-100">
+                    {displayProduct.distributorInfo || 'Information not available'}
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
