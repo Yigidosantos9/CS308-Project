@@ -186,7 +186,7 @@ public class ProductService {
         if (filter.getCategory() != null && !filter.getCategory().isBlank()) {
             try {
                 productType = com.cs308.product.domain.enums.ProductType
-                        .valueOf(filter.getCategory().toUpperCase());
+                        .valueOf(filter.getCategory().toUpperCase(java.util.Locale.ENGLISH));
             } catch (IllegalArgumentException e) {
                 // Unknown category -> no results
                 return List.of();
@@ -203,7 +203,7 @@ public class ProductService {
         if (audienceStr != null && !audienceStr.isBlank()) {
             try {
                 targetAudience = com.cs308.product.domain.enums.TargetAudience
-                        .valueOf(audienceStr.toUpperCase());
+                        .valueOf(audienceStr.toUpperCase(java.util.Locale.ENGLISH));
             } catch (IllegalArgumentException e) {
                 return List.of();
             }
@@ -213,7 +213,7 @@ public class ProductService {
         if (filter.getColor() != null && !filter.getColor().isBlank()) {
             try {
                 color = com.cs308.product.domain.enums.Color
-                        .valueOf(filter.getColor().toUpperCase());
+                        .valueOf(filter.getColor().toUpperCase(java.util.Locale.ENGLISH));
             } catch (IllegalArgumentException e) {
                 return List.of();
             }
