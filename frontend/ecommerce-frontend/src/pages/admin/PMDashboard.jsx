@@ -37,17 +37,32 @@ const PMDashboard = () => {
             const orderUserIds = [...new Set((data || []).map(o => o.userId).filter(Boolean))];
             const orderUserData = {};
             for (const uid of orderUserIds) {
-                if (!userNames[uid]) {
-                    try {
-                        const fetchedUser = await authService.getUserById(uid);
-                        const fullName = [fetchedUser?.firstName, fetchedUser?.lastName].filter(Boolean).join(' ').trim();
-                        orderUserData[uid] = fullName || fetchedUser?.email || `Customer #${uid}`;
-                    } catch {
-                        orderUserData[uid] = `Customer #${uid}`;
-                    }
+                try {
+                    const fetchedUser = await authService.getUserById(uid);
+                    const fullName = [fetchedUser?.firstName, fetchedUser?.lastName].filter(Boolean).join(' ').trim();
+                    orderUserData[uid] = fullName || fetchedUser?.email || `Customer #${uid}`;
+                } catch {
+                    orderUserData[uid] = `Customer #${uid}`;
                 }
             }
             setUserNames(prev => ({ ...prev, ...orderUserData }));
+
+            // Fetch product names for order items
+            const allProductIds = [...new Set(
+                (data || []).flatMap(order =>
+                    (order.items || []).map(item => item.productId)
+                ).filter(Boolean)
+            )];
+            const orderProductData = {};
+            for (const id of allProductIds) {
+                try {
+                    const product = await productService.getProductById(id);
+                    orderProductData[id] = product?.name || `Product #${id}`;
+                } catch {
+                    orderProductData[id] = `Product #${id}`;
+                }
+            }
+            setProductNames(prev => ({ ...prev, ...orderProductData }));
         } catch (error) {
             console.error('Failed to fetch orders:', error);
         } finally {
@@ -311,7 +326,7 @@ const PMDashboard = () => {
                                                 {order.items?.map((item, index) => (
                                                     <div key={index} className="flex justify-between bg-white p-3 rounded-lg border border-gray-100">
                                                         <div>
-                                                            <p className="font-medium">Product #{item.productId}</p>
+                                                            <p className="font-medium">{productNames[item.productId] || `Product #${item.productId}`}</p>
                                                             <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
                                                         </div>
                                                         <p className="font-medium">${item.price?.toFixed(2)}</p>

@@ -243,6 +243,13 @@ const ProductDetails = () => {
         reviewService.getProductReviews(id),
         reviewService.getProductReviewStats(id)
       ]);
+
+      // Add current user's name to reviewerNames cache so it shows immediately
+      if (user?.userId) {
+        const currentUserName = [user.firstName, user.lastName].filter(Boolean).join(' ').trim() || user.email || `User #${user.userId}`;
+        setReviewerNames(prev => ({ ...prev, [user.userId]: currentUserName }));
+      }
+
       setReviews(reviewsData || []);
       setReviewStats(statsData || { averageRating: 0, reviewCount: 0 });
 
@@ -495,7 +502,7 @@ const ProductDetails = () => {
         <div className="max-w-7xl mx-auto mt-16 border-t border-gray-300 pt-10">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold tracking-tight">
-              Customer Reviews ({reviewStats.reviewCount})
+              Customer Reviews
             </h2>
             {canReview ? (
               <button

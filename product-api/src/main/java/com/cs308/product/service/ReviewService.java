@@ -64,8 +64,20 @@ public class ReviewService {
     }
 
     public List<ReviewResponse> getApprovedReviews(Long productId) {
-        return reviewRepository.findByProductIdAndApprovedTrueOrderByCreatedAtDesc(productId)
-                .stream().map(this::toResponse).collect(Collectors.toList());
+        // Return all reviews that have ratings (ratings are always visible immediately)
+        // But hide comments if not approved yet
+        return reviewRepository.findByProductIdOrderByCreatedAtDesc(productId)
+                .stream()
+                .filter(r -> r.getRating() != null) // Only show reviews that have ratings
+                .map(review -> {
+                    ReviewResponse response = toResponse(review);
+                    // Hide comment if not approved
+                    if (!review.isApproved()) {
+                        response.setComment(null);
+                    }
+                    return response;
+                })
+                .collect(Collectors.toList());
     }
 
     public List<ReviewResponse> getAllReviews(Long productId) {
