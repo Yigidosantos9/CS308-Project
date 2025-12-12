@@ -18,6 +18,43 @@ import {
 import { useShop } from '../../context/ShopContext';
 import { authService, orderService, addressService, productService } from '../../services/api'; // 🔹 ADDED productService
 
+const countries = [
+  'Argentina',
+  'Australia',
+  'Austria',
+  'Belgium',
+  'Brazil',
+  'Canada',
+  'Chile',
+  'Czech Republic',
+  'Denmark',
+  'Finland',
+  'France',
+  'Germany',
+  'Greece',
+  'India',
+  'Ireland',
+  'Italy',
+  'Japan',
+  'Mexico',
+  'Netherlands',
+  'New Zealand',
+  'Norway',
+  'Poland',
+  'Portugal',
+  'Saudi Arabia',
+  'Singapore',
+  'South Africa',
+  'South Korea',
+  'Spain',
+  'Sweden',
+  'Switzerland',
+  'Turkey',
+  'United Arab Emirates',
+  'United Kingdom',
+  'United States',
+];
+
 const tabs = [
   'Profile',
   'Orders',
@@ -52,7 +89,12 @@ const Profile = () => {
     cvv: '',
     cardholderName: '',
   });
-  const [paymentError, setPaymentError] = useState('');
+const [paymentError, setPaymentError] = useState('');
+
+  const formatCardNumber = (num) => {
+    const digits = (num || '').replace(/\D/g, '').slice(0, 16);
+    return (digits.match(/.{1,4}/g) || []).join(' ').trim();
+  };
 
   // 🔹 Per-user payments key helper
   const getPaymentsStorageKey = () =>
@@ -232,27 +274,37 @@ const Profile = () => {
     { completed: 0, preparing: 0, shipped: 0 }
   );
 
-  const stats = [
-    { label: 'Total Orders', value: String(orders.length), highlight: true },
-    { label: 'Delivered', value: String(statusCounts.completed) },
-    { label: 'Preparing', value: String(statusCounts.preparing) },
-    // Include in-transit orders in this bucket so counts match the list badges
-    { label: 'In Transit', value: String(statusCounts.shipped) },
-  ];
+const stats = [
+  { label: 'Total Orders', value: String(orders.length), highlight: true },
+  { label: 'Delivered', value: String(statusCounts.completed) },
+  { label: 'Preparing', value: String(statusCounts.preparing) },
+  // Include in-transit orders in this bucket so counts match the list badges
+  { label: 'In Transit', value: String(statusCounts.shipped) },
+];
 
-  const [addresses, setAddresses] = useState([]);
-  const [showAddAddress] = useState(true);
-  const [editingAddressId, setEditingAddressId] = useState(null);
-  const [newAddress, setNewAddress] = useState({
-    title: '',
-    addressLine: '',
-    city: '',
-    country: '',
-    zipCode: '',
-  });
+const [addresses, setAddresses] = useState([]);
+const [showAddAddress] = useState(true);
+const [editingAddressId, setEditingAddressId] = useState(null);
+const [newAddress, setNewAddress] = useState({
+  title: '',
+  addressLine: '',
+  city: '',
+  country: '',
+  zipCode: '',
+});
+const [addressError, setAddressError] = useState('');
 
   const handleAddressChange = (field, value) => {
-    setNewAddress((prev) => ({ ...prev, [field]: value }));
+    let cleaned = value;
+    if (field === 'city' || field === 'country') {
+      cleaned = value.replace(/[^\p{L}\s'.-]/gu, ''); // only letters and simple punctuation
+    } else if (field === 'zipCode') {
+      cleaned = value.replace(/\D/g, '').slice(0, 5); // digits only, max 5
+    } else if (field === 'addressLine') {
+      cleaned = value.replace(/[^\p{L}0-9\s'.,#-]/gu, ''); // allow letters, numbers, common separators
+    }
+    setNewAddress((prev) => ({ ...prev, [field]: cleaned }));
+    if (addressError) setAddressError('');
   };
 
   useEffect(() => {
@@ -274,7 +326,54 @@ const Profile = () => {
 
   const handleAddAddress = async (e) => {
     e.preventDefault();
+
+    const validateAddress = (addr) => {
+      const trimmed = {
+        title: (addr.title || '').trim(),
+        addressLine: (addr.addressLine || '').trim(),
+        city: (addr.city || '').trim(),
+        country: (addr.country || '').trim(),
+        zipCode: (addr.zipCode || '').trim(),
+      };
+
+      const addrHasLetters = /[A-Za-z]/.test(trimmed.addressLine);
+      const addrHasTwoLetters = (trimmed.addressLine.match(/[A-Za-z]/g) || []).length >= 2;
+      const nameRegex = /^[\p{L}][\p{L}\s'.-]{1,}$/u; // letters, spaces, apostrophes, hyphens, dots only
+
+      if (!trimmed.title || trimmed.title.length < 2) {
+        return 'Please enter a title (min 2 characters).';
+      }
+      if (!trimmed.addressLine || trimmed.addressLine.length < 5 || !addrHasLetters || !addrHasTwoLetters) {
+        return 'Address line must include at least two letters and be 5+ characters.';
+      }
+      if (!trimmed.city || trimmed.city.length < 3 || !nameRegex.test(trimmed.city)) {
+        return 'Enter a valid city (letters only, min 3 chars).';
+      }
+      if (!trimmed.country || !nameRegex.test(trimmed.country)) {
+        return 'Select a valid country.';
+      }
+      if (!trimmed.zipCode || !/^[0-9]{5}$/.test(trimmed.zipCode)) {
+        return 'Zip code must be 5 digits.';
+      }
+      return '';
+    };
+
+    const validationMsg = validateAddress(newAddress);
+    if (validationMsg) {
+      setAddressError(validationMsg);
+      return;
+    }
+    setAddressError('');
+
     try {
+      const cleanAddress = {
+        title: newAddress.title.trim(),
+        addressLine: newAddress.addressLine.trim(),
+        city: newAddress.city.trim(),
+        country: newAddress.country.trim(),
+        zipCode: newAddress.zipCode.trim(),
+      };
+
       if (!user?.userId) {
         console.error('No userId available when saving address');
         return;
@@ -282,10 +381,10 @@ const Profile = () => {
 
       if (editingAddressId) {
         // 🔹 CHANGED: pass userId to update
-        await addressService.updateAddress(editingAddressId, newAddress, user.userId);
+        await addressService.updateAddress(editingAddressId, cleanAddress, user.userId);
       } else {
         // 🔹 CHANGED: pass userId to add
-        await addressService.addAddress(newAddress, user.userId);
+        await addressService.addAddress(cleanAddress, user.userId);
       }
 
       setEditingAddressId(null);
@@ -563,6 +662,9 @@ const Profile = () => {
                 Edit Address
               </h3>
               <form onSubmit={handleAddAddress} className="space-y-3">
+                {addressError && (
+                  <p className="text-sm text-red-600">{addressError}</p>
+                )}
                 <input
                   placeholder="Title (e.g. Home)"
                   className="w-full rounded-lg border border-gray-200 p-2 text-sm"
@@ -610,16 +712,17 @@ const Profile = () => {
                     required
                   />
                 </div>
-                <input
-                  placeholder="Country"
-                  className="w-full rounded-lg border border-gray-200 p-2 text-sm"
+                <select
+                  className="w-full rounded-lg border border-gray-200 p-2 text-sm bg-white"
                   value={newAddress.country}
-                  onChange={(e) =>
-                    handleAddressChange('country', e.target.value)
-                  }
-                  autoComplete="off"
+                  onChange={(e) => handleAddressChange('country', e.target.value)}
                   required
-                />
+                >
+                  <option value="">Select Country</option>
+                  {countries.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
                 <div className="flex gap-2 pt-2">
                   <button
                     type="submit"
@@ -676,16 +779,19 @@ const Profile = () => {
 
         {/* New Address card ONLY when not editing */}
         {showAddAddress && !editingAddressId && (
-          <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-            <h3 className="mb-4 text-sm font-bold uppercase tracking-wide">
-              New Address
-            </h3>
-            <form onSubmit={handleAddAddress} className="space-y-3">
-              <input
-                placeholder="Title (e.g. Home)"
-                className="w-full rounded-lg border border-gray-200 p-2 text-sm"
-                value={newAddress.title}
-                onChange={(e) => handleAddressChange('title', e.target.value)}
+            <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+              <h3 className="mb-4 text-sm font-bold uppercase tracking-wide">
+                New Address
+              </h3>
+              <form onSubmit={handleAddAddress} className="space-y-3">
+                {addressError && (
+                  <p className="text-sm text-red-600">{addressError}</p>
+                )}
+                <input
+                  placeholder="Title (e.g. Home)"
+                  className="w-full rounded-lg border border-gray-200 p-2 text-sm"
+                  value={newAddress.title}
+                  onChange={(e) => handleAddressChange('title', e.target.value)}
                 autoComplete="off"
                 required
               />
@@ -728,16 +834,17 @@ const Profile = () => {
                   required
                 />
               </div>
-              <input
-                placeholder="Country"
-                className="w-full rounded-lg border border-gray-200 p-2 text-sm"
+              <select
+                className="w-full rounded-lg border border-gray-200 p-2 text-sm bg-white"
                 value={newAddress.country}
-                onChange={(e) =>
-                  handleAddressChange('country', e.target.value)
-                }
-                autoComplete="off"
+                onChange={(e) => handleAddressChange('country', e.target.value)}
                 required
-              />
+              >
+                <option value="">Select Country</option>
+                {countries.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
               <div className="flex gap-2 pt-2">
                 <button
                   type="submit"
@@ -827,6 +934,29 @@ const Profile = () => {
           <h3 className="mb-3 text-lg font-bold">
             {editingPaymentIndex !== null ? 'Edit Card' : 'Add New Card'}
           </h3>
+          <div className="mb-4 rounded-2xl bg-gradient-to-r from-[#111] via-[#1f1f1f] to-[#2b2b2b] p-4 text-white shadow-lg border border-black/40">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-semibold uppercase tracking-wide text-gray-200">RAWCTRL Card</p>
+              <CreditCard className="h-5 w-5 text-gray-200" />
+            </div>
+            <p className="mt-6 text-lg font-mono tracking-[0.3em]">
+              {formatCardNumber(newPayment.cardNumber) || '**** **** **** ****'}
+            </p>
+            <div className="mt-4 flex items-center justify-between text-sm">
+              <div>
+                <p className="opacity-70 text-xs text-gray-300">Cardholder</p>
+                <p className="font-semibold">
+                  {newPayment.cardholderName || 'Name Surname'}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="opacity-70 text-xs text-gray-300">Expires</p>
+                <p className="font-semibold">
+                  {newPayment.expiry || 'MM/YY'}
+                </p>
+              </div>
+            </div>
+          </div>
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -903,16 +1033,15 @@ const Profile = () => {
               type="text"
               placeholder="Card Number"
               className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
-              value={newPayment.cardNumber}
-              onChange={(e) =>
+              value={formatCardNumber(newPayment.cardNumber)}
+              onChange={(e) => {
+                const digits = e.target.value.replace(/\D/g, '').slice(0, 16);
                 setNewPayment({
                   ...newPayment,
-                  cardNumber: e.target.value
-                    .replace(/\D/g, '')
-                    .slice(0, 16),
-                })
-              }
-              maxLength={16}
+                  cardNumber: digits,
+                });
+              }}
+              maxLength={19}
               required
             />
             <div className="flex gap-3">
