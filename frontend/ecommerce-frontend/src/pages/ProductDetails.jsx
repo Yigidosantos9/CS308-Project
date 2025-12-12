@@ -87,6 +87,7 @@ const ProductDetails = () => {
   const [newReview, setNewReview] = useState({ rating: 0, comment: '' });
   const [reviewLoading, setReviewLoading] = useState(false);
   const [reviewError, setReviewError] = useState('');
+  const [reviewSuccess, setReviewSuccess] = useState('');
   const [canReview, setCanReview] = useState(false); // User has DELIVERED order with this product
   const [reviewerNames, setReviewerNames] = useState({});
   const [reviewerTypes, setReviewerTypes] = useState({});
@@ -234,7 +235,8 @@ const ProductDetails = () => {
       } else {
         successMessage = 'Comment submitted! Pending Product Manager approval.';
       }
-      alert(successMessage);
+      setReviewSuccess(successMessage);
+      setTimeout(() => setReviewSuccess(''), 5000); // Auto-hide after 5 seconds
 
       // Refresh reviews after submission
       const [reviewsData, statsData] = await Promise.all([
@@ -512,6 +514,22 @@ const ProductDetails = () => {
               )
             )}
           </div>
+
+          {/* Success Message */}
+          {reviewSuccess && (
+            <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-3">
+              <svg className="w-5 h-5 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              <span className="text-green-800 font-medium">{reviewSuccess}</span>
+              <button
+                onClick={() => setReviewSuccess('')}
+                className="ml-auto text-green-600 hover:text-green-800"
+              >
+                ✕
+              </button>
+            </div>
+          )}
 
           {/* Review Form */}
           {showReviewForm && (
