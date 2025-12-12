@@ -194,10 +194,16 @@ public class ProductService {
         }
 
         com.cs308.product.domain.enums.TargetAudience targetAudience = null;
-        if (filter.getGender() != null && !filter.getGender().isBlank()) {
+        // Check targetAudience first, then fall back to gender for backward
+        // compatibility
+        String audienceStr = filter.getTargetAudience();
+        if (audienceStr == null || audienceStr.isBlank()) {
+            audienceStr = filter.getGender();
+        }
+        if (audienceStr != null && !audienceStr.isBlank()) {
             try {
                 targetAudience = com.cs308.product.domain.enums.TargetAudience
-                        .valueOf(filter.getGender().toUpperCase());
+                        .valueOf(audienceStr.toUpperCase());
             } catch (IllegalArgumentException e) {
                 return List.of();
             }

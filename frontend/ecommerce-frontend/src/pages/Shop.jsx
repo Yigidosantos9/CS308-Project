@@ -15,6 +15,7 @@ const Shop = () => {
 
   // Read filters from URL
   const currentCategory = searchParams.get('category') || '';
+  const currentTargetAudience = searchParams.get('targetAudience') || '';
   const currentSort = searchParams.get('sort') || 'relevance';
   const searchQuery = searchParams.get('q') || '';
 
@@ -27,6 +28,7 @@ const Shop = () => {
         const filter = {
           q: searchQuery,
           category: currentCategory === 'all' ? null : currentCategory,
+          targetAudience: currentTargetAudience || null,
           sort: currentSort
         };
 
@@ -41,7 +43,7 @@ const Shop = () => {
     };
 
     loadProducts();
-  }, [currentCategory, currentSort, searchQuery]);
+  }, [currentCategory, currentTargetAudience, currentSort, searchQuery]);
 
   // Handler to update URL params
   const handleFilterChange = (key, value) => {
@@ -69,7 +71,9 @@ const Shop = () => {
         <div className="flex justify-between items-end mb-8 border-b border-gray-300 pb-4">
           <div>
             <h1 className="text-3xl font-bold uppercase tracking-tight">
-              {searchQuery ? `Search: "${searchQuery}"` : (currentCategory || 'All Products')}
+              {searchQuery ? `Search: "${searchQuery}"` :
+                currentTargetAudience ? currentTargetAudience.toUpperCase() :
+                  (currentCategory || 'All Products')}
             </h1>
             <p className="text-gray-500 text-sm mt-1">
               {products.length} Items Found
@@ -104,7 +108,7 @@ const Shop = () => {
             <div className="mb-10">
               <h3 className="font-bold text-sm uppercase mb-4 tracking-wider">Categories</h3>
               <ul className="space-y-3 text-sm text-gray-600">
-                {['All', 'Jeans', 'Sweatshirts', 'Accessories'].map((cat) => (
+                {['All', 'Jeans', 'Tshirt', 'Dress'].map((cat) => (
                   <li key={cat}>
                     <button
                       onClick={() => handleFilterChange('category', cat === 'All' ? '' : cat.toLowerCase())}
@@ -114,6 +118,26 @@ const Shop = () => {
                         }`}
                     >
                       {cat}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Target Audience */}
+            <div className="mb-10">
+              <h3 className="font-bold text-sm uppercase mb-4 tracking-wider">Shop For</h3>
+              <ul className="space-y-3 text-sm text-gray-600">
+                {['All', 'Men', 'Women', 'Kids', 'Unisex'].map((audience) => (
+                  <li key={audience}>
+                    <button
+                      onClick={() => handleFilterChange('targetAudience', audience === 'All' ? '' : audience.toLowerCase())}
+                      className={`hover:text-black transition-colors ${(currentTargetAudience === audience.toLowerCase() || (audience === 'All' && !currentTargetAudience))
+                        ? 'text-black font-bold underline'
+                        : ''
+                        }`}
+                    >
+                      {audience}
                     </button>
                   </li>
                 ))}

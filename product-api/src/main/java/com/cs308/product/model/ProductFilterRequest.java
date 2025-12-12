@@ -14,6 +14,9 @@ public class ProductFilterRequest {
     // ?gender=...
     private String gender;
 
+    // ?targetAudience=...
+    private String targetAudience;
+
     // ?color=...
     private String color;
 

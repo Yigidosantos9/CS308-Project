@@ -4,21 +4,21 @@ import { Link } from 'react-router-dom';
 const categories = [
   {
     id: 1,
-    title: 'CASUAL',
+    title: 'MEN',
     image: 'https://images.unsplash.com/photo-1552374196-1ab2a1c593e8?auto=format&fit=crop&w=800&q=80',
-    link: '/shop?category=casual'
+    link: '/shop?targetAudience=men'
   },
   {
     id: 2,
-    title: 'STREETWEAR',
+    title: 'WOMEN',
     image: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=800&q=80',
-    link: '/shop?category=streetwear'
+    link: '/shop?targetAudience=women'
   },
   {
     id: 3,
-    title: 'PARTY',
+    title: 'ALL PRODUCTS',
     image: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=800&q=80',
-    link: '/shop?category=party'
+    link: '/shop'
   }
 ];
 

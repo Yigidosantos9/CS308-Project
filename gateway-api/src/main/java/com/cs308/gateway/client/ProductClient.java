@@ -42,6 +42,9 @@ public class ProductClient {
             if (filter.getGender() != null) {
                 uriBuilder.queryParam("gender", filter.getGender());
             }
+            if (filter.getTargetAudience() != null) {
+                uriBuilder.queryParam("targetAudience", filter.getTargetAudience());
+            }
             if (filter.getColor() != null) {
                 uriBuilder.queryParam("color", filter.getColor());
             }
