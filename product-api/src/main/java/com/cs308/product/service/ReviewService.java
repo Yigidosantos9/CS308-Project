@@ -96,7 +96,20 @@ public class ReviewService {
         Review review = reviewRepository.findById(reviewId)
                 .orElseThrow(() -> new IllegalArgumentException("Review not found"));
         Long productId = review.getProductId();
-        reviewRepository.delete(review);
+
+        // If review has a rating, only clear the comment and approve it (rating stays)
+        // If review has no rating (comment-only), delete the entire review
+        if (review.getRating() != null && review.getRating() > 0) {
+            // Keep the rating, just clear the comment
+            review.setComment(null);
+            review.setApproved(true); // Mark as approved since no comment to review
+            reviewRepository.save(review);
+            log.info("Disapproved comment for review {}, rating preserved", reviewId);
+        } else {
+            // No rating, delete the entire review
+            reviewRepository.delete(review);
+            log.info("Deleted review {} (no rating)", reviewId);
+        }
 
         // Update product table
         recalculateProductRating(productId);

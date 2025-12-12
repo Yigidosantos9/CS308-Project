@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Package, Truck, CheckCircle, Clock, ChevronDown, FileText, XCircle, RotateCcw, LogOut, Star, MessageSquare } from 'lucide-react';
 import { useShop } from '../../context/ShopContext';
-import { orderService, reviewService } from '../../services/api';
+import { orderService, reviewService, productService, authService } from '../../services/api';
 
 const ORDER_STATUSES = ['PREPARING', 'IN_TRANSIT', 'DELIVERED', 'CANCELLED', 'REFUNDED'];
 
@@ -14,6 +14,8 @@ const PMDashboard = () => {
     const [loading, setLoading] = useState(true);
     const [expandedOrderId, setExpandedOrderId] = useState(null);
     const [activeTab, setActiveTab] = useState('orders');
+    const [productNames, setProductNames] = useState({});
+    const [userNames, setUserNames] = useState({});
 
     useEffect(() => {
         // Check if user is product manager
@@ -30,6 +32,22 @@ const PMDashboard = () => {
             setLoading(true);
             const data = await orderService.getAllOrders();
             setOrders(data || []);
+
+            // Fetch customer names for orders
+            const orderUserIds = [...new Set((data || []).map(o => o.userId).filter(Boolean))];
+            const orderUserData = {};
+            for (const uid of orderUserIds) {
+                if (!userNames[uid]) {
+                    try {
+                        const fetchedUser = await authService.getUserById(uid);
+                        const fullName = [fetchedUser?.firstName, fetchedUser?.lastName].filter(Boolean).join(' ').trim();
+                        orderUserData[uid] = fullName || fetchedUser?.email || `Customer #${uid}`;
+                    } catch {
+                        orderUserData[uid] = `Customer #${uid}`;
+                    }
+                }
+            }
+            setUserNames(prev => ({ ...prev, ...orderUserData }));
         } catch (error) {
             console.error('Failed to fetch orders:', error);
         } finally {
@@ -41,6 +59,33 @@ const PMDashboard = () => {
         try {
             const data = await reviewService.getPendingReviews();
             setPendingReviews(data || []);
+
+            // Fetch product names
+            const productIds = [...new Set((data || []).map(r => r.productId))];
+            const productData = {};
+            for (const id of productIds) {
+                try {
+                    const product = await productService.getProductById(id);
+                    productData[id] = product?.name || `Product #${id}`;
+                } catch {
+                    productData[id] = `Product #${id}`;
+                }
+            }
+            setProductNames(productData);
+
+            // Fetch user names
+            const userIds = [...new Set((data || []).map(r => r.userId).filter(Boolean))];
+            const userData = {};
+            for (const uid of userIds) {
+                try {
+                    const user = await authService.getUserById(uid);
+                    const fullName = [user?.firstName, user?.lastName].filter(Boolean).join(' ').trim();
+                    userData[uid] = fullName || user?.email || `User #${uid}`;
+                } catch {
+                    userData[uid] = `User #${uid}`;
+                }
+            }
+            setUserNames(userData);
         } catch (error) {
             console.error('Failed to fetch pending reviews:', error);
         }
@@ -223,6 +268,7 @@ const PMDashboard = () => {
                     <div className="space-y-4">
                         {orders
                             .filter(order => activeTab === 'orders' || order.status !== 'DELIVERED')
+                            .sort((a, b) => b.id - a.id)
                             .map(order => (
                                 <div
                                     key={order.id}
@@ -242,7 +288,7 @@ const PMDashboard = () => {
                                                 <div>
                                                     <p className="font-bold">Order #{order.id}</p>
                                                     <p className="text-sm text-gray-500">
-                                                        Customer #{order.userId} • {new Date(order.orderDate).toLocaleDateString()}
+                                                        {userNames[order.userId] || `Customer #${order.userId}`} • {new Date(order.orderDate).toLocaleDateString()}
                                                     </p>
                                                 </div>
                                             </div>
@@ -323,13 +369,9 @@ const PMDashboard = () => {
                                     <div className="flex items-start justify-between">
                                         <div className="flex-1">
                                             <div className="flex items-center gap-3 mb-2">
-                                                <span className="font-semibold">Product #{review.productId}</span>
+                                                <span className="font-semibold">{productNames[review.productId] || `Product #${review.productId}`}</span>
                                                 <span className="text-sm text-gray-500">
-                                                    by {review.userName ||
-                                                        review.username ||
-                                                        review.reviewerName ||
-                                                        review.reviewerFullName ||
-                                                        (review.userId ? `User #${review.userId}` : 'User')}
+                                                    by {userNames[review.userId] || review.userName || `User #${review.userId}`}
                                                 </span>
                                             </div>
                                             {review.rating != null && review.rating > 0 && (
