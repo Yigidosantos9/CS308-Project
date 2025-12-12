@@ -27,7 +27,6 @@ const Navbar = () => {
     { name: 'NEW!', path: '/shop?category=new', isRed: true },
     { name: 'JEANS', path: '/shop?category=jeans', isRed: false },
     { name: 'SWEATSHIRTS', path: '/shop?category=sweatshirts', isRed: false },
-    { name: 'ACCESSORIES', path: '/shop?category=accessories', isRed: false },
   ];
 
   const handleSearch = (e) => {
