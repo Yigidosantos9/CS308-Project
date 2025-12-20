@@ -10,6 +10,7 @@ import Home from './pages/Home';
 import Shop from './pages/Shop';
 import ProductDetails from './pages/ProductDetails';
 import Cart from './pages/cart/Cart';
+import Wishlist from './pages/wishlist/Wishlist';
 import Checkout from './pages/checkout/Checkout';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
@@ -26,6 +27,7 @@ function App() {
             <Route path="shop" element={<Shop />} />
             <Route path="product/:id" element={<ProductDetails />} />
             <Route path="cart" element={<Cart />} />
+            <Route path="wishlist" element={<Wishlist />} />
             <Route path="checkout" element={
               <PrivateRoute>
                 <Checkout />

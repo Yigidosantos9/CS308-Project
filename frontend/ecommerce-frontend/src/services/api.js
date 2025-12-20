@@ -374,4 +374,46 @@ export const addressService = {
   },
 };
 
+// Wishlist Service - requires authentication
+export const wishlistService = {
+  // GET /api/wishlist - Get current user's wishlist
+  getWishlist: async () => {
+    try {
+      const response = await api.get('/wishlist');
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching wishlist:", error);
+      throw error;
+    }
+  },
+
+  // POST /api/wishlist/add?productId=...&size=...
+  addToWishlist: async (productId, size) => {
+    try {
+      const params = { productId };
+      if (size) {
+        params.size = size;
+      }
+      const response = await api.post('/wishlist/add', null, { params });
+      return response.data;
+    } catch (error) {
+      console.error("Error adding to wishlist:", error);
+      throw error;
+    }
+  },
+
+  // DELETE /api/wishlist/remove?productId=...
+  removeFromWishlist: async (productId) => {
+    try {
+      const response = await api.delete('/wishlist/remove', {
+        params: { productId }
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Error removing from wishlist:", error);
+      throw error;
+    }
+  },
+};
+
 export default api;

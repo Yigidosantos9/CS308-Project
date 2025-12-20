@@ -363,4 +363,70 @@ public class ProductClient {
             throw new RuntimeException("Failed to reduce stock", e);
         }
     }
+
+    // ==================== WISHLIST METHODS ====================
+
+    public com.cs308.gateway.model.product.Wishlist addToWishlist(Long userId, Long productId, String size) {
+        log.debug("Calling product service: POST /wishlist/add - userId: {}, productId: {}, size: {}",
+                userId, productId, size);
+
+        try {
+            var uriBuilder = UriComponentsBuilder.fromPath("/wishlist/add")
+                    .queryParam("userId", userId)
+                    .queryParam("productId", productId);
+
+            if (size != null) {
+                uriBuilder.queryParam("size", size);
+            }
+
+            String uri = uriBuilder.toUriString();
+
+            com.cs308.gateway.model.product.Wishlist wishlist = restTemplate.postForObject(
+                    uri, null, com.cs308.gateway.model.product.Wishlist.class);
+            return wishlist;
+        } catch (RestClientException e) {
+            log.error("Error calling product service for add to wishlist", e);
+            throw new RuntimeException("Failed to add item to wishlist", e);
+        }
+    }
+
+    public com.cs308.gateway.model.product.Wishlist removeFromWishlist(Long userId, Long productId) {
+        log.debug("Calling product service: DELETE /wishlist/remove - userId: {}, productId: {}",
+                userId, productId);
+
+        try {
+            String uri = UriComponentsBuilder.fromPath("/wishlist/remove")
+                    .queryParam("userId", userId)
+                    .queryParam("productId", productId)
+                    .toUriString();
+
+            ResponseEntity<com.cs308.gateway.model.product.Wishlist> response = restTemplate.exchange(
+                    uri,
+                    HttpMethod.DELETE,
+                    null,
+                    com.cs308.gateway.model.product.Wishlist.class);
+
+            return response.getBody();
+        } catch (RestClientException e) {
+            log.error("Error calling product service for remove from wishlist", e);
+            throw new RuntimeException("Failed to remove item from wishlist", e);
+        }
+    }
+
+    public com.cs308.gateway.model.product.Wishlist getWishlist(Long userId) {
+        log.debug("Calling product service: GET /wishlist for userId: {}", userId);
+
+        try {
+            String uri = UriComponentsBuilder.fromPath("/wishlist")
+                    .queryParam("userId", userId)
+                    .toUriString();
+
+            com.cs308.gateway.model.product.Wishlist wishlist = restTemplate.getForObject(
+                    uri, com.cs308.gateway.model.product.Wishlist.class);
+            return wishlist;
+        } catch (RestClientException e) {
+            log.error("Error calling product service for get wishlist", e);
+            throw new RuntimeException("Failed to fetch wishlist", e);
+        }
+    }
 }

@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useShop } from '../context/ShopContext';
-import { productService, reviewService, orderService, authService } from '../services/api';
+import { productService, reviewService, orderService, authService, wishlistService } from '../services/api';
+import { Heart } from 'lucide-react';
 
 const StarRating = ({ rating, onRate, interactive = false }) => {
   const [hover, setHover] = useState(0);
@@ -92,6 +93,10 @@ const ProductDetails = () => {
   const [reviewerNames, setReviewerNames] = useState({});
   const [reviewerTypes, setReviewerTypes] = useState({});
   const isProductManager = user?.userType === 'PRODUCT_MANAGER';
+
+  // Wishlist state
+  const [isInWishlist, setIsInWishlist] = useState(false);
+  const [wishlistLoading, setWishlistLoading] = useState(false);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -185,12 +190,60 @@ const ProductDetails = () => {
       }
     };
 
+    // Check if product is in wishlist
+    const checkWishlist = async () => {
+      if (!user || isProductManager) {
+        setIsInWishlist(false);
+        return;
+      }
+      try {
+        const wishlist = await wishlistService.getWishlist();
+        const inWishlist = wishlist?.items?.some(item => item.product?.id === parseInt(id));
+        setIsInWishlist(inWishlist);
+      } catch (error) {
+        console.error('Error checking wishlist:', error);
+        setIsInWishlist(false);
+      }
+    };
+
     if (id) {
       fetchProduct();
       fetchReviews();
       checkCanReview();
+      checkWishlist();
     }
   }, [id, user, isProductManager]);
+
+  // Handle wishlist toggle
+  const handleWishlistToggle = async () => {
+    if (!user) {
+      alert('Please login to add items to your wishlist');
+      return;
+    }
+    if (isProductManager) return;
+
+    // Require size selection when adding to wishlist
+    if (!isInWishlist && !selectedSize) {
+      alert('Please select a size before adding to wishlist');
+      return;
+    }
+
+    setWishlistLoading(true);
+    try {
+      if (isInWishlist) {
+        await wishlistService.removeFromWishlist(parseInt(id));
+        setIsInWishlist(false);
+      } else {
+        await wishlistService.addToWishlist(parseInt(id), selectedSize);
+        setIsInWishlist(true);
+      }
+    } catch (error) {
+      console.error('Error toggling wishlist:', error);
+      alert('Failed to update wishlist. Please try again.');
+    } finally {
+      setWishlistLoading(false);
+    }
+  };
 
   const handleSubmitReview = async (e) => {
     e.preventDefault();
@@ -440,22 +493,39 @@ const ProductDetails = () => {
               const isDisabled = displayProduct.stock === 0 || availableToAdd <= 0;
 
               return (
-                <button
-                  onClick={() => {
-                    const actualQty = Math.min(selectedQuantity, availableToAdd);
-                    if (actualQty > 0) {
-                      addToCart({ ...displayProduct, selectedSize }, actualQty);
-                      setSelectedQuantity(1);
-                    }
-                  }}
-                  disabled={isDisabled}
-                  className={`w-48 py-3 px-8 text-sm font-bold uppercase tracking-wider shadow-lg transition-colors ${isDisabled
-                    ? 'bg-gray-400 text-gray-700 cursor-not-allowed'
-                    : 'bg-black text-white hover:bg-gray-800'
-                    }`}
-                >
-                  {displayProduct.stock === 0 ? 'Out of Stock' : availableToAdd <= 0 ? 'Max in Cart' : `Add to Cart${selectedQuantity > 1 ? ` (${Math.min(selectedQuantity, availableToAdd)})` : ''}`}
-                </button>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => {
+                      const actualQty = Math.min(selectedQuantity, availableToAdd);
+                      if (actualQty > 0) {
+                        addToCart({ ...displayProduct, selectedSize }, actualQty);
+                        setSelectedQuantity(1);
+                      }
+                    }}
+                    disabled={isDisabled}
+                    className={`w-48 py-3 px-8 text-sm font-bold uppercase tracking-wider shadow-lg transition-colors ${isDisabled
+                      ? 'bg-gray-400 text-gray-700 cursor-not-allowed'
+                      : 'bg-black text-white hover:bg-gray-800'
+                      }`}
+                  >
+                    {displayProduct.stock === 0 ? 'Out of Stock' : availableToAdd <= 0 ? 'Max in Cart' : `Add to Cart${selectedQuantity > 1 ? ` (${Math.min(selectedQuantity, availableToAdd)})` : ''}`}
+                  </button>
+
+                  {/* Wishlist Heart Button */}
+                  <button
+                    onClick={handleWishlistToggle}
+                    disabled={wishlistLoading}
+                    className={`w-12 h-12 flex items-center justify-center border-2 rounded-lg transition-all ${isInWishlist
+                      ? 'bg-red-50 border-red-500 text-red-500 hover:bg-red-100'
+                      : 'border-gray-300 text-gray-400 hover:border-red-500 hover:text-red-500'
+                      } ${wishlistLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    title={isInWishlist ? 'Remove from Wishlist' : 'Add to Wishlist'}
+                  >
+                    <Heart
+                      className={`w-6 h-6 transition-all ${isInWishlist ? 'fill-current' : ''}`}
+                    />
+                  </button>
+                </div>
               );
             })()}
             {/* Description */}

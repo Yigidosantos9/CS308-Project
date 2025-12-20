@@ -1,5 +1,5 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Search, ShoppingBag, User, Menu, X } from 'lucide-react';
+import { Search, ShoppingBag, User, Menu, X, Heart } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 import { useShop } from '../../context/ShopContext';
@@ -84,6 +84,13 @@ const Navbar = () => {
             <button onClick={() => setIsSearchOpen(true)} className="hover:opacity-60 transition-opacity">
               <Search className="w-6 h-6" />
             </button>
+          )}
+
+          {/* Wishlist - Hidden for Product Manager */}
+          {user?.userType !== 'PRODUCT_MANAGER' && (
+            <Link to="/wishlist" className="hover:opacity-60 transition-opacity">
+              <Heart className="w-6 h-6" />
+            </Link>
           )}
 
           {/* Cart - Hidden for Product Manager */}

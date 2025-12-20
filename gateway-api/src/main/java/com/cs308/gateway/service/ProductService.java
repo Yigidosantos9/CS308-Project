@@ -67,4 +67,21 @@ public class ProductService {
         log.info("Processing restore stock request: {}", request);
         return productClient.restoreStock(request);
     }
+
+    // ==================== WISHLIST METHODS ====================
+
+    public com.cs308.gateway.model.product.Wishlist addToWishlist(Long userId, Long productId, String size) {
+        log.info("Processing add to wishlist request - userId: {}, productId: {}, size: {}", userId, productId, size);
+        return productClient.addToWishlist(userId, productId, size);
+    }
+
+    public com.cs308.gateway.model.product.Wishlist removeFromWishlist(Long userId, Long productId) {
+        log.info("Processing remove from wishlist request - userId: {}, productId: {}", userId, productId);
+        return productClient.removeFromWishlist(userId, productId);
+    }
+
+    public com.cs308.gateway.model.product.Wishlist getWishlist(Long userId) {
+        log.info("Processing get wishlist request for userId: {}", userId);
+        return productClient.getWishlist(userId);
+    }
 }
