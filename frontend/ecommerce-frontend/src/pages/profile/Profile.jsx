@@ -14,9 +14,13 @@ import {
   LogOut,
   FileText,
   ChevronDown,
+  RotateCcw,
+  Clock,
+  XCircle,
+  AlertCircle,
 } from 'lucide-react';
 import { useShop } from '../../context/ShopContext';
-import { authService, orderService, addressService, productService } from '../../services/api'; // 🔹 ADDED productService
+import { authService, orderService, addressService, productService, refundService } from '../../services/api';
 
 const countries = [
   'Argentina',
@@ -89,7 +93,22 @@ const Profile = () => {
     cvv: '',
     cardholderName: '',
   });
-const [paymentError, setPaymentError] = useState('');
+  const [paymentError, setPaymentError] = useState('');
+
+  // ==================== REFUND STATE ====================
+  const [refundModalOpen, setRefundModalOpen] = useState(false);
+  const [selectedOrderForRefund, setSelectedOrderForRefund] = useState(null);
+  const [refundReason, setRefundReason] = useState('');
+  const [refundLoading, setRefundLoading] = useState(false);
+  const [refundError, setRefundError] = useState('');
+  const [refundSuccess, setRefundSuccess] = useState('');
+
+  // ==================== CANCEL ORDER STATE ====================
+  const [cancelModalOpen, setCancelModalOpen] = useState(false);
+  const [selectedOrderForCancel, setSelectedOrderForCancel] = useState(null);
+  const [cancelLoading, setCancelLoading] = useState(false);
+  const [cancelError, setCancelError] = useState('');
+  const [cancelSuccess, setCancelSuccess] = useState('');
 
   const formatCardNumber = (num) => {
     const digits = (num || '').replace(/\D/g, '').slice(0, 16);
@@ -168,9 +187,9 @@ const [paymentError, setPaymentError] = useState('');
 
     const now = new Date();
     const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth() + 1; // JS months are 0-based
+    const currentMonth = now.getMonth() + 1;
     const fullYear = 2000 + year;
-    const maxAllowedYear = currentYear + 20; // Guard against nonsense future dates
+    const maxAllowedYear = currentYear + 20;
 
     if (fullYear > maxAllowedYear) {
       return { valid: false, message: 'Expiry year is too far in the future.' };
@@ -213,11 +232,11 @@ const [paymentError, setPaymentError] = useState('');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  const fetchOrders = async () => { // 🔹 UPDATED
+  const fetchOrders = async () => {
     try {
       const data = await orderService.getOrders(user.userId);
 
-      // 🔹 Simple in-memory cache so we don't refetch the same product many times
+      // Simple in-memory cache so we don't refetch the same product many times
       const productCache = {};
 
       const ordersWithProductNames = await Promise.all(
@@ -226,7 +245,6 @@ const [paymentError, setPaymentError] = useState('');
             (order.items || []).map(async (item) => {
               if (!item?.productId) return item;
 
-              // If we already fetched this product once, reuse it
               if (!productCache[item.productId]) {
                 try {
                   const product = await productService.getProductById(item.productId);
@@ -251,6 +269,12 @@ const [paymentError, setPaymentError] = useState('');
             totalPrice: order.totalPrice,
             status: order.status,
             items: itemsWithNames,
+            // Refund fields
+            refundStatus: order.refundStatus || 'NONE',
+            refundRequestedAt: order.refundRequestedAt,
+            refundReason: order.refundReason,
+            refundRejectionReason: order.refundRejectionReason,
+            deliveredAt: order.deliveredAt,
           };
         })
       );
@@ -261,7 +285,6 @@ const [paymentError, setPaymentError] = useState('');
     }
   };
 
-
   // Calculate dynamic stats based on actual orders
   const statusCounts = orders.reduce(
     (acc, order) => {
@@ -269,39 +292,39 @@ const [paymentError, setPaymentError] = useState('');
       if (status === 'DELIVERED') acc.completed += 1;
       else if (status === 'PREPARING') acc.preparing += 1;
       else if (status === 'SHIPPED' || status === 'IN_TRANSIT') acc.shipped += 1;
+      else if (status === 'REFUNDED') acc.refunded += 1;
       return acc;
     },
-    { completed: 0, preparing: 0, shipped: 0 }
+    { completed: 0, preparing: 0, shipped: 0, refunded: 0 }
   );
 
-const stats = [
-  { label: 'Total Orders', value: String(orders.length), highlight: true },
-  { label: 'Delivered', value: String(statusCounts.completed) },
-  { label: 'Preparing', value: String(statusCounts.preparing) },
-  // Include in-transit orders in this bucket so counts match the list badges
-  { label: 'In Transit', value: String(statusCounts.shipped) },
-];
+  const stats = [
+    { label: 'Total Orders', value: String(orders.length), highlight: true },
+    { label: 'Delivered', value: String(statusCounts.completed) },
+    { label: 'Preparing', value: String(statusCounts.preparing) },
+    { label: 'In Transit', value: String(statusCounts.shipped) },
+  ];
 
-const [addresses, setAddresses] = useState([]);
-const [showAddAddress] = useState(true);
-const [editingAddressId, setEditingAddressId] = useState(null);
-const [newAddress, setNewAddress] = useState({
-  title: '',
-  addressLine: '',
-  city: '',
-  country: '',
-  zipCode: '',
-});
-const [addressError, setAddressError] = useState('');
+  const [addresses, setAddresses] = useState([]);
+  const [showAddAddress] = useState(true);
+  const [editingAddressId, setEditingAddressId] = useState(null);
+  const [newAddress, setNewAddress] = useState({
+    title: '',
+    addressLine: '',
+    city: '',
+    country: '',
+    zipCode: '',
+  });
+  const [addressError, setAddressError] = useState('');
 
   const handleAddressChange = (field, value) => {
     let cleaned = value;
     if (field === 'city' || field === 'country') {
-      cleaned = value.replace(/[^\p{L}\s'.-]/gu, ''); // only letters and simple punctuation
+      cleaned = value.replace(/[^\p{L}\s'.-]/gu, '');
     } else if (field === 'zipCode') {
-      cleaned = value.replace(/\D/g, '').slice(0, 5); // digits only, max 5
+      cleaned = value.replace(/\D/g, '').slice(0, 5);
     } else if (field === 'addressLine') {
-      cleaned = value.replace(/[^\p{L}0-9\s'.,#-]/gu, ''); // allow letters, numbers, common separators
+      cleaned = value.replace(/[^\p{L}0-9\s'.,#-]/gu, '');
     }
     setNewAddress((prev) => ({ ...prev, [field]: cleaned }));
     if (addressError) setAddressError('');
@@ -316,7 +339,6 @@ const [addressError, setAddressError] = useState('');
 
   const fetchAddresses = async () => {
     try {
-      // 🔹 CHANGED: pass userId to match backend expectations
       const data = await addressService.getAddresses(user.userId);
       setAddresses(data || []);
     } catch (err) {
@@ -338,7 +360,7 @@ const [addressError, setAddressError] = useState('');
 
       const addrHasLetters = /[A-Za-z]/.test(trimmed.addressLine);
       const addrHasTwoLetters = (trimmed.addressLine.match(/[A-Za-z]/g) || []).length >= 2;
-      const nameRegex = /^[\p{L}][\p{L}\s'.-]{1,}$/u; // letters, spaces, apostrophes, hyphens, dots only
+      const nameRegex = /^[\p{L}][\p{L}\s'.-]{1,}$/u;
 
       if (!trimmed.title || trimmed.title.length < 2) {
         return 'Please enter a title (min 2 characters).';
@@ -380,10 +402,8 @@ const [addressError, setAddressError] = useState('');
       }
 
       if (editingAddressId) {
-        // 🔹 CHANGED: pass userId to update
         await addressService.updateAddress(editingAddressId, cleanAddress, user.userId);
       } else {
-        // 🔹 CHANGED: pass userId to add
         await addressService.addAddress(cleanAddress, user.userId);
       }
 
@@ -396,7 +416,7 @@ const [addressError, setAddressError] = useState('');
         zipCode: '',
       });
 
-      await fetchAddresses(); // 🔹 CHANGED: ensure refresh after save
+      await fetchAddresses();
     } catch (err) {
       console.error('Failed to add address', err);
     }
@@ -404,7 +424,6 @@ const [addressError, setAddressError] = useState('');
 
   const handleDeleteAddress = async (addressId) => {
     try {
-      // 🔹 CHANGED: pass userId to delete (to stay consistent with backend style)
       await addressService.deleteAddress(addressId, user?.userId);
       fetchAddresses();
     } catch (err) {
@@ -436,19 +455,156 @@ const [addressError, setAddressError] = useState('');
 
   // LOGOUT HANDLER
   const handleLogout = () => {
-    // 1) Clear token + user info from localStorage
     authService.logout();
-
-    // 2) Optionally clear cart (so user doesn't see old cart on guest)
     clearCart();
-
-    // 3) Clear global user state
     setUser(null);
-
-    // 4) Redirect to login page
     navigate('/login');
   };
 
+  // ==================== REFUND HANDLERS ====================
+
+  const openRefundModal = (order) => {
+    setSelectedOrderForRefund(order);
+    setRefundReason('');
+    setRefundError('');
+    setRefundSuccess('');
+    setRefundModalOpen(true);
+  };
+
+  const closeRefundModal = () => {
+    setRefundModalOpen(false);
+    setSelectedOrderForRefund(null);
+    setRefundReason('');
+    setRefundError('');
+    setRefundSuccess('');
+  };
+
+  const handleRefundSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!refundReason || refundReason.trim().length < 10) {
+      setRefundError('Please provide a reason with at least 10 characters.');
+      return;
+    }
+
+    setRefundLoading(true);
+    setRefundError('');
+
+    try {
+      await refundService.requestRefund(selectedOrderForRefund.id, refundReason.trim());
+      setRefundSuccess('Refund request submitted successfully! We will review it shortly.');
+      
+      // Refresh orders to show updated status
+      await fetchOrders();
+      
+      // Close modal after a short delay
+      setTimeout(() => {
+        closeRefundModal();
+      }, 2000);
+    } catch (err) {
+      setRefundError(err.message || 'Failed to submit refund request. Please try again.');
+    } finally {
+      setRefundLoading(false);
+    }
+  };
+
+  // ==================== CANCEL ORDER FUNCTIONS ====================
+  const openCancelModal = (order) => {
+    setSelectedOrderForCancel(order);
+    setCancelError('');
+    setCancelSuccess('');
+    setCancelModalOpen(true);
+  };
+
+  const closeCancelModal = () => {
+    setCancelModalOpen(false);
+    setSelectedOrderForCancel(null);
+    setCancelError('');
+    setCancelSuccess('');
+  };
+
+  const handleCancelOrder = async () => {
+    setCancelLoading(true);
+    setCancelError('');
+
+    try {
+      await orderService.cancelOrder(selectedOrderForCancel.id);
+      setCancelSuccess('Order cancelled successfully!');
+      
+      // Refresh orders to show updated status
+      await fetchOrders();
+      
+      // Close modal after a short delay
+      setTimeout(() => {
+        closeCancelModal();
+      }, 2000);
+    } catch (err) {
+      setCancelError(err.message || 'Failed to cancel order. Please try again.');
+    } finally {
+      setCancelLoading(false);
+    }
+  };
+
+  // Check if order can be cancelled (only PROCESSING or PREPARING)
+  const canCancelOrder = (order) => {
+    if (!order) return false;
+    return order.status === 'PROCESSING' || order.status === 'PREPARING';
+  };
+
+  // Check if order is eligible for refund
+  const isOrderEligibleForRefund = (order) => {
+    if (!order) return false;
+    if (order.status !== 'DELIVERED') return false;
+    if (order.refundStatus && order.refundStatus !== 'NONE') return false;
+
+    // Check 30-day window
+    const deliveryDate = order.deliveredAt ? new Date(order.deliveredAt) : new Date(order.orderDate);
+    const daysSinceDelivery = Math.floor((Date.now() - deliveryDate.getTime()) / (1000 * 60 * 60 * 24));
+    return daysSinceDelivery <= 30;
+  };
+
+  // Get days remaining for refund
+  const getDaysRemainingForRefund = (order) => {
+    if (!order || order.status !== 'DELIVERED') return 0;
+    const deliveryDate = order.deliveredAt ? new Date(order.deliveredAt) : new Date(order.orderDate);
+    const daysSinceDelivery = Math.floor((Date.now() - deliveryDate.getTime()) / (1000 * 60 * 60 * 24));
+    return Math.max(0, 30 - daysSinceDelivery);
+  };
+
+  // Get refund status badge
+  const getRefundStatusBadge = (refundStatus, orderStatus) => {
+    // If the main status is already REFUNDED, we don't need to show an "Approved" badge
+    if (orderStatus === 'REFUNDED') {
+      return null;
+    }
+
+    switch (refundStatus) {
+      case 'PENDING':
+        return (
+          <span className="inline-flex items-center gap-1 rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-800">
+            <Clock className="h-3 w-3" />
+            Refund Requested
+          </span>
+        );
+      case 'APPROVED':
+        // This will only show if the order hasn't transitioned to the 'REFUNDED' status yet
+        return (
+          <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
+            <CheckCircle className="h-3 w-3" />
+            Refund Approved
+          </span>
+        );
+      case 'REJECTED':
+        return (
+          <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800">
+            <XCircle className="h-3 w-3" />
+            Refund Rejected
+          </span>
+        );
+      default:
+        return null;
+    }
+  };
   const ProfileContent = () => (
     <div className="space-y-6">
       <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
@@ -506,7 +662,7 @@ const [addressError, setAddressError] = useState('');
 
   const handleDownloadInvoice = async (order, e) => {
     if (e) {
-      e.stopPropagation(); // Prevent card expansion
+      e.stopPropagation();
       e.preventDefault();
     }
     console.log('Download invoice clicked', order?.id);
@@ -560,24 +716,31 @@ const [addressError, setAddressError] = useState('');
                     </p>
                   </div>
                 </div>
-                <div className="text-right">
+                <div className="text-right flex flex-col items-end gap-1">
                   <p className="font-bold">
                     $
                     {order.totalPrice?.toFixed(2) ||
                       order.totalAmount?.toFixed(2)}
                   </p>
-                  <span
-                    className={`inline-block rounded-full px-3 py-1 text-xs font-medium ${order.status === 'DELIVERED'
-                      ? 'bg-green-100 text-green-800'
-                      : order.status === 'PROCESSING'
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : order.status === 'IN_TRANSIT'
-                          ? 'bg-blue-100 text-blue-800'
-                          : 'bg-gray-100 text-gray-800'
-                      }`}
-                  >
-                    {order.status}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`inline-block rounded-full px-3 py-1 text-xs font-medium ${order.status === 'DELIVERED'
+                        ? 'bg-green-100 text-green-800'
+                        : order.status === 'PROCESSING' || order.status === 'PREPARING'
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : order.status === 'IN_TRANSIT'
+                            ? 'bg-blue-100 text-blue-800'
+                            : order.status === 'REFUNDED'
+                              ? 'bg-purple-100 text-purple-800'
+                              : order.status === 'CANCELLED'
+                                ? 'bg-red-100 text-red-800'
+                                : 'bg-gray-100 text-gray-800'
+                        }`}
+                    >
+                      {order.status}
+                    </span>
+                    {order.refundStatus && order.refundStatus !== 'NONE' && getRefundStatusBadge(order.refundStatus, order.status)}
+                  </div>
                 </div>
               </div>
             </div>
@@ -588,14 +751,12 @@ const [addressError, setAddressError] = useState('');
                 {order.items && order.items.length > 0 ? (
                   <div className="space-y-3">
                     {order.items.map((item, index) => {
-                      // 🔹 Prefer product name; fall back to Product #id
                       const itemName =
                         item.productName ||
                         item.name ||
                         item.product?.name ||
                         `Product #${item.productId}`;
 
-                      // 🔹 safer line total calculation
                       const lineTotal =
                         item.price ??
                         (item.unitPrice && item.quantity
@@ -630,7 +791,74 @@ const [addressError, setAddressError] = useState('');
                   <p className="text-gray-500 text-sm">No items available</p>
                 )}
 
-                <div className="mt-4 pt-4 border-t border-gray-200 flex justify-end">
+                {/* Refund Information */}
+                {order.refundStatus && order.refundStatus !== 'NONE' && (
+                  <div className="mt-4 p-4 rounded-lg bg-white border border-gray-200">
+                    <h5 className="font-semibold text-sm mb-2 flex items-center gap-2">
+                      <RotateCcw className="h-4 w-4" />
+                      Refund Information
+                    </h5>
+                    {order.refundReason && (
+                      <p className="text-sm text-gray-600 mb-1">
+                        <span className="font-medium">Reason:</span> {order.refundReason}
+                      </p>
+                    )}
+                    {order.refundRequestedAt && (
+                      <p className="text-sm text-gray-500">
+                        Requested: {new Date(order.refundRequestedAt).toLocaleDateString()}
+                      </p>
+                    )}
+                    {order.refundStatus === 'REJECTED' && order.refundRejectionReason && (
+                      <p className="text-sm text-red-600 mt-2">
+                        <span className="font-medium">Rejection reason:</span> {order.refundRejectionReason}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                <div className="mt-4 pt-4 border-t border-gray-200 flex justify-between items-center">
+                  {/* Action Buttons - Cancel for non-delivered, Refund for delivered */}
+                  <div className="flex gap-2">
+                    {/* Cancel Button - Only show for PROCESSING/PREPARING orders */}
+                    {canCancelOrder(order) && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openCancelModal(order);
+                        }}
+                        className="flex items-center gap-2 rounded-lg bg-orange-50 border border-orange-200 px-4 py-2 text-sm font-medium text-orange-700 transition hover:bg-orange-100"
+                      >
+                        <XCircle className="h-4 w-4" />
+                        Cancel Order
+                      </button>
+                    )}
+                    
+                    {/* Refund Button - Only show if eligible (delivered within 30 days) */}
+                    {isOrderEligibleForRefund(order) && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openRefundModal(order);
+                        }}
+                        className="flex items-center gap-2 rounded-lg bg-red-50 border border-red-200 px-4 py-2 text-sm font-medium text-red-700 transition hover:bg-red-100"
+                      >
+                        <RotateCcw className="h-4 w-4" />
+                        Request Refund
+                        <span className="text-xs text-red-500">
+                          ({getDaysRemainingForRefund(order)} days left)
+                        </span>
+                      </button>
+                    )}
+                    {order.status === 'DELIVERED' && !isOrderEligibleForRefund(order) && order.refundStatus === 'NONE' && (
+                      <p className="text-sm text-gray-500 flex items-center gap-1">
+                        <AlertCircle className="h-4 w-4" />
+                        Refund window expired
+                      </p>
+                    )}
+                  </div>
+
                   <button
                     type="button"
                     onClick={(e) => handleDownloadInvoice(order, e)}
@@ -645,6 +873,7 @@ const [addressError, setAddressError] = useState('');
           </div>
         ))
       )}
+
     </div>
   );
 
@@ -653,7 +882,6 @@ const [addressError, setAddressError] = useState('');
       <div className="grid gap-4 md:grid-cols-2">
         {addresses.map((address) => (
           editingAddressId === address.id ? (
-            // 🔹 Inline edit form on the clicked card
             <div
               key={address.id}
               className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm"
@@ -741,7 +969,6 @@ const [addressError, setAddressError] = useState('');
               </form>
             </div>
           ) : (
-            // 🔹 normal read-only card
             <div
               key={address.id}
               className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm"
@@ -777,21 +1004,20 @@ const [addressError, setAddressError] = useState('');
           )
         ))}
 
-        {/* New Address card ONLY when not editing */}
         {showAddAddress && !editingAddressId && (
-            <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-              <h3 className="mb-4 text-sm font-bold uppercase tracking-wide">
-                New Address
-              </h3>
-              <form onSubmit={handleAddAddress} className="space-y-3">
-                {addressError && (
-                  <p className="text-sm text-red-600">{addressError}</p>
-                )}
-                <input
-                  placeholder="Title (e.g. Home)"
-                  className="w-full rounded-lg border border-gray-200 p-2 text-sm"
-                  value={newAddress.title}
-                  onChange={(e) => handleAddressChange('title', e.target.value)}
+          <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+            <h3 className="mb-4 text-sm font-bold uppercase tracking-wide">
+              New Address
+            </h3>
+            <form onSubmit={handleAddAddress} className="space-y-3">
+              {addressError && (
+                <p className="text-sm text-red-600">{addressError}</p>
+              )}
+              <input
+                placeholder="Title (e.g. Home)"
+                className="w-full rounded-lg border border-gray-200 p-2 text-sm"
+                value={newAddress.title}
+                onChange={(e) => handleAddressChange('title', e.target.value)}
                 autoComplete="off"
                 required
               />
@@ -928,7 +1154,6 @@ const [addressError, setAddressError] = useState('');
         </div>
       ))}
 
-      {/* Add Payment Button or Form */}
       {showAddPayment ? (
         <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
           <h3 className="mb-3 text-lg font-bold">
@@ -967,7 +1192,6 @@ const [addressError, setAddressError] = useState('');
               }
               setPaymentError('');
 
-              // Detect card brand from first digit
               const firstDigit = newPayment.cardNumber.charAt(0);
               let brand = 'Card';
               if (firstDigit === '4') brand = 'Visa';
@@ -1298,7 +1522,6 @@ const [addressError, setAddressError] = useState('');
               </div>
             </div>
 
-            {/* LOGOUT BUTTON */}
             <button
               onClick={handleLogout}
               className="group flex w-full items-center justify-between rounded-2xl border border-red-100 bg-red-50 p-4 text-sm font-bold text-red-600 transition hover:border-red-200 hover:bg-red-100 hover:shadow-sm"
@@ -1311,6 +1534,147 @@ const [addressError, setAddressError] = useState('');
           <div className="space-y-6">{renderContent()}</div>
         </div>
       </div>
+
+      {/* Refund Modal - Outside of OrdersContent to prevent re-render focus loss */}
+      {refundModalOpen && selectedOrderForRefund && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full mx-4 overflow-hidden">
+            <div className="p-6 border-b border-gray-200">
+              <h3 className="text-lg font-bold flex items-center gap-2">
+                <RotateCcw className="h-5 w-5 text-red-500" />
+                Request Refund
+              </h3>
+              <p className="text-sm text-gray-500 mt-1">
+                Order #{selectedOrderForRefund.id}
+              </p>
+            </div>
+
+            <form onSubmit={handleRefundSubmit} className="p-6 space-y-4">
+              {refundError && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+                  {refundError}
+                </div>
+              )}
+
+              {refundSuccess && (
+                <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700">
+                  {refundSuccess}
+                </div>
+              )}
+
+              <div>
+                <p className="text-sm text-gray-600 mb-3">
+                  Order Total: <span className="font-bold">${selectedOrderForRefund.totalPrice?.toFixed(2)}</span>
+                </p>
+                <p className="text-sm text-gray-500 mb-3">
+                  Days remaining to request refund: <span className="font-medium">{getDaysRemainingForRefund(selectedOrderForRefund)}</span>
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Reason for refund *
+                </label>
+                <textarea
+                  value={refundReason}
+                  onChange={(e) => setRefundReason(e.target.value)}
+                  placeholder="Please explain why you want a refund (minimum 10 characters)..."
+                  className="w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-black focus:outline-none min-h-[100px]"
+                  required
+                  minLength={10}
+                  maxLength={1000}
+                />
+                <p className="text-xs text-gray-400 mt-1">
+                  {refundReason.length}/1000 characters
+                </p>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={closeRefundModal}
+                  className="flex-1 rounded-lg border border-gray-300 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
+                  disabled={refundLoading}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 rounded-lg bg-red-600 py-2.5 text-sm font-medium text-white hover:bg-red-700 transition disabled:opacity-50"
+                  disabled={refundLoading || refundSuccess}
+                >
+                  {refundLoading ? 'Submitting...' : 'Submit Request'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Cancel Order Modal */}
+      {cancelModalOpen && selectedOrderForCancel && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full mx-4 overflow-hidden">
+            <div className="p-6 border-b border-gray-200">
+              <h3 className="text-lg font-bold flex items-center gap-2">
+                <XCircle className="h-5 w-5 text-orange-500" />
+                Cancel Order
+              </h3>
+              <p className="text-sm text-gray-500 mt-1">
+                Order #{selectedOrderForCancel.id}
+              </p>
+            </div>
+
+            <div className="p-6 space-y-4">
+              {cancelError && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+                  {cancelError}
+                </div>
+              )}
+
+              {cancelSuccess && (
+                <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700">
+                  {cancelSuccess}
+                </div>
+              )}
+
+              <div>
+                <p className="text-sm text-gray-600 mb-3">
+                  Order Total: <span className="font-bold">${selectedOrderForCancel.totalPrice?.toFixed(2)}</span>
+                </p>
+                <p className="text-sm text-gray-600 mb-3">
+                  Status: <span className="font-medium">{selectedOrderForCancel.status}</span>
+                </p>
+              </div>
+
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                <p className="text-sm text-orange-800">
+                  <strong>Warning:</strong> This action cannot be undone. Your order will be cancelled and you will receive a full refund.
+                </p>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={closeCancelModal}
+                  className="flex-1 rounded-lg border border-gray-300 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
+                  disabled={cancelLoading}
+                >
+                  Keep Order
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCancelOrder}
+                  className="flex-1 rounded-lg bg-orange-600 py-2.5 text-sm font-medium text-white hover:bg-orange-700 transition disabled:opacity-50"
+                  disabled={cancelLoading || cancelSuccess}
+                >
+                  {cancelLoading ? 'Cancelling...' : 'Cancel Order'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

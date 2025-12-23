@@ -324,6 +324,107 @@ export const orderService = {
       console.error("Error updating order status:", error);
       throw error;
     }
+  },
+
+  // Customer: Cancel order (only for PROCESSING/PREPARING orders)
+  cancelOrder: async (orderId) => {
+    try {
+      // CHANGE: No query params needed. Gateway reads the token.
+      const response = await api.post(`/orders/${orderId}/cancel`);
+      return response.data;
+    } catch (error) {
+      console.error("Error cancelling order:", error);
+      const errorMessage = error.response?.data?.error || 'Failed to cancel order';
+      throw new Error(errorMessage);
+    }
+  }
+};
+
+// ==================== REFUND SERVICE ====================
+export const refundService = {
+  /**
+   * Request a refund for an order (customer action)
+   * @param {number} orderId - The order ID
+   * @param {string} reason - The reason for the refund
+   */
+  requestRefund: async (orderId, reason) => {
+    try {
+      // CHANGE: Send reason in body. Gateway reads userId from Token.
+      const response = await api.post(`/orders/${orderId}/refund`, { reason });
+      return response.data;
+    } catch (error) {
+      console.error("Error requesting refund:", error);
+      const errorMessage = error.response?.data?.error || 'Failed to request refund';
+      throw new Error(errorMessage);
+    }
+  },
+
+  /**
+   * Check if an order is eligible for refund
+   * @param {number} orderId - The order ID
+   */
+  checkRefundEligibility: async (orderId) => {
+    try {
+      const response = await api.get(`/orders/${orderId}/refund/eligibility`);
+      return response.data;
+    } catch (error) {
+      console.error("Error checking refund eligibility:", error);
+      return { eligible: false, daysRemaining: 0 };
+    }
+  },
+
+  // ==================== SALES MANAGER ACTIONS ====================
+
+  /**
+   * Get all pending refund requests (Sales Manager action)
+   */
+  getPendingRefundRequests: async () => {
+    try {
+      const response = await api.get('/sales/refunds/pending');
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching pending refund requests:", error);
+      return [];
+    }
+  },
+
+  /**
+   * Get count of pending refund requests (Sales Manager action)
+   */
+  getPendingRefundCount: async () => {
+    try {
+      const response = await api.get('/sales/refunds/pending/count');
+      return response.data || 0;
+    } catch (error) {
+      console.error("Error fetching pending refund count:", error);
+      return 0;
+    }
+  },
+
+  /**
+   * Approve a refund request (Sales Manager action)
+   * @param {number} orderId - The order ID
+   */
+  approveRefund: async (orderId) => {
+    try {
+      const response = await api.put(`/sales/refunds/${orderId}/approve`);
+      return response.data;
+    } catch (error) {
+      console.error("Error approving refund:", error);
+      throw error;
+    }
+  },
+
+  // Sales Manager: Reject Refund
+  // PUT /api/sales/refunds/{id}/reject
+  rejectRefund: async (orderId, reason = null) => {
+    try {
+      const response = await api.put(`/sales/refunds/${orderId}/reject`, { reason });
+      return response.data;
+    } catch (error) {
+      console.error("Error rejecting refund:", error);
+      throw error;
+    }
   }
 };
 

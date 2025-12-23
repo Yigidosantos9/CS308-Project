@@ -1,11 +1,12 @@
 package com.cs308.order.controller;
 
+import com.cs308.order.dto.RefundRejectDTO;
+import com.cs308.order.dto.RefundRequestDTO;
 import com.cs308.order.model.Order;
 import com.cs308.order.model.InvoiceRequest;
 import com.cs308.order.model.InvoiceItem;
 import com.cs308.order.service.OrderService;
 import com.cs308.order.service.InvoicePdfService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
@@ -13,9 +14,11 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDate;
+import jakarta.validation.Valid;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -69,6 +72,125 @@ public class OrderController {
             return ResponseEntity.badRequest().build();
         }
     }
+
+    // ==================== REFUND ENDPOINTS ====================
+
+    /**
+     * Customer requests a refund for their order
+     * POST /orders/{id}/refund?userId={userId}
+     */
+    @PostMapping("/{id}/refund")
+    public ResponseEntity<?> requestRefund(
+            @PathVariable Long id,
+            @RequestParam Long userId,
+            @Valid @RequestBody RefundRequestDTO request) {
+        try {
+            Order order = orderService.requestRefund(id, userId, request);
+            return ResponseEntity.ok(order);
+        } catch (RuntimeException e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(error);
+        }
+    }
+
+    /**
+     * PM approves a refund request
+     * PUT /orders/{id}/refund/approve
+     */
+    @PutMapping("/{id}/refund/approve")
+    public ResponseEntity<?> approveRefund(@PathVariable Long id) {
+        try {
+            Order order = orderService.approveRefund(id);
+            return ResponseEntity.ok(order);
+        } catch (RuntimeException e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(error);
+        }
+    }
+
+    /**
+     * PM rejects a refund request
+     * PUT /orders/{id}/refund/reject
+     */
+    @PutMapping("/{id}/refund/reject")
+    public ResponseEntity<?> rejectRefund(
+            @PathVariable Long id,
+            @RequestBody(required = false) RefundRejectDTO request) {
+        try {
+            Order order = orderService.rejectRefund(id, request);
+            return ResponseEntity.ok(order);
+        } catch (RuntimeException e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(error);
+        }
+    }
+
+    /**
+     * Get all pending refund requests (for PM dashboard)
+     * GET /orders/refunds/pending
+     */
+    @GetMapping("/refunds/pending")
+    public ResponseEntity<List<Order>> getPendingRefundRequests() {
+        return ResponseEntity.ok(orderService.getPendingRefundRequests());
+    }
+
+    /**
+     * Get count of pending refund requests
+     * GET /orders/refunds/pending/count
+     */
+    @GetMapping("/refunds/pending/count")
+    public ResponseEntity<Map<String, Long>> getPendingRefundCount() {
+        Map<String, Long> response = new HashMap<>();
+        response.put("count", orderService.countPendingRefundRequests());
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Check if an order is eligible for refund
+     * GET /orders/{id}/refund/eligibility?userId={userId}
+     */
+    @GetMapping("/{id}/refund/eligibility")
+    public ResponseEntity<Map<String, Object>> checkRefundEligibility(
+            @PathVariable Long id,
+            @RequestParam Long userId) {
+        Order order = orderService.getOrderByIdAndUser(id, userId);
+        if (order == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("eligible", orderService.isEligibleForRefund(order));
+        response.put("daysRemaining", orderService.getDaysRemainingForRefund(order));
+        response.put("orderStatus", order.getStatus());
+        response.put("refundStatus", order.getRefundStatus());
+        
+        return ResponseEntity.ok(response);
+    }
+
+    // ==================== CANCEL ORDER ENDPOINTS ====================
+
+    /**
+     * Customer cancels an order (only for PROCESSING/PREPARING orders)
+     * POST /orders/{id}/cancel?userId={userId}
+     */
+    @PostMapping("/{id}/cancel")
+    public ResponseEntity<?> cancelOrder(
+            @PathVariable Long id,
+            @RequestParam Long userId) {
+        try {
+            Order order = orderService.cancelOrder(id, userId);
+            return ResponseEntity.ok(order);
+        } catch (RuntimeException e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(error);
+        }
+    }
+
+    // ==================== INVOICE ENDPOINT ====================
 
     @GetMapping(value = "/{id}/invoice", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<ByteArrayResource> getInvoice(@PathVariable Long id,

@@ -94,29 +94,6 @@ public class OrderController {
         }
     }
 
-    // Customers can cancel orders (only if in "processing" status)
-    @PostMapping("/{orderId}/cancel")
-    public ResponseEntity<?> cancelOrder(
-            @AuthenticationPrincipal SecurityContext securityContext,
-            @PathVariable Long orderId) {
-        Long userId = securityContext.getUserId();
-        log.info("BFF: Cancel order request received - orderId: {}, userId: {}", orderId, userId);
-        // TODO: Implement cancel order
-        return ResponseEntity.ok().build();
-    }
-
-    // Customers can return products (only if delivered)
-    @PostMapping("/{orderId}/return")
-    public ResponseEntity<?> returnProduct(
-            @AuthenticationPrincipal SecurityContext securityContext,
-            @PathVariable Long orderId,
-            @RequestParam Long productId) {
-        Long userId = securityContext.getUserId();
-        log.info("BFF: Return product request - orderId: {}, productId: {}, userId: {}",
-                orderId, productId, userId);
-        // TODO: Implement return product
-        return ResponseEntity.ok().build();
-    }
 
     // Product Manager can view all orders and update delivery status
     @GetMapping("/all")

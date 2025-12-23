@@ -1,9 +1,14 @@
 package com.cs308.gateway.controller;
 
+import com.cs308.gateway.client.OrderClient;
 import com.cs308.gateway.model.auth.enums.UserType;
 import com.cs308.gateway.model.invoice.InvoiceEmailRequest;
 import com.cs308.gateway.model.invoice.InvoiceRequest;
 import com.cs308.gateway.model.invoice.RefundEmailRequest;
+import com.cs308.gateway.model.order.RefundReject;
+import com.cs308.gateway.model.product.Order;
+import com.cs308.gateway.model.product.OrderItem;
+import com.cs308.gateway.model.product.Product;
 import com.cs308.gateway.model.product.StockRestoreRequest;
 import com.cs308.gateway.security.RequiresRole;
 import com.cs308.gateway.service.InvoiceEmailService;
@@ -20,14 +25,18 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Slf4j
 @RestController
 @RequestMapping("/api/sales")
-@RequiresRole({ UserType.SALES_MANAGER }) // All endpoints require Sales Manager role
+@RequiresRole({ UserType.SALES_MANAGER })
 @RequiredArgsConstructor
 public class SalesManagerController {
 
     private final OrderService orderService;
+    private final OrderClient orderClient;
     private final InvoiceEmailService invoiceEmailService;
     private final ProductService productService;
     private final com.cs308.gateway.service.AuthService authService;
@@ -101,85 +110,192 @@ public class SalesManagerController {
         return ResponseEntity.ok().build();
     }
 
-    // Sales Manager can evaluate refund requests
-    @PutMapping("/refunds/{refundId}/approve")
-    public ResponseEntity<?> approveRefund(@PathVariable Long refundId) {
-        log.info("BFF: Approve refund request - refundId: {}", refundId);
+    // ==================== REFUND MANAGEMENT ====================
 
-        // Assuming refundId corresponds to orderId for this implementation
-        Long orderId = refundId;
+    /**
+     * Get all pending refund requests
+     */
+    @GetMapping("/refunds/pending")
+    public ResponseEntity<?> getPendingRefunds() {
+        log.info("BFF: Get pending refund requests");
+        try {
+            List<Order> pendingRefunds = orderClient.getPendingRefundRequests();
+            return ResponseEntity.ok(pendingRefunds);
+        } catch (Exception e) {
+            log.error("Failed to fetch pending refunds", e);
+            return ResponseEntity.internalServerError().body("Failed to fetch pending refunds");
+        }
+    }
+
+    /**
+     * Get count of pending refund requests
+     */
+    @GetMapping("/refunds/pending/count")
+    public ResponseEntity<?> getPendingRefundCount() {
+        log.info("BFF: Get pending refund count");
+        try {
+            Long count = orderClient.getPendingRefundCount();
+            return ResponseEntity.ok(count);
+        } catch (Exception e) {
+            log.error("Failed to fetch pending refund count", e);
+            return ResponseEntity.ok(0L);
+        }
+    }
+
+    /**
+     * Approve a refund request
+     * - Updates order status in order-api
+     * - Restores stock for all items
+     * - Sends approval email to customer
+     */
+    @PutMapping("/refunds/{orderId}/approve")
+    public ResponseEntity<?> approveRefund(@PathVariable Long orderId) {
+        log.info("BFF: Approve refund request - orderId: {}", orderId);
 
         try {
-            // 1. Get Order to get userId
-            java.util.List<com.cs308.gateway.model.product.Order> allOrders = orderService.getAllOrders();
-            com.cs308.gateway.model.product.Order order = allOrders.stream()
-                    .filter(o -> o.getId().equals(orderId))
-                    .findFirst()
-                    .orElse(null);
+            // 1. Call order-api to approve the refund and get order details
+            Order order = orderClient.approveRefund(orderId);
+            
+            if (order == null) {
+                return ResponseEntity.badRequest().body("Order not found or refund already processed");
+            }
 
-            if (order != null) {
-                // 2. Get User to get Email
-                com.cs308.gateway.model.auth.response.UserDetails user = authService.getUserById(order.getUserId());
+            // 2. Restore stock for each item
+            if (order.getItems() != null && !order.getItems().isEmpty()) {
+                for (OrderItem item : order.getItems()) {
+                    try {
+                        StockRestoreRequest stockRequest = new StockRestoreRequest();
+                        stockRequest.setProductId(item.getProductId());
+                        stockRequest.setQuantity(item.getQuantity());
+                        productService.restoreStock(stockRequest);
+                        log.info("Stock restored for product {} - quantity: {}", 
+                                item.getProductId(), item.getQuantity());
+                    } catch (Exception e) {
+                        log.error("Failed to restore stock for product {}: {}", 
+                                item.getProductId(), e.getMessage());
+                        // Continue with other items even if one fails
+                    }
+                }
+            }
+
+            // 3. Send approval email to customer
+            try {
+                com.cs308.gateway.model.auth.response.UserDetails user = 
+                        authService.getUserById(order.getUserId());
 
                 if (user != null && user.getEmail() != null) {
-                    // 3. Get Product Names
-                    String productNames = "Order #" + orderId;
-                    if (order.getItems() != null && !order.getItems().isEmpty()) {
-                        try {
-                            java.util.List<String> names = new java.util.ArrayList<>();
-                            for (com.cs308.gateway.model.product.OrderItem item : order.getItems()) {
-                                try {
-                                    com.cs308.gateway.model.product.Product p = productService
-                                            .getProduct(item.getProductId());
-                                    if (p != null) {
-                                        names.add(p.getName());
-                                    } else {
-                                        names.add("Product #" + item.getProductId());
-                                    }
-                                } catch (Exception e) {
-                                    names.add("Product #" + item.getProductId());
-                                }
-                            }
-                            if (!names.isEmpty()) {
-                                productNames = String.join(", ", names);
-                            }
-                        } catch (Exception e) {
-                            log.warn("Failed to fetch product names for refund email", e);
-                        }
-                    }
+                    String productNames = getProductNamesForOrder(order);
 
-                    // 4. Send Email
                     RefundEmailRequest emailRequest = RefundEmailRequest.builder()
                             .to(user.getEmail())
                             .orderId(orderId)
-                            .refundAmount(order.getTotalPrice()) // Assuming full refund for simplicity
+                            .refundAmount(order.getTotalPrice())
                             .productName(productNames)
                             .build();
 
                     invoiceEmailService.sendRefundEmail(emailRequest);
+                    log.info("Refund approval email sent to {}", user.getEmail());
                 }
+            } catch (Exception e) {
+                log.error("Failed to send refund approval email", e);
+                // Don't fail the request just because email failed
             }
+
+            return ResponseEntity.ok("Refund approved successfully. Stock restored and customer notified.");
+
         } catch (Exception e) {
-            log.error("Failed to process refund approval notification", e);
-            // Don't fail the request just because email failed
+            log.error("Failed to approve refund for order {}", orderId, e);
+            return ResponseEntity.internalServerError()
+                    .body("Failed to approve refund: " + e.getMessage());
         }
-
-        return ResponseEntity.ok("Refund approved and notification sent.");
     }
 
-    @PutMapping("/refunds/{refundId}/reject")
-    public ResponseEntity<?> rejectRefund(@PathVariable Long refundId) {
-        log.info("BFF: Reject refund request - refundId: {}", refundId);
-        // TODO: Implement reject refund
-        return ResponseEntity.ok().build();
+    /**
+     * Reject a refund request
+     * - Updates order status in order-api
+     * - Sends rejection email to customer with optional reason
+     */
+    @PutMapping("/refunds/{orderId}/reject")
+    public ResponseEntity<?> rejectRefund(
+            @PathVariable Long orderId,
+            @RequestBody(required = false) RefundReject request) {
+        log.info("BFF: Reject refund request - orderId: {}", orderId);
+
+        try {
+            // 1. Call order-api to reject the refund
+            Order order = orderClient.rejectRefund(orderId, request);
+            
+            if (order == null) {
+                return ResponseEntity.badRequest().body("Order not found or refund already processed");
+            }
+
+            // 2. Send rejection email to customer
+            try {
+                com.cs308.gateway.model.auth.response.UserDetails user = 
+                        authService.getUserById(order.getUserId());
+
+                if (user != null && user.getEmail() != null) {
+                    String productNames = getProductNamesForOrder(order);
+
+                    RefundEmailRequest emailRequest = RefundEmailRequest.builder()
+                            .to(user.getEmail())
+                            .orderId(orderId)
+                            .refundAmount(order.getTotalPrice())
+                            .productName(productNames)
+                            .rejectionReason(request != null ? request.getReason() : null)
+                            .build();
+
+                    invoiceEmailService.sendRefundRejectionEmail(emailRequest);
+                    log.info("Refund rejection email sent to {}", user.getEmail());
+                }
+            } catch (Exception e) {
+                log.error("Failed to send refund rejection email", e);
+                // Don't fail the request just because email failed
+            }
+
+            return ResponseEntity.ok("Refund request rejected. Customer has been notified.");
+
+        } catch (Exception e) {
+            log.error("Failed to reject refund for order {}", orderId, e);
+            return ResponseEntity.internalServerError()
+                    .body("Failed to reject refund: " + e.getMessage());
+        }
     }
 
-    // Simple helper endpoint so a Sales Manager can manually restore stock after a
-    // refund.
+    /**
+     * Manual stock restore endpoint (keep for backwards compatibility)
+     */
     @PostMapping("/refunds/restore-stock")
     public ResponseEntity<?> restoreStockAfterRefund(@RequestBody @Valid StockRestoreRequest request) {
         log.info("BFF: Restore stock after refund - productId: {}, quantity: {}",
                 request.getProductId(), request.getQuantity());
         return ResponseEntity.ok(productService.restoreStock(request));
+    }
+
+    // ==================== HELPER METHODS ====================
+
+    /**
+     * Get comma-separated product names for an order
+     */
+    private String getProductNamesForOrder(Order order) {
+        if (order.getItems() == null || order.getItems().isEmpty()) {
+            return "Order #" + order.getId();
+        }
+
+        List<String> names = new ArrayList<>();
+        for (OrderItem item : order.getItems()) {
+            try {
+                Product product = productService.getProduct(item.getProductId());
+                if (product != null && product.getName() != null) {
+                    names.add(product.getName());
+                } else {
+                    names.add("Product #" + item.getProductId());
+                }
+            } catch (Exception e) {
+                names.add("Product #" + item.getProductId());
+            }
+        }
+        
+        return names.isEmpty() ? "Order #" + order.getId() : String.join(", ", names);
     }
 }

@@ -3,7 +3,6 @@ package com.cs308.order.controller;
 import com.cs308.order.model.InvoiceRequest;
 import com.cs308.order.service.InvoicePdfService;
 import jakarta.validation.Valid;
-import jakarta.validation.Valid;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;

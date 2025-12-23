@@ -1,6 +1,6 @@
 package com.cs308.order.model.enums;
-
 public enum OrderStatus {
+    PROCESSING,
     PREPARING,
     IN_TRANSIT,
     DELIVERED,

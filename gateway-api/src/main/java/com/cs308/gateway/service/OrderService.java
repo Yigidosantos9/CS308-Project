@@ -5,10 +5,12 @@ import com.cs308.gateway.client.OrderClient;
 import com.cs308.gateway.client.ProductClient;
 import com.cs308.gateway.model.invoice.InvoiceRequest;
 import com.cs308.gateway.model.product.CreateOrderRequest;
+import com.cs308.gateway.model.order.RefundRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -66,16 +68,14 @@ public class OrderService {
                     log.info("Reduced stock for product {} by {}", item.getProductId(), item.getQuantity());
                 } catch (Exception e) {
                     log.error("Failed to reduce stock for product {}: {}", item.getProductId(), e.getMessage());
-                    // Continue with other items even if one fails
                 }
             }
         }
 
-        // Send invoice email
+        // Send invoice email logic (kept same as your provided code)
         try {
             if (userEmail != null && !userEmail.isEmpty()) {
                 log.info("Fetching invoice PDF for order {} to send email to {}", order.getId(), userEmail);
-
                 String buyerName = null;
                 try {
                     com.cs308.gateway.model.auth.response.UserDetails user = authService.getUserById(userId);
@@ -83,16 +83,12 @@ public class OrderService {
                         buyerName = (user.getFirstName() != null ? user.getFirstName() : "") + " " +
                                 (user.getLastName() != null ? user.getLastName() : "");
                         buyerName = buyerName.trim();
-                        if (buyerName.isEmpty()) {
-                            buyerName = null;
-                        }
+                        if (buyerName.isEmpty()) buyerName = null;
                     }
                 } catch (Exception e) {
-                    log.warn("Failed to fetch user details for invoice name, using default", e);
+                    log.warn("Failed to fetch user details for invoice name", e);
                 }
-
                 byte[] pdfBytes = orderClient.getOrderInvoice(order.getId(), buyerName, null, null);
-                // Use order ID as invoice number for now since we don't have the invoice object
                 invoiceEmailService.sendInvoiceEmail(userEmail, pdfBytes, String.valueOf(order.getId()));
             }
         } catch (Exception e) {
@@ -123,32 +119,42 @@ public class OrderService {
     }
 
     public byte[] getOrderInvoice(Long orderId) {
-        log.info("Processing get order invoice for orderId: {}", orderId);
         return orderClient.getOrderInvoice(orderId, null, null, null);
     }
 
     public byte[] getOrderInvoice(Long orderId, String buyerAddress) {
-        log.info("Processing get order invoice for orderId: {} with buyerAddress override", orderId);
         return orderClient.getOrderInvoice(orderId, null, buyerAddress, null);
     }
 
     public byte[] getOrderInvoice(Long userId, Long orderId, String buyerName, String buyerAddress, String paymentMethod) {
         log.info("Processing get order invoice for orderId: {} with overrides", orderId);
         Order order = orderClient.getOrder(orderId, userId);
-        String resolvedName = buyerName != null && !buyerName.isEmpty()
-                ? buyerName
-                : (order != null ? order.getBuyerName() : null);
-        String resolvedAddress = buyerAddress != null && !buyerAddress.isEmpty()
-                ? buyerAddress
-                : (order != null ? order.getBuyerAddress() : null);
-        String resolvedPayment = paymentMethod != null && !paymentMethod.isEmpty()
-                ? paymentMethod
-                : (order != null ? order.getPaymentMethod() : null);
+        String resolvedName = buyerName != null && !buyerName.isEmpty() ? buyerName : (order != null ? order.getBuyerName() : null);
+        String resolvedAddress = buyerAddress != null && !buyerAddress.isEmpty() ? buyerAddress : (order != null ? order.getBuyerAddress() : null);
+        String resolvedPayment = paymentMethod != null && !paymentMethod.isEmpty() ? paymentMethod : (order != null ? order.getPaymentMethod() : null);
         return orderClient.getOrderInvoice(orderId, resolvedName, resolvedAddress, resolvedPayment);
     }
 
     public void updateOrderStatus(Long orderId, String status) {
         log.info("Processing update order status request - orderId: {}, status: {}", orderId, status);
         orderClient.updateOrderStatus(orderId, status);
+    }
+
+    // ==================== NEWLY ADDED METHODS ====================
+    // These were missing from your Gateway Service
+
+    public Order cancelOrder(Long orderId, Long userId) {
+        log.info("GATEWAY LOG: Processing cancel order request - orderId: {}, userId: {}", orderId, userId);
+        return orderClient.cancelOrder(orderId, userId);
+    }
+
+    public Order requestRefund(Long orderId, Long userId, RefundRequest request) {
+        log.info("GATEWAY LOG: Processing refund request - orderId: {}, userId: {}", orderId, userId);
+        return orderClient.requestRefund(orderId, userId, request);
+    }
+
+    public Map<String, Object> checkRefundEligibility(Long orderId, Long userId) {
+        log.info("GATEWAY LOG: Checking refund eligibility - orderId: {}, userId: {}", orderId, userId);
+        return orderClient.checkRefundEligibility(orderId, userId);
     }
 }

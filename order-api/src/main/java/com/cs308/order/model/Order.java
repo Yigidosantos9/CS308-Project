@@ -1,6 +1,7 @@
 package com.cs308.order.model;
 
 import com.cs308.order.model.enums.OrderStatus;
+import com.cs308.order.model.enums.RefundStatus;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -41,6 +42,29 @@ public class Order {
     @Column(name = "payment_method")
     private String paymentMethod;
 
+    // ==================== REFUND FIELDS ====================
+    
+    @Enumerated(EnumType.STRING)
+    @Column(name = "refund_status")
+    private RefundStatus refundStatus = RefundStatus.NONE;
+
+    @Column(name = "refund_requested_at")
+    private LocalDateTime refundRequestedAt;
+
+    @Column(name = "refund_reason", length = 1000)
+    private String refundReason;
+
+    @Column(name = "refund_rejection_reason", length = 1000)
+    private String refundRejectionReason;
+
+    @Column(name = "refund_processed_at")
+    private LocalDateTime refundProcessedAt;
+
+    @Column(name = "delivered_at")
+    private LocalDateTime deliveredAt;
+
+    // ==================== ITEMS ====================
+
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<OrderItem> items;
 
@@ -53,7 +77,10 @@ public class Order {
         this.status = status;
         this.totalAmount = totalAmount;
         this.items = items;
+        this.refundStatus = RefundStatus.NONE;
     }
+
+    // ==================== GETTERS AND SETTERS ====================
 
     public Long getId() {
         return id;
@@ -141,5 +168,55 @@ public class Order {
 
     public void setPaymentMethod(String paymentMethod) {
         this.paymentMethod = paymentMethod;
+    }
+
+    // ==================== REFUND GETTERS/SETTERS ====================
+
+    public RefundStatus getRefundStatus() {
+        return refundStatus;
+    }
+
+    public void setRefundStatus(RefundStatus refundStatus) {
+        this.refundStatus = refundStatus;
+    }
+
+    public LocalDateTime getRefundRequestedAt() {
+        return refundRequestedAt;
+    }
+
+    public void setRefundRequestedAt(LocalDateTime refundRequestedAt) {
+        this.refundRequestedAt = refundRequestedAt;
+    }
+
+    public String getRefundReason() {
+        return refundReason;
+    }
+
+    public void setRefundReason(String refundReason) {
+        this.refundReason = refundReason;
+    }
+
+    public String getRefundRejectionReason() {
+        return refundRejectionReason;
+    }
+
+    public void setRefundRejectionReason(String refundRejectionReason) {
+        this.refundRejectionReason = refundRejectionReason;
+    }
+
+    public LocalDateTime getRefundProcessedAt() {
+        return refundProcessedAt;
+    }
+
+    public void setRefundProcessedAt(LocalDateTime refundProcessedAt) {
+        this.refundProcessedAt = refundProcessedAt;
+    }
+
+    public LocalDateTime getDeliveredAt() {
+        return deliveredAt;
+    }
+
+    public void setDeliveredAt(LocalDateTime deliveredAt) {
+        this.deliveredAt = deliveredAt;
     }
 }

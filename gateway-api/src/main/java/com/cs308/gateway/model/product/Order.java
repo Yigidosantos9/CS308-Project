@@ -26,7 +26,9 @@ public class Order {
     private String buyerAddress;
     private String paymentMethod;
     private String invoiceNumber;
-
+    private String refundStatus; 
+    private String refundReason;
+    private LocalDateTime refundRequestedAt;
     @Builder.Default
     private List<OrderItem> items = new ArrayList<>();
 

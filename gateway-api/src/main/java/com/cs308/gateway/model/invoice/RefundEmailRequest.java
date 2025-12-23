@@ -25,4 +25,7 @@ public class RefundEmailRequest {
     private Double refundAmount;
 
     private String productName;
+    
+    // Added for rejection notification emails
+    private String rejectionReason;
 }

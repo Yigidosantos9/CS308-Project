@@ -1,9 +1,5 @@
 package com.cs308.order.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
 public class AddressRequest {
     private String title;
