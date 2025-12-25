@@ -20,6 +20,7 @@ import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 @RequiredArgsConstructor
 @Component
@@ -27,6 +28,7 @@ public class AuthenticationService {
 
     private final UserRepository userRepository;
     private final TokenService tokenService;
+    private final PasswordEncoder passwordEncoder;
 
     @Value("${jwt.secret}")
     private String secret;
@@ -47,7 +49,7 @@ public class AuthenticationService {
 
         User user = User.builder()
                 .email(createUserRequest.getEmail())
-                .password(createUserRequest.getPassword())
+                .password(passwordEncoder.encode(createUserRequest.getPassword()))
                 .firstName(createUserRequest.getFirstName())
                 .surname(createUserRequest.getLastName())
                 .phoneNumber(createUserRequest.getPhoneNumber())
@@ -67,7 +69,7 @@ public class AuthenticationService {
                 .orElseThrow(
                         () -> new IllegalArgumentException("No user found with email: " + loginRequest.getEmail()));
 
-        if (!user.getPassword().equals(loginRequest.getPassword())) {
+        if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
             throw new IllegalArgumentException("Invalid credentials provided.");
         }
 

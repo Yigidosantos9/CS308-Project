@@ -71,12 +71,12 @@ public class OrderService {
         try {
             OrderStatus newStatus = OrderStatus.valueOf(status.toUpperCase());
             order.setStatus(newStatus);
-            
+
             // Track delivery time for refund window calculation
             if (newStatus == OrderStatus.DELIVERED && order.getDeliveredAt() == null) {
                 order.setDeliveredAt(LocalDateTime.now());
             }
-            
+
             return orderRepository.save(order);
         } catch (IllegalArgumentException e) {
             throw new RuntimeException("Invalid order status: " + status);
@@ -140,7 +140,7 @@ public class OrderService {
     @Transactional
     public Order requestRefund(Long orderId, Long userId, RefundRequestDTO request) {
         Order order = orderRepository.findByIdAndUserId(orderId, userId);
-        
+
         if (order == null) {
             throw new RuntimeException("Order not found or does not belong to user");
         }
@@ -152,19 +152,21 @@ public class OrderService {
 
         // Check if refund already requested/processed (null is treated as NONE)
         if (order.getRefundStatus() != null && order.getRefundStatus() != RefundStatus.NONE) {
-            throw new RuntimeException("Refund already " + order.getRefundStatus().toString().toLowerCase() + " for this order");
+            throw new RuntimeException(
+                    "Refund already " + order.getRefundStatus().toString().toLowerCase() + " for this order");
         }
 
         // Validate refund window (30 days from delivery)
         LocalDateTime deliveryDate = order.getDeliveredAt();
         if (deliveryDate == null) {
-            // Fallback: use order date + reasonable delivery estimate if deliveredAt not set
+            // Fallback: use order date + reasonable delivery estimate if deliveredAt not
+            // set
             deliveryDate = order.getOrderDate().plusDays(3);
         }
-        
+
         long daysSinceDelivery = ChronoUnit.DAYS.between(deliveryDate, LocalDateTime.now());
         if (daysSinceDelivery > REFUND_WINDOW_DAYS) {
-            throw new RuntimeException("Refund window has expired. Refunds must be requested within " 
+            throw new RuntimeException("Refund window has expired. Refunds must be requested within "
                     + REFUND_WINDOW_DAYS + " days of delivery. Days since delivery: " + daysSinceDelivery);
         }
 
@@ -172,10 +174,10 @@ public class OrderService {
         order.setRefundStatus(RefundStatus.PENDING);
         order.setRefundRequestedAt(LocalDateTime.now());
         order.setRefundReason(request.getReason());
-// --- ADD THESE LINES ---
-        System.out.println(">>> DB LOG CHECK: Order #" + order.getId() + 
-        " RefundStatus: " + order.getRefundStatus());
-// -----------------------
+        // --- ADD THESE LINES ---
+        System.out.println(">>> DB LOG CHECK: Order #" + order.getId() +
+                " RefundStatus: " + order.getRefundStatus());
+        // -----------------------
         return orderRepository.save(order);
     }
 
@@ -251,16 +253,19 @@ public class OrderService {
      * Check if an order is eligible for refund
      */
     public boolean isEligibleForRefund(Order order) {
-        if (order == null) return false;
-        if (order.getStatus() != OrderStatus.DELIVERED) return false;
+        if (order == null)
+            return false;
+        if (order.getStatus() != OrderStatus.DELIVERED)
+            return false;
         // null is treated as NONE (eligible)
-        if (order.getRefundStatus() != null && order.getRefundStatus() != RefundStatus.NONE) return false;
+        if (order.getRefundStatus() != null && order.getRefundStatus() != RefundStatus.NONE)
+            return false;
 
         LocalDateTime deliveryDate = order.getDeliveredAt();
         if (deliveryDate == null) {
             deliveryDate = order.getOrderDate().plusDays(3);
         }
-        
+
         long daysSinceDelivery = ChronoUnit.DAYS.between(deliveryDate, LocalDateTime.now());
         return daysSinceDelivery <= REFUND_WINDOW_DAYS;
     }
@@ -269,16 +274,34 @@ public class OrderService {
      * Get days remaining in refund window
      */
     public int getDaysRemainingForRefund(Order order) {
-        if (order == null || order.getStatus() != OrderStatus.DELIVERED) return 0;
+        if (order == null || order.getStatus() != OrderStatus.DELIVERED)
+            return 0;
 
         LocalDateTime deliveryDate = order.getDeliveredAt();
         if (deliveryDate == null) {
             deliveryDate = order.getOrderDate().plusDays(3);
         }
-        
+
         long daysSinceDelivery = ChronoUnit.DAYS.between(deliveryDate, LocalDateTime.now());
         int daysRemaining = REFUND_WINDOW_DAYS - (int) daysSinceDelivery;
         return Math.max(0, daysRemaining);
+    }
+
+    // ==================== DATE RANGE QUERIES ====================
+
+    /**
+     * Get orders within a date range (for Sales Manager invoice filtering)
+     */
+    @Transactional(readOnly = true)
+    public List<Order> getOrdersByDateRange(LocalDateTime startDate, LocalDateTime endDate) {
+        List<Order> orders = orderRepository.findByOrderDateBetween(startDate, endDate);
+        // Force load items for each order
+        orders.forEach(order -> {
+            if (order.getItems() != null) {
+                order.getItems().size();
+            }
+        });
+        return orders;
     }
 
     // ==================== CANCEL ORDER METHODS ====================
@@ -290,21 +313,23 @@ public class OrderService {
     @Transactional
     public Order cancelOrder(Long orderId, Long userId) {
         Order order = orderRepository.findByIdAndUserId(orderId, userId);
-        
+
         if (order == null) {
             throw new RuntimeException("Order not found or does not belong to user");
         }
 
         // Only allow cancellation for PROCESSING or PREPARING orders
         if (order.getStatus() != OrderStatus.PROCESSING && order.getStatus() != OrderStatus.PREPARING) {
-            throw new RuntimeException("Only orders in PROCESSING or PREPARING status can be cancelled. Current status: " + order.getStatus());
+            throw new RuntimeException(
+                    "Only orders in PROCESSING or PREPARING status can be cancelled. Current status: "
+                            + order.getStatus());
         }
 
         // Update order status to CANCELLED
         order.setStatus(OrderStatus.CANCELLED);
         // --- ADD THESE LINES ---
-        System.out.println(">>> DB LOG CHECK: Order #" + order.getId() + 
-                           " RefundStatus: " + order.getRefundStatus());
+        System.out.println(">>> DB LOG CHECK: Order #" + order.getId() +
+                " RefundStatus: " + order.getRefundStatus());
         // -----------------------
         return orderRepository.save(order);
     }

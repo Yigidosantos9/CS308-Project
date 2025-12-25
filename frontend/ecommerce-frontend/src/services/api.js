@@ -517,4 +517,49 @@ export const wishlistService = {
   },
 };
 
+// ==================== SALES MANAGER SERVICE ====================
+export const salesManagerService = {
+  /**
+   * Get invoices (orders) within a date range
+   * @param {string} startDate - Start date in yyyy-MM-dd format
+   * @param {string} endDate - End date in yyyy-MM-dd format
+   */
+  getInvoices: async (startDate, endDate) => {
+    try {
+      const response = await api.get('/sales/invoices', {
+        params: { startDate, endDate }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching invoices:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Download invoice PDF for a specific order
+   * @param {number} orderId - The order ID
+   */
+  downloadInvoicePdf: async (orderId) => {
+    try {
+      const response = await api.get(`/orders/${orderId}/invoice`, {
+        responseType: 'blob'
+      });
+      // Create download link and trigger download
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `invoice-order-${orderId}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error downloading invoice:", error);
+      throw error;
+    }
+  }
+};
+
 export default api;

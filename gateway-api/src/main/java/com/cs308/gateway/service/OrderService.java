@@ -83,7 +83,8 @@ public class OrderService {
                         buyerName = (user.getFirstName() != null ? user.getFirstName() : "") + " " +
                                 (user.getLastName() != null ? user.getLastName() : "");
                         buyerName = buyerName.trim();
-                        if (buyerName.isEmpty()) buyerName = null;
+                        if (buyerName.isEmpty())
+                            buyerName = null;
                     }
                 } catch (Exception e) {
                     log.warn("Failed to fetch user details for invoice name", e);
@@ -113,6 +114,16 @@ public class OrderService {
         return orderClient.getAllOrders();
     }
 
+    // ==================== DATE RANGE QUERIES ====================
+
+    /**
+     * Get orders within a date range (for Sales Manager invoice filtering)
+     */
+    public List<Order> getOrdersByDateRange(String startDate, String endDate) {
+        log.info("Processing get orders by date range request - startDate: {}, endDate: {}", startDate, endDate);
+        return orderClient.getOrdersByDateRange(startDate, endDate);
+    }
+
     public byte[] generateInvoicePdf(InvoiceRequest request) {
         log.info("Processing invoice PDF generation for invoiceNumber: {}", request.getInvoiceNumber());
         return orderClient.generateInvoicePdf(request);
@@ -126,12 +137,16 @@ public class OrderService {
         return orderClient.getOrderInvoice(orderId, null, buyerAddress, null);
     }
 
-    public byte[] getOrderInvoice(Long userId, Long orderId, String buyerName, String buyerAddress, String paymentMethod) {
+    public byte[] getOrderInvoice(Long userId, Long orderId, String buyerName, String buyerAddress,
+            String paymentMethod) {
         log.info("Processing get order invoice for orderId: {} with overrides", orderId);
         Order order = orderClient.getOrder(orderId, userId);
-        String resolvedName = buyerName != null && !buyerName.isEmpty() ? buyerName : (order != null ? order.getBuyerName() : null);
-        String resolvedAddress = buyerAddress != null && !buyerAddress.isEmpty() ? buyerAddress : (order != null ? order.getBuyerAddress() : null);
-        String resolvedPayment = paymentMethod != null && !paymentMethod.isEmpty() ? paymentMethod : (order != null ? order.getPaymentMethod() : null);
+        String resolvedName = buyerName != null && !buyerName.isEmpty() ? buyerName
+                : (order != null ? order.getBuyerName() : null);
+        String resolvedAddress = buyerAddress != null && !buyerAddress.isEmpty() ? buyerAddress
+                : (order != null ? order.getBuyerAddress() : null);
+        String resolvedPayment = paymentMethod != null && !paymentMethod.isEmpty() ? paymentMethod
+                : (order != null ? order.getPaymentMethod() : null);
         return orderClient.getOrderInvoice(orderId, resolvedName, resolvedAddress, resolvedPayment);
     }
 

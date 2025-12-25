@@ -16,6 +16,7 @@ import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
 import Profile from './pages/profile/Profile';
 import PMDashboard from './pages/admin/PMDashboard';
+import SalesManagerDashboard from './pages/admin/SalesManagerDashboard';
 
 function App() {
   return (
@@ -43,6 +44,11 @@ function App() {
             <Route path="pm-dashboard" element={
               <PrivateRoute>
                 <PMDashboard />
+              </PrivateRoute>
+            } />
+            <Route path="sales-dashboard" element={
+              <PrivateRoute>
+                <SalesManagerDashboard />
               </PrivateRoute>
             } />
           </Route>

@@ -62,12 +62,17 @@ public class SalesManagerController {
 
     // Sales Manager can view invoices in date range
     @GetMapping("/invoices")
-    public ResponseEntity<?> getInvoices(
+    public ResponseEntity<List<Order>> getInvoices(
             @RequestParam String startDate,
             @RequestParam String endDate) {
         log.info("BFF: Get invoices request - startDate: {}, endDate: {}", startDate, endDate);
-        // TODO: Implement get invoices
-        return ResponseEntity.ok().build();
+        try {
+            List<Order> orders = orderService.getOrdersByDateRange(startDate, endDate);
+            return ResponseEntity.ok(orders);
+        } catch (Exception e) {
+            log.error("Failed to fetch invoices", e);
+            return ResponseEntity.internalServerError().body(null);
+        }
     }
 
     // Generate invoice PDF on demand (proxied to Order API)
@@ -155,7 +160,7 @@ public class SalesManagerController {
         try {
             // 1. Call order-api to approve the refund and get order details
             Order order = orderClient.approveRefund(orderId);
-            
+
             if (order == null) {
                 return ResponseEntity.badRequest().body("Order not found or refund already processed");
             }
@@ -168,10 +173,10 @@ public class SalesManagerController {
                         stockRequest.setProductId(item.getProductId());
                         stockRequest.setQuantity(item.getQuantity());
                         productService.restoreStock(stockRequest);
-                        log.info("Stock restored for product {} - quantity: {}", 
+                        log.info("Stock restored for product {} - quantity: {}",
                                 item.getProductId(), item.getQuantity());
                     } catch (Exception e) {
-                        log.error("Failed to restore stock for product {}: {}", 
+                        log.error("Failed to restore stock for product {}: {}",
                                 item.getProductId(), e.getMessage());
                         // Continue with other items even if one fails
                     }
@@ -180,8 +185,7 @@ public class SalesManagerController {
 
             // 3. Send approval email to customer
             try {
-                com.cs308.gateway.model.auth.response.UserDetails user = 
-                        authService.getUserById(order.getUserId());
+                com.cs308.gateway.model.auth.response.UserDetails user = authService.getUserById(order.getUserId());
 
                 if (user != null && user.getEmail() != null) {
                     String productNames = getProductNamesForOrder(order);
@@ -224,15 +228,14 @@ public class SalesManagerController {
         try {
             // 1. Call order-api to reject the refund
             Order order = orderClient.rejectRefund(orderId, request);
-            
+
             if (order == null) {
                 return ResponseEntity.badRequest().body("Order not found or refund already processed");
             }
 
             // 2. Send rejection email to customer
             try {
-                com.cs308.gateway.model.auth.response.UserDetails user = 
-                        authService.getUserById(order.getUserId());
+                com.cs308.gateway.model.auth.response.UserDetails user = authService.getUserById(order.getUserId());
 
                 if (user != null && user.getEmail() != null) {
                     String productNames = getProductNamesForOrder(order);
@@ -295,7 +298,7 @@ public class SalesManagerController {
                 names.add("Product #" + item.getProductId());
             }
         }
-        
+
         return names.isEmpty() ? "Order #" + order.getId() : String.join(", ", names);
     }
 }

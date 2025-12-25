@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -44,4 +45,11 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
      */
     @Query("SELECT o FROM Order o WHERE o.refundStatus = 'APPROVED' ORDER BY o.refundProcessedAt DESC")
     List<Order> findApprovedRefunds();
+
+    // ==================== DATE RANGE QUERIES ====================
+
+    /**
+     * Find orders within a date range (for Sales Manager invoice filtering)
+     */
+    List<Order> findByOrderDateBetween(LocalDateTime startDate, LocalDateTime endDate);
 }

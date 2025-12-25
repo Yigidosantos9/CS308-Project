@@ -117,6 +117,34 @@ public class OrderClient {
         }
     }
 
+    // ==================== DATE RANGE QUERIES ====================
+
+    /**
+     * Get orders within a date range (for Sales Manager invoice filtering)
+     */
+    public List<Order> getOrdersByDateRange(String startDate, String endDate) {
+        log.debug("Calling order service: GET /orders/date-range?startDate={}&endDate={}", startDate, endDate);
+
+        try {
+            String uri = UriComponentsBuilder.fromPath("/orders/date-range")
+                    .queryParam("startDate", startDate)
+                    .queryParam("endDate", endDate)
+                    .toUriString();
+
+            ResponseEntity<List<Order>> response = orderRestTemplate.exchange(
+                    uri,
+                    HttpMethod.GET,
+                    null,
+                    new ParameterizedTypeReference<List<Order>>() {
+                    });
+
+            return response.getBody();
+        } catch (RestClientException e) {
+            log.error("Error calling order service for get orders by date range", e);
+            throw new RuntimeException("Failed to get orders by date range", e);
+        }
+    }
+
     public com.cs308.gateway.model.address.Address addAddress(Long userId,
             com.cs308.gateway.model.address.AddressRequest request) {
         log.debug("Calling order service: POST /addresses - userId: {}", userId);
@@ -212,7 +240,8 @@ public class OrderClient {
     }
 
     public byte[] getOrderInvoice(Long orderId, String buyerName, String buyerAddress, String paymentMethod) {
-        log.debug("Calling order service: GET /orders/{}/invoice?buyerName={}, buyerAddress={}, paymentMethod={}", orderId,
+        log.debug("Calling order service: GET /orders/{}/invoice?buyerName={}, buyerAddress={}, paymentMethod={}",
+                orderId,
                 buyerName, buyerAddress, paymentMethod);
 
         try {
@@ -414,8 +443,7 @@ public class OrderClient {
             log.error("Error calling order service for cancel order", e);
             String errorMessage = "Failed to cancel order";
             if (e instanceof org.springframework.web.client.HttpClientErrorException) {
-                org.springframework.web.client.HttpClientErrorException httpError = 
-                    (org.springframework.web.client.HttpClientErrorException) e;
+                org.springframework.web.client.HttpClientErrorException httpError = (org.springframework.web.client.HttpClientErrorException) e;
                 String body = httpError.getResponseBodyAsString();
                 if (body != null && body.contains("error")) {
                     errorMessage = body;

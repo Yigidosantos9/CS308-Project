@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDate;
 
@@ -18,6 +19,7 @@ import java.time.LocalDate;
 public class DataInitializer {
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Bean
     public CommandLineRunner initData() {
@@ -27,7 +29,7 @@ public class DataInitializer {
                 log.info("Seeding Product Manager user: {}", email);
                 User pmUser = User.builder()
                         .email(email)
-                        .password("password") // In a real app, this should be encoded
+                        .password(passwordEncoder.encode("password"))
                         .firstName("Product")
                         .surname("Manager")
                         .phoneNumber("1234567890")

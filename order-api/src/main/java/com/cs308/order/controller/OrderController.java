@@ -15,6 +15,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
@@ -41,6 +43,25 @@ public class OrderController {
     @GetMapping("/all")
     public ResponseEntity<List<Order>> getAllOrders() {
         return ResponseEntity.ok(orderService.getAllOrders());
+    }
+
+    // ==================== DATE RANGE QUERIES ====================
+
+    /**
+     * Get orders within a date range (for Sales Manager invoice filtering)
+     * GET /orders/date-range?startDate=yyyy-MM-dd&endDate=yyyy-MM-dd
+     */
+    @GetMapping("/date-range")
+    public ResponseEntity<List<Order>> getOrdersByDateRange(
+            @RequestParam String startDate,
+            @RequestParam String endDate) {
+        try {
+            LocalDateTime start = LocalDate.parse(startDate).atStartOfDay();
+            LocalDateTime end = LocalDate.parse(endDate).atTime(23, 59, 59);
+            return ResponseEntity.ok(orderService.getOrdersByDateRange(start, end));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     @GetMapping("/{id}")
@@ -166,7 +187,7 @@ public class OrderController {
         response.put("daysRemaining", orderService.getDaysRemainingForRefund(order));
         response.put("orderStatus", order.getStatus());
         response.put("refundStatus", order.getRefundStatus());
-        
+
         return ResponseEntity.ok(response);
     }
 
