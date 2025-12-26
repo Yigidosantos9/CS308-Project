@@ -92,7 +92,7 @@ const ProductDetails = () => {
   const [canReview, setCanReview] = useState(false); // User has DELIVERED order with this product
   const [reviewerNames, setReviewerNames] = useState({});
   const [reviewerTypes, setReviewerTypes] = useState({});
-  const isProductManager = user?.userType === 'PRODUCT_MANAGER';
+  const isProductManager = user?.userType === 'PRODUCT_MANAGER' || user?.userType === 'SALES_MANAGER';
 
   // Wishlist state
   const [isInWishlist, setIsInWishlist] = useState(false);
@@ -444,7 +444,7 @@ const ProductDetails = () => {
             </div>
 
             {/* Quantity Selector */}
-            {user?.userType !== 'PRODUCT_MANAGER' && displayProduct.stock > 0 && (() => {
+            {user?.userType !== 'PRODUCT_MANAGER' && user?.userType !== 'SALES_MANAGER' && displayProduct.stock > 0 && (() => {
               const inCartQuantity = getCartQuantityForProduct(displayProduct.id);
               const availableToAdd = displayProduct.stock - inCartQuantity;
               const maxQuantity = Math.max(0, availableToAdd);
@@ -487,7 +487,7 @@ const ProductDetails = () => {
             })()}
 
             {/* Add to Cart Button - Hidden for Product Manager */}
-            {user?.userType !== 'PRODUCT_MANAGER' && (() => {
+            {user?.userType !== 'PRODUCT_MANAGER' && user?.userType !== 'SALES_MANAGER' && (() => {
               const inCartQuantity = getCartQuantityForProduct(displayProduct.id);
               const availableToAdd = displayProduct.stock - inCartQuantity;
               const isDisabled = displayProduct.stock === 0 || availableToAdd <= 0;

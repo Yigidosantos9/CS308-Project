@@ -86,15 +86,15 @@ const Navbar = () => {
             </button>
           )}
 
-          {/* Wishlist - Hidden for Product Manager */}
-          {user?.userType !== 'PRODUCT_MANAGER' && (
+          {/* Wishlist - Hidden for Product Manager and Sales Manager */}
+          {user?.userType !== 'PRODUCT_MANAGER' && user?.userType !== 'SALES_MANAGER' && (
             <Link to="/wishlist" className="hover:opacity-60 transition-opacity">
               <Heart className="w-6 h-6" />
             </Link>
           )}
 
-          {/* Cart - Hidden for Product Manager */}
-          {user?.userType !== 'PRODUCT_MANAGER' && (
+          {/* Cart - Hidden for Product Manager and Sales Manager */}
+          {user?.userType !== 'PRODUCT_MANAGER' && user?.userType !== 'SALES_MANAGER' && (
             <Link to="/cart" className="relative hover:opacity-60 transition-opacity">
               <ShoppingBag className="w-6 h-6" />
               {cartItemCount > 0 && (
@@ -105,9 +105,13 @@ const Navbar = () => {
             </Link>
           )}
 
-          {/* User Profile Link - PM goes to dashboard, others to profile */}
+          {/* User Profile Link - PM/Sales Manager goes to dashboard, others to profile */}
           <Link
-            to={user ? (user.userType === 'PRODUCT_MANAGER' ? "/pm-dashboard" : "/profile") : "/login"}
+            to={user ? (
+              user.userType === 'PRODUCT_MANAGER' ? "/pm-dashboard" :
+                user.userType === 'SALES_MANAGER' ? "/sales-dashboard" :
+                  "/profile"
+            ) : "/login"}
             className="hidden sm:flex items-center gap-2 hover:opacity-60 transition-opacity"
           >
             {user ? (
@@ -146,12 +150,16 @@ const Navbar = () => {
             </Link>
           ))}
           <Link
-            to={user ? (user.userType === 'PRODUCT_MANAGER' ? "/pm-dashboard" : "/profile") : "/login"}
+            to={user ? (
+              user.userType === 'PRODUCT_MANAGER' ? "/pm-dashboard" :
+                user.userType === 'SALES_MANAGER' ? "/sales-dashboard" :
+                  "/profile"
+            ) : "/login"}
             onClick={() => setIsMenuOpen(false)}
             className="flex items-center gap-2 text-lg font-semibold text-black"
           >
             <User className="w-5 h-5" />
-            {user?.userType === 'PRODUCT_MANAGER' ? 'Dashboard' : 'Profile'}
+            {(user?.userType === 'PRODUCT_MANAGER' || user?.userType === 'SALES_MANAGER') ? 'Dashboard' : 'Profile'}
           </Link>
         </div>
       )}
