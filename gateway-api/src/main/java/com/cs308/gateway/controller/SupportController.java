@@ -1,9 +1,12 @@
 package com.cs308.gateway.controller;
 
-import com.cs308.gateway.model.auth.enums.UserType;
+import com.cs308.gateway.model.support.StartChatResponse;
+import com.cs308.gateway.model.support.SupportChatSession;
 import com.cs308.gateway.security.SecurityContext;
+import com.cs308.gateway.service.SupportChatService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -14,15 +17,18 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class SupportController {
 
+    private final SupportChatService supportChatService;
+
     // Anyone (guests or customers) can initiate chat
     @PostMapping("/chat/start")
     public ResponseEntity<?> startChat(
             @AuthenticationPrincipal SecurityContext securityContext,
-            @RequestBody Object chatRequest) {
+            @RequestBody(required = false) Object chatRequest) {
         Long userId = (securityContext != null) ? securityContext.getUserId() : null;
         log.info("BFF: Start chat request - userId: {}", userId);
-        // TODO: Implement start chat
-        return ResponseEntity.ok().build();
+        SupportChatSession session = supportChatService.startChat(userId, chatRequest);
+        StartChatResponse response = new StartChatResponse(session.getId(), session.getStatus());
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     // Customers or guests can send messages

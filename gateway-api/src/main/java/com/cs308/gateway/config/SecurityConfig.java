@@ -29,6 +29,7 @@ public class SecurityConfig {
                         .pathMatchers("/api/membership/**").permitAll()
                         .pathMatchers("/api/auth/**").permitAll()
                         .pathMatchers(HttpMethod.GET, "/api/products/**").permitAll()
+                        .pathMatchers(HttpMethod.POST, "/api/support/chat/start").permitAll()
                         .pathMatchers(HttpMethod.POST, "/api/products/**").hasRole("PRODUCT_MANAGER")
                         .pathMatchers(HttpMethod.PUT, "/api/products/**").hasRole("PRODUCT_MANAGER")
                         .pathMatchers(HttpMethod.DELETE, "/api/products/**").hasRole("PRODUCT_MANAGER")
