@@ -17,7 +17,7 @@ const PMDashboard = () => {
     const [activeTab, setActiveTab] = useState('orders');
     const [productNames, setProductNames] = useState({});
     const [userNames, setUserNames] = useState({});
-    
+
     // Refund rejection modal state
     const [rejectModalOpen, setRejectModalOpen] = useState(false);
     const [selectedRefundOrder, setSelectedRefundOrder] = useState(null);
@@ -192,7 +192,7 @@ const PMDashboard = () => {
     // ==================== REFUND HANDLERS ====================
     const handleApproveRefund = async (orderId) => {
         if (processingRefund) return;
-        
+
         setProcessingRefund(true);
         try {
             await refundService.approveRefund(orderId);
@@ -422,7 +422,7 @@ const PMDashboard = () => {
                                                         Refund Pending
                                                     </span>
                                                 </div>
-                                                
+
                                                 <div className="text-sm text-gray-600 mb-3">
                                                     <p><span className="font-medium">Order Date:</span> {new Date(order.orderDate).toLocaleDateString()}</p>
                                                     <p><span className="font-medium">Total Amount:</span> ${order.totalPrice?.toFixed(2)}</p>
@@ -452,7 +452,7 @@ const PMDashboard = () => {
                                                     </div>
                                                 </div>
                                             </div>
-                                            
+
                                             <div className="flex gap-2 ml-4">
                                                 <button
                                                     onClick={() => handleApproveRefund(order.id)}
@@ -527,6 +527,24 @@ const PMDashboard = () => {
                                     {/* Order Details */}
                                     {expandedOrderId === order.id && (
                                         <div className="border-t border-gray-200 bg-gray-50 p-5">
+                                            {/* Delivery Address */}
+                                            <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                                <h4 className="font-semibold mb-2 flex items-center gap-2 text-blue-800">
+                                                    <Truck className="h-4 w-4" />
+                                                    Delivery Information
+                                                </h4>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                                                    <div>
+                                                        <p className="text-gray-500 text-xs uppercase">Customer Name</p>
+                                                        <p className="font-medium">{order.buyerName || userNames[order.userId] || `Customer #${order.userId}`}</p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-gray-500 text-xs uppercase">Delivery Address</p>
+                                                        <p className="font-medium">{order.buyerAddress || 'Address not provided'}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+
                                             {/* Order Items */}
                                             <h4 className="font-semibold mb-3">Order Items</h4>
                                             <div className="space-y-2 mb-4">
@@ -647,7 +665,7 @@ const PMDashboard = () => {
                             You are about to reject the refund request for Order #{selectedRefundOrder.id}.
                             You may optionally provide a reason that will be sent to the customer.
                         </p>
-                        
+
                         <div className="mb-4">
                             <label className="block text-sm font-medium text-gray-700 mb-2">
                                 Rejection Reason (optional)
