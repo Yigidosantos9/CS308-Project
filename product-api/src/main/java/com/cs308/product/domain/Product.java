@@ -47,6 +47,13 @@ public class Product {
     @Column(nullable = false)
     private Double price;
 
+    // Discount fields - set by Sales Manager
+    @Column(name = "discounted_price")
+    private Double discountedPrice; // null means no discount
+
+    @Column(name = "discount_rate")
+    private Double discountRate; // Percentage (0-100), null means no discount
+
     @NotNull
     @Column(nullable = false)
     private Integer stock;

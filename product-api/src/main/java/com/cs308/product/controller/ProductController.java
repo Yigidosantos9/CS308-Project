@@ -50,6 +50,25 @@ public class ProductController {
         return ResponseEntity.ok(updated);
     }
 
+    /**
+     * Set discount on a product (Sales Manager action)
+     * 
+     * @param id           Product ID
+     * @param discountRate Discount rate as percentage (0-100). Pass 0 or null to
+     *                     remove discount.
+     */
+    @PostMapping("/{id}/discount")
+    public ResponseEntity<Product> setDiscount(
+            @PathVariable Long id,
+            @RequestParam Double discountRate) {
+        try {
+            Product updated = service.setDiscount(id, discountRate);
+            return ResponseEntity.ok(updated);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
     @GetMapping
     public List<Product> listProducts(@ModelAttribute ProductFilterRequest filter) {
         return service.search(filter);

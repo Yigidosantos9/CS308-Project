@@ -11,6 +11,8 @@ const ProductCard = ({ product }) => {
     return "https://placehold.co/600x800/f5f5f5/a3a3a3?text=No+Image";
   };
 
+  const hasDiscount = product.discountedPrice && product.discountRate > 0;
+
   return (
     <Link to={`/product/${product.id}`} className="group block">
       {/* Image Container */}
@@ -20,6 +22,13 @@ const ProductCard = ({ product }) => {
           alt={product.name}
           className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
         />
+
+        {/* Discount Badge */}
+        {hasDiscount && (
+          <span className="absolute top-2 right-2 bg-emerald-500 text-white text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider">
+            {product.discountRate}% OFF
+          </span>
+        )}
 
         {/* Stock Logic based on your Product.java 'stock' field */}
         {product.stock > 0 && product.stock < 5 && (
@@ -43,9 +52,22 @@ const ProductCard = ({ product }) => {
             {product.brand || "RAWCTRL"}
           </p>
         </div>
-        <p className="font-medium text-sm">
-          ${product.price?.toFixed(2)}
-        </p>
+        <div className="text-right">
+          {hasDiscount ? (
+            <>
+              <p className="font-medium text-sm text-emerald-600">
+                ${product.discountedPrice?.toFixed(2)}
+              </p>
+              <p className="text-xs text-gray-400 line-through">
+                ${product.price?.toFixed(2)}
+              </p>
+            </>
+          ) : (
+            <p className="font-medium text-sm">
+              ${product.price?.toFixed(2)}
+            </p>
+          )}
+        </div>
       </div>
     </Link>
   );

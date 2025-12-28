@@ -68,6 +68,14 @@ public class ProductService {
         return productClient.restoreStock(request);
     }
 
+    public Product setDiscount(Long productId, Double discountRate) {
+        log.info("Processing set discount - productId: {}, discountRate: {}", productId, discountRate);
+        if (discountRate != null && (discountRate < 0 || discountRate > 100)) {
+            throw new IllegalArgumentException("Discount rate must be between 0 and 100");
+        }
+        return productClient.setDiscount(productId, discountRate);
+    }
+
     // ==================== WISHLIST METHODS ====================
 
     public com.cs308.gateway.model.product.Wishlist addToWishlist(Long userId, Long productId, String size) {

@@ -64,6 +64,7 @@ class WishlistServiceTest {
         // GIVEN
         Long userId = 10L;
         Long productId = 5L;
+        String size = "M";
 
         Product product = buildProduct(productId, 100.0);
 
@@ -73,7 +74,7 @@ class WishlistServiceTest {
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
         // WHEN
-        Wishlist result = wishlistService.addToWishlist(userId, productId);
+        Wishlist result = wishlistService.addToWishlist(userId, productId, size);
 
         // THEN
         assertNotNull(result);
@@ -92,11 +93,13 @@ class WishlistServiceTest {
         // GIVEN
         Long userId = 10L;
         Long productId = 5L;
+        String size = "M";
 
         Product product = buildProduct(productId, 50.0);
 
         Wishlist wishlist = buildEmptyWishlist(userId);
         WishlistItem existingItem = buildWishlistItem(wishlist, product);
+        existingItem.setSize(size);
         wishlist.setItems(new ArrayList<>(List.of(existingItem)));
 
         when(productRepository.findById(productId)).thenReturn(Optional.of(product));
@@ -104,7 +107,7 @@ class WishlistServiceTest {
 
         // WHEN - THEN
         RuntimeException ex = assertThrows(RuntimeException.class,
-                () -> wishlistService.addToWishlist(userId, productId));
+                () -> wishlistService.addToWishlist(userId, productId, size));
 
         assertTrue(ex.getMessage().toLowerCase().contains("already"));
 
@@ -117,12 +120,13 @@ class WishlistServiceTest {
         // GIVEN
         Long userId = 10L;
         Long productId = 99L;
+        String size = "L";
 
         when(productRepository.findById(productId)).thenReturn(Optional.empty());
 
         // WHEN - THEN
         assertThrows(ProductNotFoundException.class,
-                () -> wishlistService.addToWishlist(userId, productId));
+                () -> wishlistService.addToWishlist(userId, productId, size));
 
         verify(productRepository).findById(productId);
     }

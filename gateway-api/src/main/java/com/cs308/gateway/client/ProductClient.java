@@ -226,6 +226,27 @@ public class ProductClient {
         }
     }
 
+    public Product setDiscount(Long productId, Double discountRate) {
+        log.debug("Calling product service: POST /products/{}/discount?discountRate={}", productId, discountRate);
+
+        try {
+            String uri = UriComponentsBuilder.fromPath("/products/{productId}/discount")
+                    .queryParam("discountRate", discountRate)
+                    .buildAndExpand(productId)
+                    .toUriString();
+
+            ResponseEntity<Product> response = restTemplate.postForEntity(
+                    uri,
+                    null,
+                    Product.class);
+
+            return response.getBody();
+        } catch (RestClientException e) {
+            log.error("Error calling product service to set discount for id: {}", productId, e);
+            throw new RuntimeException("Failed to set product discount", e);
+        }
+    }
+
     // ==================== REVIEW METHODS ====================
 
     public Object addReview(Long userId, Object reviewRequest) {

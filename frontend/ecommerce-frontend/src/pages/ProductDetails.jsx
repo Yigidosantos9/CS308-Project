@@ -413,10 +413,24 @@ const ProductDetails = () => {
             )}
 
             {/* Price */}
-            <div className="flex items-baseline gap-4">
-              <span className="text-2xl font-medium text-black">
-                ${(displayProduct.price || 0).toFixed(2)}
-              </span>
+            <div className="flex items-baseline gap-4 flex-wrap">
+              {displayProduct.discountedPrice && displayProduct.discountRate > 0 ? (
+                <>
+                  <span className="text-2xl font-medium text-emerald-600">
+                    ${displayProduct.discountedPrice.toFixed(2)}
+                  </span>
+                  <span className="text-lg text-gray-400 line-through">
+                    ${(displayProduct.price || 0).toFixed(2)}
+                  </span>
+                  <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full">
+                    {displayProduct.discountRate}% OFF
+                  </span>
+                </>
+              ) : (
+                <span className="text-2xl font-medium text-black">
+                  ${(displayProduct.price || 0).toFixed(2)}
+                </span>
+              )}
               <span className="text-xs text-gray-500 font-light">(Tax Included)</span>
             </div>
 

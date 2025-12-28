@@ -89,6 +89,39 @@ public class ProductService {
         return productRepository.save(existing);
     }
 
+    /**
+     * Set discount on a product.
+     * 
+     * @param productId    The product to apply discount to
+     * @param discountRate The discount rate as a percentage (0-100). Pass null or 0
+     *                     to remove discount.
+     * @return The updated product
+     */
+    public Product setDiscount(Long productId, Double discountRate) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ProductNotFoundException(productId));
+
+        if (discountRate == null || discountRate <= 0) {
+            // Remove discount
+            product.setDiscountRate(null);
+            product.setDiscountedPrice(null);
+        } else {
+            if (discountRate > 100) {
+                throw new IllegalArgumentException("Discount rate cannot exceed 100%");
+            }
+            // Calculate discounted price
+            Double originalPrice = product.getPrice();
+            Double discountedPrice = originalPrice * (1 - discountRate / 100.0);
+            // Round to 2 decimal places
+            discountedPrice = Math.round(discountedPrice * 100.0) / 100.0;
+
+            product.setDiscountRate(discountRate);
+            product.setDiscountedPrice(discountedPrice);
+        }
+
+        return productRepository.save(product);
+    }
+
     private void applyUpdates(Product target, ProductUpdateRequest request) {
         if (request.getName() != null) {
             target.setName(request.getName());

@@ -30,86 +30,87 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc(addFilters = false)
 class AuthenticationControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+        @Autowired
+        private MockMvc mockMvc;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+        @Autowired
+        private ObjectMapper objectMapper;
 
-    @MockitoBean
-    private AuthenticationService authenticationService;
+        @MockitoBean
+        private AuthenticationService authenticationService;
 
-    @Test
-    void signUp_shouldReturnSuccessMessage() throws Exception {
-        // given
-        CreateUserRequest request = CreateUserRequest.builder()
-                .email("test@example.com")
-                .password("password")
-                .firstName("John")
-                .lastName("Doe")
-                .phoneNumber("555-1234")
-                .birthDate(LocalDate.of(1990, 1, 1))
-                .build();
-        String successMessage = "User signed up successfully.";
+        @Test
+        void signUp_shouldReturnSuccessMessage() throws Exception {
+                // given
+                CreateUserRequest request = CreateUserRequest.builder()
+                                .email("test@example.com")
+                                .password("password")
+                                .firstName("John")
+                                .lastName("Doe")
+                                .phoneNumber("555-1234")
+                                .birthDate(LocalDate.of(1990, 1, 1))
+                                .build();
+                String successMessage = "User signed up successfully.";
 
-        when(authenticationService.signUp(any(CreateUserRequest.class)))
-                .thenReturn(successMessage);
+                when(authenticationService.signUp(any(CreateUserRequest.class)))
+                                .thenReturn(successMessage);
 
-        // when & then
-        mockMvc.perform(post("/membership/sign-up")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
-                .andExpect(content().string(successMessage));
+                // when & then
+                mockMvc.perform(post("/membership/sign-up")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
+                                .andExpect(status().isOk())
+                                .andExpect(content().string(successMessage));
 
-        verify(authenticationService).signUp(any(CreateUserRequest.class));
-    }
+                verify(authenticationService).signUp(any(CreateUserRequest.class));
+        }
 
-    @Test
-    void login_shouldReturnLoginResponse() throws Exception {
-        // given
-        LoginRequest request = LoginRequest.builder()
-                .email("test@example.com")
-                .password("password")
-                .build();
+        @Test
+        void login_shouldReturnLoginResponse() throws Exception {
+                // given
+                LoginRequest request = LoginRequest.builder()
+                                .email("test@example.com")
+                                .password("password")
+                                .build();
 
-        LoginResponse mockResponse = new LoginResponse();
-        mockResponse.setToken("mock.jwt.token");
+                LoginResponse mockResponse = new LoginResponse();
+                mockResponse.setToken("mock.jwt.token");
 
-        when(authenticationService.login(any(LoginRequest.class)))
-                .thenReturn(mockResponse);
+                when(authenticationService.login(any(LoginRequest.class)))
+                                .thenReturn(mockResponse);
 
-        // when & then
-        mockMvc.perform(post("/membership/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.token", is("mock.jwt.token")));
+                // when & then
+                mockMvc.perform(post("/membership/login")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.token", is("mock.jwt.token")));
 
-        verify(authenticationService).login(any(LoginRequest.class));
-    }
+                verify(authenticationService).login(any(LoginRequest.class));
+        }
 
-    @Test
-    void verifyToken_shouldReturnUserDetails() throws Exception {
-        // given
-        String mockToken = "ey.mock.token.string";
+        @Test
+        void verifyToken_shouldReturnUserDetails() throws Exception {
+                // given
+                String mockToken = "ey.mock.token.string";
 
-        UserDetails mockUserDetails = new UserDetails();
-        mockUserDetails.setUserId("user-123");
-        mockUserDetails.setEmail("user@example.com");
-        mockUserDetails.setUserType(UserType.CUSTOMER);
+                UserDetails mockUserDetails = new UserDetails();
+                mockUserDetails.setUserId("user-123");
+                mockUserDetails.setEmail("user@example.com");
+                mockUserDetails.setUserType(UserType.CUSTOMER);
 
-        when(authenticationService.verifyToken(mockToken))
-                .thenReturn(mockUserDetails);
+                when(authenticationService.verifyToken(mockToken))
+                                .thenReturn(mockUserDetails);
 
-        // when & then
-        mockMvc.perform(post("/membership/verify-token")
-                        .contentType(MediaType.TEXT_PLAIN)
-                        .content(mockToken))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.userId", is("user-123")))
-                .andExpect(jsonPath("$.email", is("user@example.com")));
+                // when & then
+                // when & then
+                mockMvc.perform(post("/membership/verify-token")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"token\":\"" + mockToken + "\"}"))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.userId", is("user-123")))
+                                .andExpect(jsonPath("$.email", is("user@example.com")));
 
-        verify(authenticationService).verifyToken(mockToken);
-    }
+                verify(authenticationService).verifyToken(mockToken);
+        }
 }

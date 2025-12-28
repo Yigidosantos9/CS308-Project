@@ -28,6 +28,10 @@ public class Product {
 
     private Double price;
 
+    private Double discountedPrice;
+
+    private Double discountRate;
+
     private Integer stock;
 
     private String model;

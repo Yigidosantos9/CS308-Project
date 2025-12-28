@@ -25,74 +25,76 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(WishlistController.class)
 class WishlistControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+        @Autowired
+        private MockMvc mockMvc;
 
-    @MockitoBean
-    private WishlistService wishlistService;
+        @MockitoBean
+        private WishlistService wishlistService;
 
-    private Wishlist buildWishlist(Long userId) {
-        Wishlist wishlist = new Wishlist();
-        wishlist.setId(1L);
-        wishlist.setUserId(userId);
-        wishlist.setItems(new ArrayList<>());
-        return wishlist;
-    }
+        private Wishlist buildWishlist(Long userId) {
+                Wishlist wishlist = new Wishlist();
+                wishlist.setId(1L);
+                wishlist.setUserId(userId);
+                wishlist.setItems(new ArrayList<>());
+                return wishlist;
+        }
 
-    @Test
-    void addToWishlist_shouldCallServiceAndReturnOk() throws Exception {
-        // GIVEN
-        Long userId = 10L;
-        Long productId = 5L;
+        @Test
+        void addToWishlist_shouldCallServiceAndReturnOk() throws Exception {
+                // GIVEN
+                Long userId = 10L;
+                Long productId = 5L;
+                String size = "M";
 
-        Wishlist wishlist = buildWishlist(userId);
+                Wishlist wishlist = buildWishlist(userId);
 
-        when(wishlistService.addToWishlist(eq(userId), eq(productId)))
-                .thenReturn(wishlist);
+                when(wishlistService.addToWishlist(eq(userId), eq(productId), eq(size)))
+                                .thenReturn(wishlist);
 
-        // WHEN - THEN
-        mockMvc.perform(post("/wishlist/add")
-                .param("userId", String.valueOf(userId))
-                .param("productId", String.valueOf(productId)))
-                .andExpect(status().isOk());
+                // WHEN - THEN
+                mockMvc.perform(post("/wishlist/add")
+                                .param("userId", String.valueOf(userId))
+                                .param("productId", String.valueOf(productId))
+                                .param("size", size))
+                                .andExpect(status().isOk());
 
-        Mockito.verify(wishlistService, times(1))
-                .addToWishlist(userId, productId);
-    }
+                Mockito.verify(wishlistService, times(1))
+                                .addToWishlist(userId, productId, size);
+        }
 
-    @Test
-    void removeFromWishlist_shouldCallServiceAndReturnOk() throws Exception {
-        // GIVEN
-        Long userId = 10L;
-        Long productId = 5L;
-        Wishlist wishlist = buildWishlist(userId);
+        @Test
+        void removeFromWishlist_shouldCallServiceAndReturnOk() throws Exception {
+                // GIVEN
+                Long userId = 10L;
+                Long productId = 5L;
+                Wishlist wishlist = buildWishlist(userId);
 
-        when(wishlistService.removeFromWishlist(eq(userId), eq(productId))).thenReturn(wishlist);
+                when(wishlistService.removeFromWishlist(eq(userId), eq(productId))).thenReturn(wishlist);
 
-        // WHEN - THEN
-        mockMvc.perform(delete("/wishlist/remove")
-                .param("userId", String.valueOf(userId))
-                .param("productId", String.valueOf(productId)))
-                .andExpect(status().isOk());
+                // WHEN - THEN
+                mockMvc.perform(delete("/wishlist/remove")
+                                .param("userId", String.valueOf(userId))
+                                .param("productId", String.valueOf(productId)))
+                                .andExpect(status().isOk());
 
-        Mockito.verify(wishlistService, times(1))
-                .removeFromWishlist(userId, productId);
-    }
+                Mockito.verify(wishlistService, times(1))
+                                .removeFromWishlist(userId, productId);
+        }
 
-    @Test
-    void getWishlist_shouldCallServiceAndReturnOk() throws Exception {
-        // GIVEN
-        Long userId = 10L;
-        Wishlist wishlist = buildWishlist(userId);
+        @Test
+        void getWishlist_shouldCallServiceAndReturnOk() throws Exception {
+                // GIVEN
+                Long userId = 10L;
+                Wishlist wishlist = buildWishlist(userId);
 
-        when(wishlistService.getWishlist(eq(userId))).thenReturn(wishlist);
+                when(wishlistService.getWishlist(eq(userId))).thenReturn(wishlist);
 
-        // WHEN - THEN
-        mockMvc.perform(get("/wishlist")
-                .param("userId", String.valueOf(userId)))
-                .andExpect(status().isOk());
+                // WHEN - THEN
+                mockMvc.perform(get("/wishlist")
+                                .param("userId", String.valueOf(userId)))
+                                .andExpect(status().isOk());
 
-        Mockito.verify(wishlistService, times(1))
-                .getWishlist(userId);
-    }
+                Mockito.verify(wishlistService, times(1))
+                                .getWishlist(userId);
+        }
 }

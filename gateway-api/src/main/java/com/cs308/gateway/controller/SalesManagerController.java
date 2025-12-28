@@ -56,8 +56,15 @@ public class SalesManagerController {
             @PathVariable Long productId,
             @RequestParam Double discountRate) {
         log.info("BFF: Set discount request - productId: {}, discountRate: {}", productId, discountRate);
-        // TODO: Implement set discount
-        return ResponseEntity.ok().build();
+        try {
+            return ResponseEntity.ok(productService.setDiscount(productId, discountRate));
+        } catch (IllegalArgumentException e) {
+            log.error("Invalid discount rate: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            log.error("Failed to set discount for product {}", productId, e);
+            return ResponseEntity.internalServerError().body("Failed to set discount");
+        }
     }
 
     // Sales Manager can view invoices in date range
@@ -111,8 +118,13 @@ public class SalesManagerController {
             @RequestParam String startDate,
             @RequestParam String endDate) {
         log.info("BFF: Calculate revenue request - startDate: {}, endDate: {}", startDate, endDate);
-        // TODO: Implement calculate revenue
-        return ResponseEntity.ok().build();
+        try {
+            var revenueStats = orderService.calculateRevenueStats(startDate, endDate);
+            return ResponseEntity.ok(revenueStats);
+        } catch (Exception e) {
+            log.error("Failed to calculate revenue", e);
+            return ResponseEntity.internalServerError().body("Failed to calculate revenue: " + e.getMessage());
+        }
     }
 
     // ==================== REFUND MANAGEMENT ====================

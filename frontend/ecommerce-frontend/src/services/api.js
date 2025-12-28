@@ -559,6 +559,53 @@ export const salesManagerService = {
       console.error("Error downloading invoice:", error);
       throw error;
     }
+  },
+
+  /**
+   * Set discount on a product
+   * @param {number} productId - The product ID
+   * @param {number} discountRate - The discount rate (0-100). Pass 0 to remove discount.
+   */
+  setProductDiscount: async (productId, discountRate) => {
+    try {
+      const response = await api.post(`/sales/products/${productId}/discount`, null, {
+        params: { discountRate }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error setting product discount:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get all products for discount management
+   */
+  getAllProducts: async () => {
+    try {
+      const response = await api.get('/products');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get revenue statistics for a date range
+   * @param {string} startDate - Start date (YYYY-MM-DD)
+   * @param {string} endDate - End date (YYYY-MM-DD)
+   */
+  getRevenueStats: async (startDate, endDate) => {
+    try {
+      const response = await api.get('/sales/revenue', {
+        params: { startDate, endDate }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching revenue stats:', error);
+      throw error;
+    }
   }
 };
 

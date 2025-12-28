@@ -172,4 +172,70 @@ public class OrderService {
         log.info("GATEWAY LOG: Checking refund eligibility - orderId: {}, userId: {}", orderId, userId);
         return orderClient.checkRefundEligibility(orderId, userId);
     }
+
+    // ==================== REVENUE CALCULATION ====================
+
+    /**
+     * Calculate revenue statistics for a date range
+     * Cost is calculated as 50% of revenue (per project requirements)
+     */
+    public com.cs308.gateway.model.order.RevenueStats calculateRevenueStats(String startDate, String endDate) {
+        log.info("Processing revenue stats calculation - startDate: {}, endDate: {}", startDate, endDate);
+
+        List<Order> orders = orderClient.getOrdersByDateRange(startDate, endDate);
+
+        // Filter to only include completed orders (DELIVERED, IN_TRANSIT, PREPARING,
+        // PROCESSING)
+        // Exclude CANCELLED and REFUNDED
+        List<Order> validOrders = orders.stream()
+                .filter(o -> o.getStatus() != null &&
+                        o.getStatus() != com.cs308.gateway.model.product.enums.OrderStatus.CANCELLED &&
+                        o.getStatus() != com.cs308.gateway.model.product.enums.OrderStatus.REFUNDED)
+                .toList();
+
+        // Group orders by date
+        java.util.Map<String, java.util.List<Order>> ordersByDate = validOrders.stream()
+                .collect(java.util.stream.Collectors.groupingBy(
+                        o -> o.getOrderDate() != null
+                                ? o.getOrderDate().toLocalDate().toString()
+                                : startDate));
+
+        // Calculate daily stats
+        java.util.List<com.cs308.gateway.model.order.RevenueStats.DailyRevenue> dailyData = new java.util.ArrayList<>();
+        double totalRevenue = 0.0;
+
+        // Sort dates
+        java.util.List<String> sortedDates = new java.util.ArrayList<>(ordersByDate.keySet());
+        java.util.Collections.sort(sortedDates);
+
+        for (String date : sortedDates) {
+            java.util.List<Order> dateOrders = ordersByDate.get(date);
+            double dayRevenue = dateOrders.stream()
+                    .mapToDouble(o -> o.getTotalPrice() != null ? o.getTotalPrice() : 0.0)
+                    .sum();
+            double dayCost = dayRevenue * 0.5; // 50% cost
+            double dayProfit = dayRevenue - dayCost;
+
+            dailyData.add(com.cs308.gateway.model.order.RevenueStats.DailyRevenue.builder()
+                    .date(date)
+                    .revenue(Math.round(dayRevenue * 100.0) / 100.0)
+                    .cost(Math.round(dayCost * 100.0) / 100.0)
+                    .profit(Math.round(dayProfit * 100.0) / 100.0)
+                    .orderCount(dateOrders.size())
+                    .build());
+
+            totalRevenue += dayRevenue;
+        }
+
+        double totalCost = totalRevenue * 0.5;
+        double totalProfit = totalRevenue - totalCost;
+
+        return com.cs308.gateway.model.order.RevenueStats.builder()
+                .totalRevenue(Math.round(totalRevenue * 100.0) / 100.0)
+                .totalCost(Math.round(totalCost * 100.0) / 100.0)
+                .totalProfit(Math.round(totalProfit * 100.0) / 100.0)
+                .orderCount(validOrders.size())
+                .dailyData(dailyData)
+                .build();
+    }
 }
