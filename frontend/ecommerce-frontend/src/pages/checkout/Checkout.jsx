@@ -85,7 +85,12 @@ const Checkout = () => {
         };
     }, [invoiceUrl]);
 
-    const total = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
+    const total = cart.reduce((acc, item) => {
+        const effectivePrice = item.discountedPrice && item.discountRate > 0
+            ? item.discountedPrice
+            : item.price;
+        return acc + effectivePrice * item.quantity;
+    }, 0);
 
     const handlePlaceOrder = async () => {
         if (!user) {
@@ -137,7 +142,10 @@ const Checkout = () => {
                 items: cart.map(item => ({
                     productId: item.id,  // Cart items have 'id' from product spread
                     quantity: item.quantity,
-                    price: item.price,
+                    // Use discounted price if available, otherwise use original price
+                    price: item.discountedPrice && item.discountRate > 0
+                        ? item.discountedPrice
+                        : item.price,
                     size: item.selectedSize || item.size,
                     productName: item.name
                 })),
@@ -241,19 +249,30 @@ const Checkout = () => {
                     <div className="bg-white rounded-2xl p-6 shadow-sm">
                         <h2 className="text-xl font-bold mb-4">Order Summary</h2>
                         <div className="space-y-4 mb-6">
-                            {cart.map((item, idx) => (
-                                <div key={idx} className="flex justify-between items-center border-b pb-3">
-                                    <div>
-                                        <p className="font-medium">{item.name}</p>
-                                        <p className="text-sm text-gray-500">
-                                            Size: {item.size} • Qty: {item.quantity}
-                                        </p>
+                            {cart.map((item, idx) => {
+                                const hasDiscount = item.discountedPrice && item.discountRate > 0;
+                                const displayPrice = hasDiscount ? item.discountedPrice : item.price;
+                                return (
+                                    <div key={idx} className="flex justify-between items-center border-b pb-3">
+                                        <div>
+                                            <p className="font-medium">{item.name}</p>
+                                            <p className="text-sm text-gray-500">
+                                                Size: {item.size} • Qty: {item.quantity}
+                                            </p>
+                                        </div>
+                                        <div className="text-right">
+                                            {hasDiscount && (
+                                                <p className="text-xs text-gray-400 line-through">
+                                                    {(item.price * item.quantity).toFixed(2)} $
+                                                </p>
+                                            )}
+                                            <p className={`font-bold ${hasDiscount ? 'text-green-600' : ''}`}>
+                                                {(displayPrice * item.quantity).toFixed(2)} $
+                                            </p>
+                                        </div>
                                     </div>
-                                    <p className="font-bold">
-                                        {(item.price * item.quantity).toFixed(2)} $
-                                    </p>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                         <div className="border-t pt-4">
                             <div className="flex justify-between text-lg font-bold">
