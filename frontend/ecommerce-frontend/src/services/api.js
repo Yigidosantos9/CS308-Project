@@ -46,6 +46,68 @@ export const productService = {
       throw error;
     }
   },
+
+  // Product Manager: Add new product
+  addProduct: async (productData) => {
+    try {
+      const response = await api.post('/products', productData);
+      return response.data;
+    } catch (error) {
+      console.error("Error adding product:", error);
+      throw error;
+    }
+  },
+
+  // Product Manager: Update product
+  updateProduct: async (productId, productData) => {
+    try {
+      const response = await api.put(`/products/${productId}`, productData);
+      return response.data;
+    } catch (error) {
+      console.error("Error updating product:", error);
+      throw error;
+    }
+  },
+
+  // Product Manager: Delete product
+  deleteProduct: async (productId) => {
+    try {
+      await api.delete(`/products/${productId}`);
+    } catch (error) {
+      console.error("Error deleting product:", error);
+      throw error;
+    }
+  },
+
+  // Product Manager: Update stock
+  updateStock: async (productId, quantity) => {
+    try {
+      const response = await api.put(`/products/${productId}/stock`, null, {
+        params: { quantity }
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Error updating stock:", error);
+      throw error;
+    }
+  },
+
+  // Product Manager: Upload product image
+  uploadImage: async (file) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const response = await api.post('/products/images/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      throw error;
+    }
+  },
 };
 
 export const authService = {

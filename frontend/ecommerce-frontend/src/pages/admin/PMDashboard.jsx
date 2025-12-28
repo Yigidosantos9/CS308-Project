@@ -1,8 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Package, Truck, CheckCircle, Clock, ChevronDown, FileText, XCircle, RotateCcw, LogOut, Star, MessageSquare, AlertCircle } from 'lucide-react';
+import { Package, Truck, CheckCircle, Clock, ChevronDown, FileText, XCircle, RotateCcw, LogOut, Star, MessageSquare, AlertCircle, Plus, Edit, Trash2, Box } from 'lucide-react';
 import { useShop } from '../../context/ShopContext';
 import { orderService, reviewService, productService, authService, refundService } from '../../services/api';
+
+const PRODUCT_TYPES = ['TSHIRT', 'SHIRT', 'SWEATER', 'HOODIE', 'JACKET', 'COAT', 'PANTS', 'JEANS', 'SKIRT', 'DRESS', 'SHORTS', 'UNDERWEAR', 'ACCESSORY', 'SHOES'];
+const TARGET_AUDIENCES = ['MEN', 'WOMEN', 'KIDS'];
+const WARRANTY_STATUSES = ['NONE', 'LIMITED', 'STANDARD', 'EXTENDED'];
+const SEASONS = ['SPRING', 'SUMMER', 'FALL', 'WINTER', 'ALL_SEASON'];
+const FITS = ['REGULAR', 'SLIM', 'OVERSIZE', 'LOOSE'];
 
 const ORDER_STATUSES = ['PREPARING', 'IN_TRANSIT', 'DELIVERED', 'CANCELLED', 'REFUNDED'];
 
@@ -24,6 +30,29 @@ const PMDashboard = () => {
     const [rejectionReason, setRejectionReason] = useState('');
     const [processingRefund, setProcessingRefund] = useState(false);
 
+    // Product management state
+    const [products, setProducts] = useState([]);
+    const [productModalOpen, setProductModalOpen] = useState(false);
+    const [editingProduct, setEditingProduct] = useState(null);
+    const [productFormData, setProductFormData] = useState({
+        name: '', price: '', stock: '', model: '', serialNumber: '', description: '',
+        brand: '', productType: 'TSHIRT', targetAudience: 'MEN', warrantyStatus: 'NONE',
+        distributorInfo: '', season: '', fit: '', material: '', careInstructions: '', imageUrls: []
+    });
+    const [savingProduct, setSavingProduct] = useState(false);
+    const [stockEditId, setStockEditId] = useState(null);
+    const [stockEditValue, setStockEditValue] = useState('');
+
+    // Toast notification state
+    const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+
+    const showToast = (message, type = 'success') => {
+        setToast({ show: true, message, type });
+        // Longer timeout for errors so users can read them
+        const timeout = type === 'error' ? 8000 : 4000;
+        setTimeout(() => setToast({ show: false, message: '', type: 'success' }), timeout);
+    };
+
     useEffect(() => {
         // Check if user is product manager OR sales manager
         if (!user || (user.userType !== 'PRODUCT_MANAGER' && user.userType !== 'SALES_MANAGER')) {
@@ -33,6 +62,7 @@ const PMDashboard = () => {
         fetchOrders();
         fetchPendingReviews();
         fetchPendingRefunds();
+        fetchProducts();
     }, [user, navigate]);
 
     const fetchOrders = async () => {
@@ -158,14 +188,120 @@ const PMDashboard = () => {
         }
     };
 
+    // ==================== PRODUCT MANAGEMENT ====================
+    const fetchProducts = async () => {
+        try {
+            const data = await productService.getProducts();
+            setProducts(data || []);
+        } catch (error) {
+            console.error('Failed to fetch products:', error);
+        }
+    };
+
+    const openAddProductModal = () => {
+        setEditingProduct(null);
+        setProductFormData({
+            name: '', price: '', stock: '', model: '', serialNumber: '', description: '',
+            brand: '', productType: 'TSHIRT', targetAudience: 'MEN', warrantyStatus: 'NONE',
+            distributorInfo: '', season: '', fit: '', material: '', careInstructions: '', imageUrls: []
+        });
+        setProductModalOpen(true);
+    };
+
+    const openEditProductModal = (product) => {
+        setEditingProduct(product);
+        setProductFormData({
+            name: product.name || '',
+            price: product.price?.toString() || '',
+            stock: product.stock?.toString() || '',
+            model: product.model || '',
+            serialNumber: product.serialNumber || '',
+            description: product.description || '',
+            brand: product.brand || '',
+            productType: product.productType || 'TSHIRT',
+            targetAudience: product.targetAudience || 'MEN',
+            warrantyStatus: product.warrantyStatus || 'NONE',
+            distributorInfo: product.distributorInfo || '',
+            season: product.season || '',
+            fit: product.fit || '',
+            material: product.material || '',
+            careInstructions: product.careInstructions || '',
+            imageUrls: product.images?.map(img => img.url) || []
+        });
+        setProductModalOpen(true);
+    };
+
+    const handleProductFormChange = (e) => {
+        const { name, value } = e.target;
+        setProductFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleSaveProduct = async () => {
+        if (savingProduct) return;
+        setSavingProduct(true);
+        try {
+            const payload = {
+                ...productFormData,
+                price: parseFloat(productFormData.price),
+                stock: parseInt(productFormData.stock, 10),
+                season: productFormData.season || null,
+                fit: productFormData.fit || null
+            };
+            if (editingProduct) {
+                await productService.updateProduct(editingProduct.id, payload);
+                showToast('Product updated successfully!', 'success');
+            } else {
+                await productService.addProduct(payload);
+                showToast('Product added successfully!', 'success');
+            }
+            setProductModalOpen(false);
+            fetchProducts();
+        } catch (error) {
+            console.error('Failed to save product:', error);
+            showToast('Failed to save product: ' + (error.response?.data?.message || error.message), 'error');
+        } finally {
+            setSavingProduct(false);
+        }
+    };
+
+    const handleDeleteProduct = async (productId) => {
+        if (!window.confirm('Are you sure you want to delete this product?')) return;
+        try {
+            await productService.deleteProduct(productId);
+            showToast('Product deleted successfully!', 'success');
+            fetchProducts();
+        } catch (error) {
+            console.error('Failed to delete product:', error);
+            showToast('Failed to delete product: ' + (error.response?.data?.message || error.message), 'error');
+        }
+    };
+
+    const handleStockUpdate = async (productId) => {
+        const quantity = parseInt(stockEditValue, 10);
+        if (isNaN(quantity) || quantity < 0) {
+            showToast('Please enter a valid stock quantity', 'error');
+            return;
+        }
+        try {
+            await productService.updateStock(productId, quantity);
+            setStockEditId(null);
+            setStockEditValue('');
+            fetchProducts();
+            showToast('Stock updated successfully!', 'success');
+        } catch (error) {
+            console.error('Failed to update stock:', error);
+            showToast('Failed to update stock', 'error');
+        }
+    };
+
     const handleStatusUpdate = async (orderId, newStatus) => {
         try {
             await orderService.updateOrderStatus(orderId, newStatus);
-            // Refresh orders after update
             fetchOrders();
+            showToast(`Order status updated to ${newStatus}`, 'success');
         } catch (error) {
             console.error('Failed to update order status:', error);
-            alert('Failed to update order status');
+            showToast('Failed to update order status', 'error');
         }
     };
 
@@ -173,9 +309,10 @@ const PMDashboard = () => {
         try {
             await reviewService.approveReview(reviewId);
             fetchPendingReviews();
+            showToast('Review approved successfully!', 'success');
         } catch (error) {
             console.error('Failed to approve review:', error);
-            alert('Failed to approve review');
+            showToast('Failed to approve review', 'error');
         }
     };
 
@@ -183,9 +320,10 @@ const PMDashboard = () => {
         try {
             await reviewService.disapproveReview(reviewId);
             fetchPendingReviews();
+            showToast('Review rejected', 'success');
         } catch (error) {
             console.error('Failed to disapprove review:', error);
-            alert('Failed to disapprove review');
+            showToast('Failed to disapprove review', 'error');
         }
     };
 
@@ -198,10 +336,10 @@ const PMDashboard = () => {
             await refundService.approveRefund(orderId);
             fetchPendingRefunds();
             fetchOrders();
-            alert('Refund approved successfully! Stock has been restored and customer notified.');
+            showToast('Refund approved! Stock restored and customer notified.', 'success');
         } catch (error) {
             console.error('Failed to approve refund:', error);
-            alert('Failed to approve refund: ' + (error.response?.data?.message || error.message));
+            showToast('Failed to approve refund: ' + (error.response?.data?.message || error.message), 'error');
         } finally {
             setProcessingRefund(false);
         }
@@ -224,10 +362,10 @@ const PMDashboard = () => {
             setRejectionReason('');
             fetchPendingRefunds();
             fetchOrders();
-            alert('Refund request rejected. Customer has been notified.');
+            showToast('Refund request rejected. Customer notified.', 'success');
         } catch (error) {
             console.error('Failed to reject refund:', error);
-            alert('Failed to reject refund: ' + (error.response?.data?.message || error.message));
+            showToast('Failed to reject refund: ' + (error.response?.data?.message || error.message), 'error');
         } finally {
             setProcessingRefund(false);
         }
@@ -277,6 +415,27 @@ const PMDashboard = () => {
 
     return (
         <div className="min-h-screen bg-gray-50 py-8">
+            {/* Toast Notification */}
+            {toast.show && (
+                <div className={`fixed top-4 right-4 z-50 px-6 py-4 rounded-xl shadow-lg flex items-center gap-3 transform transition-all duration-300 ${toast.type === 'success'
+                    ? 'bg-green-600 text-white'
+                    : 'bg-red-600 text-white'
+                    }`}>
+                    {toast.type === 'success' ? (
+                        <CheckCircle className="h-5 w-5" />
+                    ) : (
+                        <XCircle className="h-5 w-5" />
+                    )}
+                    <span className="font-medium">{toast.message}</span>
+                    <button
+                        onClick={() => setToast({ show: false, message: '', type: 'success' })}
+                        className="ml-2 hover:opacity-75"
+                    >
+                        ×
+                    </button>
+                </div>
+            )}
+
             <div className="max-w-7xl mx-auto px-4">
                 {/* Header */}
                 <div className="mb-8 flex items-center justify-between">
@@ -392,6 +551,16 @@ const PMDashboard = () => {
                     >
                         <MessageSquare className="h-4 w-4" />
                         Pending Reviews ({pendingReviews.length})
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('products')}
+                        className={`px-4 py-2 rounded-lg font-medium transition flex items-center gap-2 ${activeTab === 'products'
+                            ? 'bg-indigo-600 text-white'
+                            : 'bg-white text-gray-700 border border-indigo-300'
+                            }`}
+                    >
+                        <Box className="h-4 w-4" />
+                        Products ({products.length})
                     </button>
                 </div>
 
@@ -654,9 +823,407 @@ const PMDashboard = () => {
                         )}
                     </div>
                 )}
+
+                {/* Products Management Tab */}
+                {activeTab === 'products' && (
+                    <div className="space-y-4">
+                        <div className="flex justify-between items-center mb-4">
+                            <h2 className="text-xl font-semibold">Product Management</h2>
+                            <button
+                                onClick={openAddProductModal}
+                                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+                            >
+                                <Plus className="h-4 w-4" />
+                                Add Product
+                            </button>
+                        </div>
+
+                        {products.length === 0 ? (
+                            <div className="bg-white rounded-xl p-12 text-center shadow-sm border border-gray-200">
+                                <Box className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                                <p className="text-gray-600">No products yet</p>
+                            </div>
+                        ) : (
+                            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                                <table className="w-full">
+                                    <thead className="bg-gray-50 border-b border-gray-200">
+                                        <tr>
+                                            <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Product</th>
+                                            <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Category</th>
+                                            <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Price</th>
+                                            <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Stock</th>
+                                            <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-100">
+                                        {products.map(product => (
+                                            <tr key={product.id} className="hover:bg-gray-50">
+                                                <td className="px-4 py-3">
+                                                    <div className="flex items-center gap-3">
+                                                        {product.images?.[0]?.url ? (
+                                                            <img src={product.images[0].url} alt={product.name} className="w-10 h-10 rounded object-cover" />
+                                                        ) : (
+                                                            <div className="w-10 h-10 bg-gray-100 rounded flex items-center justify-center">
+                                                                <Package className="h-5 w-5 text-gray-400" />
+                                                            </div>
+                                                        )}
+                                                        <div>
+                                                            <p className="font-medium">{product.name}</p>
+                                                            <p className="text-xs text-gray-500">{product.brand || 'No brand'}</p>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-4 py-3 text-sm text-gray-600">
+                                                    {product.productType?.replace('_', ' ')}
+                                                </td>
+                                                <td className="px-4 py-3">
+                                                    {product.discountedPrice ? (
+                                                        <div>
+                                                            <span className="font-medium text-green-600">${product.discountedPrice.toFixed(2)}</span>
+                                                            <span className="text-xs text-gray-400 line-through ml-1">${product.price?.toFixed(2)}</span>
+                                                        </div>
+                                                    ) : (
+                                                        <span className="font-medium">${product.price?.toFixed(2)}</span>
+                                                    )}
+                                                </td>
+                                                <td className="px-4 py-3">
+                                                    {stockEditId === product.id ? (
+                                                        <div className="flex items-center gap-2">
+                                                            <input
+                                                                type="number"
+                                                                value={stockEditValue}
+                                                                onChange={(e) => setStockEditValue(e.target.value)}
+                                                                className="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
+                                                                min="0"
+                                                            />
+                                                            <button
+                                                                onClick={() => handleStockUpdate(product.id)}
+                                                                className="px-2 py-1 bg-green-500 text-white text-xs rounded hover:bg-green-600"
+                                                            >
+                                                                Save
+                                                            </button>
+                                                            <button
+                                                                onClick={() => { setStockEditId(null); setStockEditValue(''); }}
+                                                                className="px-2 py-1 bg-gray-300 text-gray-700 text-xs rounded hover:bg-gray-400"
+                                                            >
+                                                                Cancel
+                                                            </button>
+                                                        </div>
+                                                    ) : (
+                                                        <button
+                                                            onClick={() => { setStockEditId(product.id); setStockEditValue(product.stock?.toString() || '0'); }}
+                                                            className={`px-2 py-1 rounded text-sm font-medium ${product.stock <= 0 ? 'bg-red-100 text-red-700' :
+                                                                product.stock <= 10 ? 'bg-yellow-100 text-yellow-700' :
+                                                                    'bg-green-100 text-green-700'
+                                                                } hover:opacity-80 transition`}
+                                                        >
+                                                            {product.stock} in stock
+                                                        </button>
+                                                    )}
+                                                </td>
+                                                <td className="px-4 py-3">
+                                                    <div className="flex gap-2">
+                                                        <button
+                                                            onClick={() => openEditProductModal(product)}
+                                                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                                                            title="Edit Product"
+                                                        >
+                                                            <Edit className="h-4 w-4" />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDeleteProduct(product.id)}
+                                                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+                                                            title="Delete Product"
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
 
-            {/* Refund Rejection Modal */}
+            {/* Product Add/Edit Modal */}
+            {productModalOpen && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+                    <div className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-xl my-8">
+                        <h3 className="text-xl font-bold mb-4">
+                            {editingProduct ? 'Edit Product' : 'Add New Product'}
+                        </h3>
+
+                        <div className="grid grid-cols-2 gap-4 max-h-96 overflow-y-auto pr-2">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
+                                <input
+                                    type="text"
+                                    name="name"
+                                    value={productFormData.name}
+                                    onChange={handleProductFormChange}
+                                    className="w-full border border-gray-300 rounded-lg p-2 text-sm"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Price *</label>
+                                <input
+                                    type="number"
+                                    name="price"
+                                    value={productFormData.price}
+                                    onChange={handleProductFormChange}
+                                    className="w-full border border-gray-300 rounded-lg p-2 text-sm"
+                                    min="0"
+                                    step="0.01"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Stock *</label>
+                                <input
+                                    type="number"
+                                    name="stock"
+                                    value={productFormData.stock}
+                                    onChange={handleProductFormChange}
+                                    className="w-full border border-gray-300 rounded-lg p-2 text-sm"
+                                    min="0"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Model *</label>
+                                <input
+                                    type="text"
+                                    name="model"
+                                    value={productFormData.model}
+                                    onChange={handleProductFormChange}
+                                    className="w-full border border-gray-300 rounded-lg p-2 text-sm"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Serial Number *</label>
+                                <input
+                                    type="text"
+                                    name="serialNumber"
+                                    value={productFormData.serialNumber}
+                                    onChange={handleProductFormChange}
+                                    className="w-full border border-gray-300 rounded-lg p-2 text-sm"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Brand</label>
+                                <input
+                                    type="text"
+                                    name="brand"
+                                    value={productFormData.brand}
+                                    onChange={handleProductFormChange}
+                                    className="w-full border border-gray-300 rounded-lg p-2 text-sm"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Category *</label>
+                                <select
+                                    name="productType"
+                                    value={productFormData.productType}
+                                    onChange={handleProductFormChange}
+                                    className="w-full border border-gray-300 rounded-lg p-2 text-sm"
+                                >
+                                    {PRODUCT_TYPES.map(type => (
+                                        <option key={type} value={type}>{type.replace('_', ' ')}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Target Audience *</label>
+                                <select
+                                    name="targetAudience"
+                                    value={productFormData.targetAudience}
+                                    onChange={handleProductFormChange}
+                                    className="w-full border border-gray-300 rounded-lg p-2 text-sm"
+                                >
+                                    {TARGET_AUDIENCES.map(aud => (
+                                        <option key={aud} value={aud}>{aud}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Warranty *</label>
+                                <select
+                                    name="warrantyStatus"
+                                    value={productFormData.warrantyStatus}
+                                    onChange={handleProductFormChange}
+                                    className="w-full border border-gray-300 rounded-lg p-2 text-sm"
+                                >
+                                    {WARRANTY_STATUSES.map(w => (
+                                        <option key={w} value={w}>{w.replace('_', ' ')}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Season</label>
+                                <select
+                                    name="season"
+                                    value={productFormData.season}
+                                    onChange={handleProductFormChange}
+                                    className="w-full border border-gray-300 rounded-lg p-2 text-sm"
+                                >
+                                    <option value="">Select season</option>
+                                    {SEASONS.map(s => (
+                                        <option key={s} value={s}>{s.replace('_', ' ')}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Fit</label>
+                                <select
+                                    name="fit"
+                                    value={productFormData.fit}
+                                    onChange={handleProductFormChange}
+                                    className="w-full border border-gray-300 rounded-lg p-2 text-sm"
+                                >
+                                    <option value="">Select fit</option>
+                                    {FITS.map(f => (
+                                        <option key={f} value={f}>{f}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Material</label>
+                                <input
+                                    type="text"
+                                    name="material"
+                                    value={productFormData.material}
+                                    onChange={handleProductFormChange}
+                                    className="w-full border border-gray-300 rounded-lg p-2 text-sm"
+                                />
+                            </div>
+                            <div className="col-span-2">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Distributor Info *</label>
+                                <input
+                                    type="text"
+                                    name="distributorInfo"
+                                    value={productFormData.distributorInfo}
+                                    onChange={handleProductFormChange}
+                                    className="w-full border border-gray-300 rounded-lg p-2 text-sm"
+                                    required
+                                />
+                            </div>
+                            <div className="col-span-2">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Description *</label>
+                                <textarea
+                                    name="description"
+                                    value={productFormData.description}
+                                    onChange={handleProductFormChange}
+                                    className="w-full border border-gray-300 rounded-lg p-2 text-sm"
+                                    rows={3}
+                                    required
+                                />
+                            </div>
+                            <div className="col-span-2">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Care Instructions</label>
+                                <textarea
+                                    name="careInstructions"
+                                    value={productFormData.careInstructions}
+                                    onChange={handleProductFormChange}
+                                    className="w-full border border-gray-300 rounded-lg p-2 text-sm"
+                                    rows={2}
+                                />
+                            </div>
+                            <div className="col-span-2">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Product Images</label>
+                                <div className="space-y-3">
+                                    {/* Existing images */}
+                                    {(productFormData.imageUrls || []).length > 0 && (
+                                        <div className="flex flex-wrap gap-2">
+                                            {productFormData.imageUrls.map((url, index) => (
+                                                <div key={index} className="relative group">
+                                                    <img
+                                                        src={url}
+                                                        alt={`Product ${index + 1}`}
+                                                        className="w-20 h-20 object-cover rounded-lg border"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            const newUrls = productFormData.imageUrls.filter((_, i) => i !== index);
+                                                            setProductFormData(prev => ({ ...prev, imageUrls: newUrls }));
+                                                        }}
+                                                        className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full text-xs opacity-0 group-hover:opacity-100 transition"
+                                                    >
+                                                        ×
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {/* File upload */}
+                                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-indigo-400 transition">
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            multiple
+                                            onChange={async (e) => {
+                                                const files = Array.from(e.target.files || []);
+                                                for (const file of files) {
+                                                    try {
+                                                        showToast(`Uploading ${file.name}...`, 'success');
+                                                        const result = await productService.uploadImage(file);
+                                                        if (result.url) {
+                                                            setProductFormData(prev => ({
+                                                                ...prev,
+                                                                imageUrls: [...(prev.imageUrls || []), result.url]
+                                                            }));
+                                                            showToast(`Image uploaded successfully!`, 'success');
+                                                        }
+                                                    } catch (error) {
+                                                        showToast(`Failed to upload ${file.name}`, 'error');
+                                                    }
+                                                }
+                                                e.target.value = '';
+                                            }}
+                                            className="hidden"
+                                            id="image-upload"
+                                        />
+                                        <label htmlFor="image-upload" className="cursor-pointer">
+                                            <div className="text-gray-500">
+                                                <svg className="mx-auto h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                </svg>
+                                                <p className="mt-1 text-sm">Click to upload images</p>
+                                                <p className="text-xs text-gray-400">PNG, JPG, GIF up to 10MB</p>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-3 mt-6">
+                            <button
+                                onClick={handleSaveProduct}
+                                disabled={savingProduct}
+                                className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {savingProduct ? 'Saving...' : (editingProduct ? 'Update Product' : 'Add Product')}
+                            </button>
+                            <button
+                                onClick={() => setProductModalOpen(false)}
+                                disabled={savingProduct}
+                                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition disabled:opacity-50"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
             {rejectModalOpen && selectedRefundOrder && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
                     <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl">

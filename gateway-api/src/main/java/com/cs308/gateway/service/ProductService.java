@@ -92,4 +92,34 @@ public class ProductService {
         log.info("Processing get wishlist request for userId: {}", userId);
         return productClient.getWishlist(userId);
     }
+
+    // ==================== PRODUCT MANAGEMENT METHODS ====================
+
+    public Product addProduct(com.cs308.gateway.model.product.CreateProductRequest request) {
+        log.info("Processing add product request: {}", request.getName());
+        return productClient.addProduct(request);
+    }
+
+    public Product updateProduct(Long id, com.cs308.gateway.model.product.ProductUpdateRequest request) {
+        log.info("Processing update product request for id: {}", id);
+        return productClient.updateProduct(id, request);
+    }
+
+    public void deleteProduct(Long id) {
+        log.info("Processing delete product request for id: {}", id);
+        productClient.deleteProduct(id);
+    }
+
+    public Product updateStock(Long id, Integer quantity) {
+        log.info("Processing update stock request - productId: {}, quantity: {}", id, quantity);
+        if (quantity == null || quantity < 0) {
+            throw new IllegalArgumentException("Stock quantity cannot be negative");
+        }
+        return productClient.updateStock(id, quantity);
+    }
+
+    public String uploadImage(byte[] fileBytes, String filename, String contentType) {
+        log.info("Processing image upload request: {}", filename);
+        return productClient.uploadImage(fileBytes, filename, contentType);
+    }
 }

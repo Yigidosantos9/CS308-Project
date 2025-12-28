@@ -5,11 +5,15 @@ import com.cs308.product.domain.enums.ProductType;
 import com.cs308.product.domain.enums.Season;
 import com.cs308.product.domain.enums.TargetAudience;
 import com.cs308.product.domain.enums.WarrantyStatus;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class ProductUpdateRequest {
 
     private String name;

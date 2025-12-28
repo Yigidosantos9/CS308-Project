@@ -450,4 +450,126 @@ public class ProductClient {
             throw new RuntimeException("Failed to fetch wishlist", e);
         }
     }
+
+    // ==================== PRODUCT MANAGEMENT METHODS ====================
+
+    public Product addProduct(com.cs308.gateway.model.product.CreateProductRequest request) {
+        log.debug("Calling product service: POST /products");
+
+        try {
+            ResponseEntity<Product> response = restTemplate.postForEntity(
+                    "/products",
+                    request,
+                    Product.class);
+            return response.getBody();
+        } catch (RestClientException e) {
+            log.error("Error calling product service to add product", e);
+            throw new RuntimeException("Failed to add product", e);
+        }
+    }
+
+    public Product updateProduct(Long id, com.cs308.gateway.model.product.ProductUpdateRequest request) {
+        log.debug("Calling product service: PUT /products/{}", id);
+
+        try {
+            ResponseEntity<Product> response = restTemplate.exchange(
+                    "/products/{id}",
+                    HttpMethod.PUT,
+                    new org.springframework.http.HttpEntity<>(request),
+                    Product.class,
+                    id);
+            return response.getBody();
+        } catch (HttpClientErrorException.NotFound e) {
+            log.warn("Product not found with id: {}", id);
+            return null;
+        } catch (RestClientException e) {
+            log.error("Error calling product service to update product id: {}", id, e);
+            throw new RuntimeException("Failed to update product", e);
+        }
+    }
+
+    public void deleteProduct(Long id) {
+        log.debug("Calling product service: DELETE /products/{}", id);
+
+        try {
+            restTemplate.exchange(
+                    "/products/{id}",
+                    HttpMethod.DELETE,
+                    null,
+                    Void.class,
+                    id);
+        } catch (HttpClientErrorException.NotFound e) {
+            log.warn("Product not found with id: {}", id);
+            throw new RuntimeException("Product not found", e);
+        } catch (RestClientException e) {
+            log.error("Error calling product service to delete product id: {}", id, e);
+            throw new RuntimeException("Failed to delete product", e);
+        }
+    }
+
+    public Product updateStock(Long id, Integer quantity) {
+        log.debug("Calling product service: PUT /products/{} with stock {}", id, quantity);
+
+        try {
+            com.cs308.gateway.model.product.ProductUpdateRequest request = com.cs308.gateway.model.product.ProductUpdateRequest
+                    .builder()
+                    .stock(quantity)
+                    .build();
+
+            ResponseEntity<Product> response = restTemplate.exchange(
+                    "/products/{id}",
+                    HttpMethod.PUT,
+                    new org.springframework.http.HttpEntity<>(request),
+                    Product.class,
+                    id);
+            return response.getBody();
+        } catch (HttpClientErrorException.NotFound e) {
+            log.warn("Product not found with id: {}", id);
+            return null;
+        } catch (RestClientException e) {
+            log.error("Error calling product service to update stock for id: {}", id, e);
+            throw new RuntimeException("Failed to update stock", e);
+        }
+    }
+
+    public String uploadImage(byte[] fileBytes, String filename, String contentType) {
+        log.debug("Calling product service: POST /images/upload");
+
+        try {
+            org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+            headers.setContentType(org.springframework.http.MediaType.MULTIPART_FORM_DATA);
+
+            org.springframework.util.MultiValueMap<String, Object> body = new org.springframework.util.LinkedMultiValueMap<>();
+
+            // Create a resource from the byte array
+            org.springframework.core.io.ByteArrayResource fileResource = new org.springframework.core.io.ByteArrayResource(
+                    fileBytes) {
+                @Override
+                public String getFilename() {
+                    return filename;
+                }
+            };
+
+            org.springframework.http.HttpHeaders fileHeaders = new org.springframework.http.HttpHeaders();
+            fileHeaders.setContentType(org.springframework.http.MediaType.parseMediaType(contentType));
+            org.springframework.http.HttpEntity<org.springframework.core.io.ByteArrayResource> filePart = new org.springframework.http.HttpEntity<>(
+                    fileResource, fileHeaders);
+
+            body.add("file", filePart);
+
+            org.springframework.http.HttpEntity<org.springframework.util.MultiValueMap<String, Object>> requestEntity = new org.springframework.http.HttpEntity<>(
+                    body, headers);
+
+            ResponseEntity<java.util.Map> response = restTemplate.postForEntity(
+                    "/images/upload",
+                    requestEntity,
+                    java.util.Map.class);
+
+            java.util.Map<String, String> result = response.getBody();
+            return result != null ? result.get("url") : null;
+        } catch (RestClientException e) {
+            log.error("Error uploading image to product service", e);
+            throw new RuntimeException("Failed to upload image", e);
+        }
+    }
 }
