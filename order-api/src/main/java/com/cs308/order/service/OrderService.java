@@ -20,26 +20,32 @@ import java.util.List;
 public class OrderService {
 
     private final OrderRepository orderRepository;
+    private final EncryptionService encryptionService;
 
     // Refund window in days (30 days after delivery)
     private static final int REFUND_WINDOW_DAYS = 30;
 
-    public OrderService(OrderRepository orderRepository) {
+    public OrderService(OrderRepository orderRepository, EncryptionService encryptionService) {
         this.orderRepository = orderRepository;
+        this.encryptionService = encryptionService;
     }
 
     public List<Order> getOrdersByUserId(Long userId) {
-        return orderRepository.findByUserId(userId);
+        List<Order> orders = orderRepository.findByUserId(userId);
+        // Decrypt sensitive fields for each order
+        orders.forEach(this::decryptOrderFields);
+        return orders;
     }
 
     @Transactional(readOnly = true)
     public List<Order> getAllOrders() {
         List<Order> orders = orderRepository.findAll();
-        // Force load items for each order
+        // Force load items and decrypt sensitive fields for each order
         orders.forEach(order -> {
             if (order.getItems() != null) {
                 order.getItems().size();
             }
+            decryptOrderFields(order);
         });
         return orders;
     }
@@ -47,9 +53,12 @@ public class OrderService {
     @Transactional(readOnly = true)
     public Order getOrderById(Long orderId) {
         Order order = orderRepository.findById(orderId).orElse(null);
-        if (order != null && order.getItems() != null) {
-            // Force load items (LAZY loading workaround)
-            order.getItems().size();
+        if (order != null) {
+            if (order.getItems() != null) {
+                // Force load items (LAZY loading workaround)
+                order.getItems().size();
+            }
+            decryptOrderFields(order);
         }
         return order;
     }
@@ -57,8 +66,11 @@ public class OrderService {
     @Transactional(readOnly = true)
     public Order getOrderByIdAndUser(Long orderId, Long userId) {
         Order order = orderRepository.findByIdAndUserId(orderId, userId);
-        if (order != null && order.getItems() != null) {
-            order.getItems().size();
+        if (order != null) {
+            if (order.getItems() != null) {
+                order.getItems().size();
+            }
+            decryptOrderFields(order);
         }
         return order;
     }
@@ -90,9 +102,13 @@ public class OrderService {
         order.setOrderDate(LocalDateTime.now());
         order.setStatus(OrderStatus.PREPARING);
         order.setRefundStatus(RefundStatus.NONE);
-        order.setBuyerName(request != null ? request.getBuyerName() : null);
-        order.setBuyerAddress(request != null ? request.getBuyerAddress() : null);
-        order.setPaymentMethod(request != null ? request.getPaymentMethod() : null);
+
+        // Encrypt sensitive buyer information before storage
+        if (request != null) {
+            order.setBuyerName(encryptionService.encrypt(request.getBuyerName()));
+            order.setBuyerAddress(encryptionService.encrypt(request.getBuyerAddress()));
+            order.setPaymentMethod(request.getPaymentMethod());
+        }
 
         // Use actual price from request, fallback to 0 if not provided
         Double totalPrice = (request != null && request.getTotalPrice() != null)
@@ -295,11 +311,12 @@ public class OrderService {
     @Transactional(readOnly = true)
     public List<Order> getOrdersByDateRange(LocalDateTime startDate, LocalDateTime endDate) {
         List<Order> orders = orderRepository.findByOrderDateBetween(startDate, endDate);
-        // Force load items for each order
+        // Force load items and decrypt sensitive fields for each order
         orders.forEach(order -> {
             if (order.getItems() != null) {
                 order.getItems().size();
             }
+            decryptOrderFields(order);
         });
         return orders;
     }
@@ -332,5 +349,26 @@ public class OrderService {
                 " RefundStatus: " + order.getRefundStatus());
         // -----------------------
         return orderRepository.save(order);
+    }
+
+    // ==================== ENCRYPTION HELPERS ====================
+
+    /**
+     * Decrypt sensitive fields in an order for API responses
+     * Handles backwards compatibility with existing unencrypted data
+     */
+    private void decryptOrderFields(Order order) {
+        if (order == null)
+            return;
+
+        // Decrypt buyer name if present
+        if (order.getBuyerName() != null && !order.getBuyerName().isEmpty()) {
+            order.setBuyerName(encryptionService.decrypt(order.getBuyerName()));
+        }
+
+        // Decrypt buyer address if present
+        if (order.getBuyerAddress() != null && !order.getBuyerAddress().isEmpty()) {
+            order.setBuyerAddress(encryptionService.decrypt(order.getBuyerAddress()));
+        }
     }
 }

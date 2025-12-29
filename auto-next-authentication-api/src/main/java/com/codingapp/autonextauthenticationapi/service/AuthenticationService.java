@@ -29,6 +29,7 @@ public class AuthenticationService {
     private final UserRepository userRepository;
     private final TokenService tokenService;
     private final PasswordEncoder passwordEncoder;
+    private final EncryptionService encryptionService;
 
     @Value("${jwt.secret}")
     private String secret;
@@ -47,6 +48,12 @@ public class AuthenticationService {
                     throw new IllegalStateException("User already exists with email: " + createUserRequest.getEmail());
                 });
 
+        // Encrypt taxId for storage
+        String encryptedTaxId = null;
+        if (createUserRequest.getTaxId() != null && !createUserRequest.getTaxId().isEmpty()) {
+            encryptedTaxId = encryptionService.encrypt(createUserRequest.getTaxId());
+        }
+
         User user = User.builder()
                 .email(createUserRequest.getEmail())
                 .password(passwordEncoder.encode(createUserRequest.getPassword()))
@@ -54,6 +61,8 @@ public class AuthenticationService {
                 .surname(createUserRequest.getLastName())
                 .phoneNumber(createUserRequest.getPhoneNumber())
                 .birthDate(createUserRequest.getBirthDate())
+                .taxId(encryptedTaxId)
+                .homeAddress(createUserRequest.getHomeAddress())
                 .userType(UserType.CUSTOMER)
                 .userStatus(UserStatus.ACTIVE)
                 .build();
@@ -94,6 +103,12 @@ public class AuthenticationService {
             User user = userRepository.findById(Long.parseLong(userId))
                     .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
 
+            // Decrypt taxId for response
+            String decryptedTaxId = null;
+            if (user.getTaxId() != null && !user.getTaxId().isEmpty()) {
+                decryptedTaxId = encryptionService.decrypt(user.getTaxId());
+            }
+
             return UserDetails.builder()
                     .userId(String.valueOf(user.getId()))
                     .email(user.getEmail())
@@ -102,6 +117,8 @@ public class AuthenticationService {
                     .lastName(user.getSurname())
                     .phoneNumber(user.getPhoneNumber())
                     .birthDate(user.getBirthDate())
+                    .taxId(decryptedTaxId)
+                    .homeAddress(user.getHomeAddress())
                     .build();
 
         } catch (ExpiredJwtException ex) {
@@ -118,6 +135,12 @@ public class AuthenticationService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
 
+        // Decrypt taxId for response
+        String decryptedTaxId = null;
+        if (user.getTaxId() != null && !user.getTaxId().isEmpty()) {
+            decryptedTaxId = encryptionService.decrypt(user.getTaxId());
+        }
+
         return UserDetails.builder()
                 .userId(String.valueOf(user.getId()))
                 .email(user.getEmail())
@@ -126,6 +149,8 @@ public class AuthenticationService {
                 .lastName(user.getSurname())
                 .phoneNumber(user.getPhoneNumber())
                 .birthDate(user.getBirthDate())
+                .taxId(decryptedTaxId)
+                .homeAddress(user.getHomeAddress())
                 .build();
     }
 }

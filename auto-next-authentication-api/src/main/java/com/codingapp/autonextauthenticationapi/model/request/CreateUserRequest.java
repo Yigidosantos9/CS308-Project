@@ -1,6 +1,5 @@
 package com.codingapp.autonextauthenticationapi.model.request;
 
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -22,5 +21,7 @@ public class CreateUserRequest {
     private String lastName;
     private String phoneNumber;
     private LocalDate birthDate;
+    private String taxId;
+    private String homeAddress;
 
 }

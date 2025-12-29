@@ -481,7 +481,7 @@ const Profile = () => {
 
   const handleRefundSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!refundReason || refundReason.trim().length < 10) {
       setRefundError('Please provide a reason with at least 10 characters.');
       return;
@@ -493,10 +493,10 @@ const Profile = () => {
     try {
       await refundService.requestRefund(selectedOrderForRefund.id, refundReason.trim());
       setRefundSuccess('Refund request submitted successfully! We will review it shortly.');
-      
+
       // Refresh orders to show updated status
       await fetchOrders();
-      
+
       // Close modal after a short delay
       setTimeout(() => {
         closeRefundModal();
@@ -530,10 +530,10 @@ const Profile = () => {
     try {
       await orderService.cancelOrder(selectedOrderForCancel.id);
       setCancelSuccess('Order cancelled successfully!');
-      
+
       // Refresh orders to show updated status
       await fetchOrders();
-      
+
       // Close modal after a short delay
       setTimeout(() => {
         closeCancelModal();
@@ -833,7 +833,7 @@ const Profile = () => {
                         Cancel Order
                       </button>
                     )}
-                    
+
                     {/* Refund Button - Only show if eligible (delivered within 30 days) */}
                     {isOrderEligibleForRefund(order) && (
                       <button
@@ -879,6 +879,20 @@ const Profile = () => {
 
   const AddressesContent = () => (
     <div className="space-y-6">
+      {/* Display Home Address from Registration */}
+      {user?.homeAddress && (
+        <div className="rounded-2xl border-2 border-green-200 bg-green-50 p-5 shadow-sm">
+          <div className="flex items-center gap-2 mb-2">
+            <MapPin className="h-4 w-4 text-green-600" />
+            <p className="text-sm font-semibold uppercase tracking-wide text-green-800">
+              Registration Home Address
+            </p>
+          </div>
+          <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
+            {user.homeAddress}
+          </p>
+        </div>
+      )}
       <div className="grid gap-4 md:grid-cols-2">
         {addresses.map((address) => (
           editingAddressId === address.id ? (

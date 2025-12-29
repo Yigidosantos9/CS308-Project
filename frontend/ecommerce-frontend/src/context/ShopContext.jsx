@@ -1,6 +1,6 @@
 import { createContext, useState, useContext, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import api, { cartService } from '../services/api';
+import api, { cartService, addressService } from '../services/api';
 
 const ShopContext = createContext();
 
@@ -122,6 +122,19 @@ export const ShopProvider = ({ children }) => {
           console.log('Cart merge skipped or failed:', mergeErr);
         } finally {
           setIsMerging(false);
+        }
+      }
+
+      // Sync pending registration address to Address service
+      const pendingAddress = localStorage.getItem('pendingRegistrationAddress');
+      if (pendingAddress) {
+        try {
+          const addressData = JSON.parse(pendingAddress);
+          await addressService.addAddress(addressData, userData.userId);
+          localStorage.removeItem('pendingRegistrationAddress');
+          console.log('Registration address synced to Address service');
+        } catch (addrErr) {
+          console.log('Failed to sync registration address:', addrErr);
         }
       }
 

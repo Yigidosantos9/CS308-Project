@@ -21,4 +21,6 @@ public class UserDetails {
     private String lastName;
     private String phoneNumber;
     private java.time.LocalDate birthDate;
+    private String taxId;
+    private String homeAddress;
 }

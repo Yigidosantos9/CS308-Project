@@ -21,5 +21,6 @@ public class CreateUserRequest {
     private String lastName;
     private String phoneNumber;
     private LocalDate birthDate;
+    private String taxId;
+    private String homeAddress;
 }
-

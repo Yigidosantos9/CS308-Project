@@ -24,7 +24,7 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @Builder
 @Entity
-@Table(name="user", schema = "authentication_schema")
+@Table(name = "user", schema = "authentication_schema")
 public class User {
 
     @Id
@@ -39,22 +39,28 @@ public class User {
     @Column(name = "user_status", nullable = false)
     private UserStatus userStatus;
 
-    @Column(name="email", nullable = false)
+    @Column(name = "email", nullable = false)
     private String email;
 
-    @Column(name="password", nullable = false)
+    @Column(name = "password", nullable = false)
     private String password;
 
-    @Column(name="firstname", nullable = false)
+    @Column(name = "firstname", nullable = false)
     private String firstName;
 
-    @Column(name="surname", nullable = false)
+    @Column(name = "surname", nullable = false)
     private String surname;
 
-    @Column(name="phone_number", nullable = false)
+    @Column(name = "phone_number", nullable = false)
     private String phoneNumber;
 
-    @Column(name="birth_date", nullable = false)
+    @Column(name = "birth_date", nullable = false)
     private LocalDate birthDate;
+
+    @Column(name = "tax_id")
+    private String taxId; // Stored encrypted
+
+    @Column(name = "home_address", columnDefinition = "TEXT")
+    private String homeAddress;
 
 }
