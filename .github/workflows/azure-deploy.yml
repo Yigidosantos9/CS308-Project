@@ -37,9 +37,6 @@ jobs:
         distribution: 'temurin'
         cache: maven
 
-    - name: Configure for Azure
-      run: cp gateway-api/src/main/resources/application-azure.yml gateway-api/src/main/resources/application.yml
-
     - name: Build Gateway API
       working-directory: gateway-api
       run: mvn clean package -DskipTests
