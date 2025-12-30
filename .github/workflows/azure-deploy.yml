@@ -103,8 +103,6 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
         cache: maven
-    - name: Configure for Azure
-      run: cp product-api/src/main/resources/application-azure.yml product-api/src/main/resources/application.yml
     - name: Build Product API
       working-directory: product-api
       run: mvn clean package -DskipTests
