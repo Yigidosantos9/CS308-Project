@@ -6,6 +6,17 @@ spring:
     name: gateway-api
   main:
     web-application-type: reactive
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ardagokmeny@gmail.com
+    password: zhcqmvzvnwqflkhd
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
   cloud:
     gateway:
       routes:
