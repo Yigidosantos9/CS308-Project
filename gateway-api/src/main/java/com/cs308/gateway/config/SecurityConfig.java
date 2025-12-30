@@ -41,6 +41,9 @@ public class SecurityConfig {
                                                                                           // review
                         .pathMatchers(HttpMethod.DELETE, "/api/reviews/**").authenticated()
                         .pathMatchers("/api/payments/**").authenticated()
+                        // Allow static resources and SPA index.html
+                        .pathMatchers("/", "/index.html", "/assets/**", "/*.js", "/*.css", "/*.ico", "/*.png", "/*.jpg")
+                        .permitAll()
                         .anyExchange().authenticated())
                 .addFilterAt(jwtWebFilter, SecurityWebFiltersOrder.AUTHENTICATION);
         return http.build();
