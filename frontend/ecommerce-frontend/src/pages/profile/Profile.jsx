@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   MapPin,
   ShieldCheck,
@@ -1525,10 +1525,13 @@ const Profile = () => {
                 Support
               </h3>
               <div className="mt-3 space-y-2 text-sm font-semibold text-black">
-                <button className="flex w-full items-center justify-between rounded-lg border border-gray-200 px-3 py-2 hover:border-black">
+                <Link
+                  to="/support"
+                  className="flex w-full items-center justify-between rounded-lg border border-gray-200 px-3 py-2 hover:border-black"
+                >
                   <span>Chat with stylist</span>
                   <ArrowIcon />
-                </button>
+                </Link>
                 <button className="flex w-full items-center justify-between rounded-lg border border-gray-200 px-3 py-2 hover:border-black">
                   <span>Book a fitting</span>
                   <ArrowIcon />

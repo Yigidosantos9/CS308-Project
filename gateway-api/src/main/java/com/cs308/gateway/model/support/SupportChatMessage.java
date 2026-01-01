@@ -7,18 +7,18 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.Instant;
-import java.util.List;
 
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class SupportChatSession {
+public class SupportChatMessage {
     private Long id;
-    private Long customerId;
-    private SupportChatStatus status;
+    private Long chatId;
+    private Long senderId;
+    private SupportSenderType senderType;
+    private String content;
+    private SupportChatAttachment attachment;
     private Instant createdAt;
-    private Object initialRequest;
-    private List<SupportChatMessage> messages;
 }

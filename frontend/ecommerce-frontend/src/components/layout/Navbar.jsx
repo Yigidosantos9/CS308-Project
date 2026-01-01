@@ -1,5 +1,5 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Search, ShoppingBag, User, Menu, X, Heart } from 'lucide-react';
+import { Headset, Search, ShoppingBag, User, Menu, X, Heart } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 import { useShop } from '../../context/ShopContext';
@@ -86,6 +86,14 @@ const Navbar = () => {
             </button>
           )}
 
+          <Link
+            to="/support"
+            aria-label="Support"
+            className="hidden md:flex items-center hover:opacity-60 transition-opacity"
+          >
+            <Headset className="w-5 h-5" />
+          </Link>
+
           {/* Wishlist - Hidden for Product Manager and Sales Manager */}
           {user?.userType !== 'PRODUCT_MANAGER' && user?.userType !== 'SALES_MANAGER' && (
             <Link to="/wishlist" className="hover:opacity-60 transition-opacity">
@@ -149,6 +157,14 @@ const Navbar = () => {
               {link.name}
             </Link>
           ))}
+          <Link
+            to="/support"
+            onClick={() => setIsMenuOpen(false)}
+            className="flex items-center gap-2 text-lg font-semibold text-black"
+          >
+            <Headset className="w-5 h-5" />
+            Support
+          </Link>
           <Link
             to={user ? (
               user.userType === 'PRODUCT_MANAGER' ? "/pm-dashboard" :

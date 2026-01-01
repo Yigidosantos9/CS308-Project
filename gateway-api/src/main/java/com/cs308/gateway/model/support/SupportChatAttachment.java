@@ -6,19 +6,15 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.Instant;
-import java.util.List;
-
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class SupportChatSession {
+public class SupportChatAttachment {
     private Long id;
-    private Long customerId;
-    private SupportChatStatus status;
-    private Instant createdAt;
-    private Object initialRequest;
-    private List<SupportChatMessage> messages;
+    private Long chatId;
+    private String filename;
+    private String contentType;
+    private long size;
 }

@@ -1,12 +1,9 @@
 import axios from 'axios';
+export const API_BASE_URL = import.meta.env.PROD ? '/api' : 'http://localhost:8080/api';
 
-const API_BASE_URL = import.meta.env.PROD ? '/api' : 'http://localhost:8080/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
 });
 
 // Add request interceptor to attach auth token
@@ -577,6 +574,88 @@ export const wishlistService = {
       throw error;
     }
   },
+};
+
+// ==================== SUPPORT CHAT SERVICE ====================
+export const supportChatService = {
+  startChat: async (payload = {}) => {
+    try {
+      const response = await api.post('/support/chat/start', payload);
+      return response.data;
+    } catch (error) {
+      console.error('Error starting support chat:', error);
+      throw error;
+    }
+  },
+
+  sendMessage: async (chatId, content) => {
+    try {
+      const response = await api.post(`/support/chat/${chatId}/message`, {
+        content
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error sending chat message:', error);
+      throw error;
+    }
+  },
+
+  getMessages: async (chatId, afterId) => {
+    try {
+      const response = await api.get(`/support/chat/${chatId}/messages`, {
+        params: afterId ? { afterId } : undefined
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching chat messages:', error);
+      throw error;
+    }
+  },
+
+  getChat: async (chatId) => {
+    try {
+      const response = await api.get(`/support/chat/${chatId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching chat details:', error);
+      throw error;
+    }
+  },
+
+  getActiveChat: async () => {
+    try {
+      const response = await api.get('/support/chat/active');
+      return response.status === 204 ? null : response.data;
+    } catch (error) {
+      if (error.response?.status === 204) {
+        return null;
+      }
+      console.error('Error fetching active chat:', error);
+      throw error;
+    }
+  },
+
+  uploadFile: async (chatId, file) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const response = await api.post(`/support/chat/${chatId}/file`, formData);
+      return response.data;
+    } catch (error) {
+      console.error('Error uploading chat file:', error);
+      throw error;
+    }
+  },
+
+  closeChat: async (chatId) => {
+    try {
+      const response = await api.post(`/support/chat/${chatId}/close`);
+      return response.data;
+    } catch (error) {
+      console.error('Error closing chat:', error);
+      throw error;
+    }
+  }
 };
 
 // ==================== SALES MANAGER SERVICE ====================

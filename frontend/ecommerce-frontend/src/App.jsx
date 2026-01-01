@@ -17,6 +17,7 @@ import Register from './pages/auth/Register';
 import Profile from './pages/profile/Profile';
 import PMDashboard from './pages/admin/PMDashboard';
 import SalesManagerDashboard from './pages/admin/SalesManagerDashboard';
+import SupportChat from './pages/support/SupportChat';
 
 function App() {
   return (
@@ -51,6 +52,7 @@ function App() {
                 <SalesManagerDashboard />
               </PrivateRoute>
             } />
+            <Route path="support" element={<SupportChat />} />
           </Route>
         </Routes>
       </Router>
