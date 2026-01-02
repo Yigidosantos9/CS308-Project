@@ -35,6 +35,7 @@ public class SecurityConfig {
                         .pathMatchers(HttpMethod.POST, "/api/support/chat/*/message").permitAll()
                         .pathMatchers(HttpMethod.POST, "/api/support/chat/*/file").permitAll()
                         .pathMatchers(HttpMethod.POST, "/api/support/chat/*/close").permitAll()
+                        .pathMatchers(HttpMethod.GET, "/api/support/chat/queue").permitAll()
                         .pathMatchers(HttpMethod.GET, "/api/support/chat/*/messages").permitAll()
                         .pathMatchers(HttpMethod.GET, "/api/support/chat/active").permitAll()
                         .pathMatchers(HttpMethod.GET, "/api/support/chat/*").permitAll()

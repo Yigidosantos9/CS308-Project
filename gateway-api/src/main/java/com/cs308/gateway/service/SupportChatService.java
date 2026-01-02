@@ -7,6 +7,7 @@ import com.cs308.gateway.model.support.SupportChatStatus;
 import com.cs308.gateway.model.support.SupportSenderType;
 import org.springframework.stereotype.Service;
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -108,8 +109,13 @@ public class SupportChatService {
         }
         session.getMessages().add(message);
 
-        if (session.getStatus() == SupportChatStatus.QUEUED) {
-            session.setStatus(SupportChatStatus.ACTIVE);
+        if (senderType == SupportSenderType.AGENT) {
+            if (session.getAgentId() == null) {
+                session.setAgentId(senderId);
+            }
+            if (session.getStatus() == SupportChatStatus.QUEUED) {
+                session.setStatus(SupportChatStatus.ACTIVE);
+            }
         }
 
         return message;
@@ -142,8 +148,13 @@ public class SupportChatService {
         }
         session.getMessages().add(message);
 
-        if (session.getStatus() == SupportChatStatus.QUEUED) {
-            session.setStatus(SupportChatStatus.ACTIVE);
+        if (senderType == SupportSenderType.AGENT) {
+            if (session.getAgentId() == null) {
+                session.setAgentId(senderId);
+            }
+            if (session.getStatus() == SupportChatStatus.QUEUED) {
+                session.setStatus(SupportChatStatus.ACTIVE);
+            }
         }
 
         return message;
@@ -158,6 +169,29 @@ public class SupportChatService {
         long sinceId = afterId != null ? afterId : 0L;
         return session.getMessages().stream()
                 .filter(message -> message.getId() > sinceId)
+                .collect(Collectors.toList());
+    }
+
+    public List<SupportChatSession> getQueuedSessions() {
+        return sessions.values().stream()
+                .filter(session -> session.getStatus() == SupportChatStatus.QUEUED)
+                .sorted(Comparator.comparing(SupportChatSession::getCreatedAt))
+                .collect(Collectors.toList());
+    }
+
+    public List<SupportChatSession> getQueueForAgent(Long agentId) {
+        return sessions.values().stream()
+                .filter(session -> session.getStatus() == SupportChatStatus.QUEUED
+                        || (session.getStatus() == SupportChatStatus.ACTIVE
+                        && agentId != null
+                        && agentId.equals(session.getAgentId()))
+                        || (session.getStatus() == SupportChatStatus.CLOSED
+                        && agentId != null
+                        && agentId.equals(session.getAgentId())))
+                .sorted(Comparator
+                        .comparing((SupportChatSession session) -> session.getStatus() == SupportChatStatus.QUEUED ? 0
+                                : session.getStatus() == SupportChatStatus.ACTIVE ? 1 : 2)
+                        .thenComparing(SupportChatSession::getCreatedAt))
                 .collect(Collectors.toList());
     }
 
@@ -177,5 +211,23 @@ public class SupportChatService {
         public byte[] getBytes() {
             return bytes;
         }
+    }
+
+    public SupportChatSession claimChat(Long chatId, Long agentId) {
+        SupportChatSession session = sessions.get(chatId);
+        if (session == null) {
+            return null;
+        }
+        if (session.getStatus() == SupportChatStatus.CLOSED) {
+            return session;
+        }
+        if (session.getAgentId() != null && !session.getAgentId().equals(agentId)) {
+            return session;
+        }
+        session.setAgentId(agentId);
+        if (session.getStatus() == SupportChatStatus.QUEUED) {
+            session.setStatus(SupportChatStatus.ACTIVE);
+        }
+        return session;
     }
 }

@@ -43,6 +43,26 @@ public class DataInitializer {
             } else {
                 log.info("Product Manager user already exists.");
             }
+
+            String supportEmail = "support@ecommerce.com";
+            if (userRepository.findByEmail(supportEmail).isEmpty()) {
+                log.info("Seeding Support Agent user: {}", supportEmail);
+                User supportUser = User.builder()
+                        .email(supportEmail)
+                        .password(passwordEncoder.encode("password"))
+                        .firstName("Support")
+                        .surname("Agent")
+                        .phoneNumber("1234567890")
+                        .birthDate(LocalDate.of(1992, 2, 2))
+                        .userType(UserType.SUPPORT_AGENT)
+                        .userStatus(UserStatus.ACTIVE)
+                        .build();
+
+                userRepository.save(supportUser);
+                log.info("Support Agent user created successfully.");
+            } else {
+                log.info("Support Agent user already exists.");
+            }
         };
     }
 }

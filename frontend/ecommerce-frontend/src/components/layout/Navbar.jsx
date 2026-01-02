@@ -87,11 +87,12 @@ const Navbar = () => {
           )}
 
           <Link
-            to="/support"
+            to={user?.userType === 'SUPPORT_AGENT' ? '/support/queue' : '/support'}
             aria-label="Support"
-            className="hidden md:flex items-center hover:opacity-60 transition-opacity"
+            className="hidden md:flex items-center gap-2 hover:opacity-60 transition-opacity"
           >
             <Headset className="w-5 h-5" />
+            <span className="text-sm font-medium">Support</span>
           </Link>
 
           {/* Wishlist - Hidden for Product Manager and Sales Manager */}
@@ -158,7 +159,7 @@ const Navbar = () => {
             </Link>
           ))}
           <Link
-            to="/support"
+            to={user?.userType === 'SUPPORT_AGENT' ? '/support/queue' : '/support'}
             onClick={() => setIsMenuOpen(false)}
             className="flex items-center gap-2 text-lg font-semibold text-black"
           >

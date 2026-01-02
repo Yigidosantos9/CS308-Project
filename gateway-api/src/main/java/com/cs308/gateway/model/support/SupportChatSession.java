@@ -17,6 +17,7 @@ import java.util.List;
 public class SupportChatSession {
     private Long id;
     private Long customerId;
+    private Long agentId;
     private SupportChatStatus status;
     private Instant createdAt;
     private Object initialRequest;

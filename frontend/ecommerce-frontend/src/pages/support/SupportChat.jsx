@@ -4,10 +4,11 @@ import { MessageCircle, Paperclip, SendHorizontal } from 'lucide-react';
 import { API_BASE_URL, supportChatService } from '../../services/api';
 import { useShop } from '../../context/ShopContext';
 
-const CHAT_STORAGE_KEY = 'supportChatId';
+const CHAT_STORAGE_KEY_PREFIX = 'supportChatId';
+const LEGACY_CHAT_STORAGE_KEY = 'supportChatId';
 
 const SupportChat = () => {
-  const { user } = useShop();
+  const { user, loading } = useShop();
   const [chatId, setChatId] = useState(null);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
@@ -26,20 +27,34 @@ const SupportChat = () => {
     return user.firstName || user.email?.split('@')[0] || 'Customer';
   }, [user]);
 
+  const storageKey = useMemo(() => {
+    const userStorageId = user?.userId || user?.email;
+    if (userStorageId) {
+      return `${CHAT_STORAGE_KEY_PREFIX}:user:${userStorageId}`;
+    }
+    return `${CHAT_STORAGE_KEY_PREFIX}:guest`;
+  }, [user]);
+
   useEffect(() => {
     let isMounted = true;
+    if (loading) {
+      return () => {
+        isMounted = false;
+      };
+    }
     const startChat = async () => {
       try {
         setStatus('starting');
         const response = await supportChatService.startChat({
           source: 'web',
           note: 'Customer initiated chat',
+          customerId: user?.userId || undefined,
         });
         if (!isMounted) return;
         setChatId(response.chatId);
         const normalizedStatus = response.status ? response.status.toLowerCase() : 'queued';
         setStatus(normalizedStatus);
-        localStorage.setItem(CHAT_STORAGE_KEY, String(response.chatId));
+        localStorage.setItem(storageKey, String(response.chatId));
         setMessages([]);
         lastMessageIdRef.current = 0;
         messageIdsRef.current = new Set();
@@ -51,22 +66,33 @@ const SupportChat = () => {
     };
 
     const initChat = async () => {
-      if (user?.userId) {
+      setChatId(null);
+      setMessages([]);
+      lastMessageIdRef.current = 0;
+      messageIdsRef.current = new Set();
+      setStatus('starting');
+
+      localStorage.removeItem(LEGACY_CHAT_STORAGE_KEY);
+
+      if (user?.userId || user?.email) {
+        localStorage.removeItem(`${CHAT_STORAGE_KEY_PREFIX}:guest`);
         try {
-          const activeChat = await supportChatService.getActiveChat();
+          const activeChat = await supportChatService.getActiveChat(user.userId);
           if (!isMounted) return;
           if (activeChat?.chatId) {
             setChatId(activeChat.chatId);
             setStatus(activeChat.status ? activeChat.status.toLowerCase() : 'queued');
-            localStorage.setItem(CHAT_STORAGE_KEY, String(activeChat.chatId));
+            localStorage.setItem(storageKey, String(activeChat.chatId));
             return;
           }
         } catch (err) {
           if (!isMounted) return;
         }
+        await startChat();
+        return;
       }
 
-      const existingChatId = localStorage.getItem(CHAT_STORAGE_KEY);
+      const existingChatId = localStorage.getItem(storageKey);
       if (existingChatId) {
         setChatId(Number(existingChatId));
         setStatus('active');
@@ -80,7 +106,7 @@ const SupportChat = () => {
     return () => {
       isMounted = false;
     };
-  }, [user]);
+  }, [user, loading, storageKey]);
 
   useEffect(() => {
     if (!chatId) return undefined;
@@ -95,13 +121,13 @@ const SupportChat = () => {
       lastMessageIdRef.current = 0;
       messageIdsRef.current = new Set();
       setStatus(nextStatus ? nextStatus.toLowerCase() : 'queued');
-      localStorage.setItem(CHAT_STORAGE_KEY, String(nextChatId));
+      localStorage.setItem(storageKey, String(nextChatId));
     };
 
     const pollMessages = async () => {
       try {
         if (user?.userId) {
-          const activeChat = await supportChatService.getActiveChat();
+          const activeChat = await supportChatService.getActiveChat(user.userId);
           if (activeChat?.chatId && activeChat.chatId !== chatId) {
             switchToChat(activeChat.chatId, activeChat.status);
             return;
@@ -134,7 +160,7 @@ const SupportChat = () => {
         }
       } catch (err) {
         if (err.response?.status === 404 && isActive) {
-          localStorage.removeItem(CHAT_STORAGE_KEY);
+          localStorage.removeItem(storageKey);
           setChatId(null);
           setMessages([]);
           lastMessageIdRef.current = 0;
@@ -162,7 +188,7 @@ const SupportChat = () => {
         }
       } catch (err) {
         if (err.response?.status === 404 && isActive) {
-          localStorage.removeItem(CHAT_STORAGE_KEY);
+          localStorage.removeItem(storageKey);
           setChatId(null);
           setMessages([]);
           lastMessageIdRef.current = 0;
@@ -267,7 +293,7 @@ const SupportChat = () => {
         return;
       }
     }
-    localStorage.removeItem(CHAT_STORAGE_KEY);
+    localStorage.removeItem(storageKey);
     setStatus('closed');
     messageIdsRef.current = new Set();
   };
@@ -280,7 +306,7 @@ const SupportChat = () => {
         setError('Unable to close previous chat.');
       }
     }
-    localStorage.removeItem(CHAT_STORAGE_KEY);
+    localStorage.removeItem(storageKey);
     setChatId(null);
     setMessages([]);
     lastMessageIdRef.current = 0;
@@ -295,11 +321,12 @@ const SupportChat = () => {
       const response = await supportChatService.startChat({
         source: 'web',
         note: 'Customer initiated chat',
+        customerId: user?.userId || undefined,
       });
       setChatId(response.chatId);
       const normalizedStatus = response.status ? response.status.toLowerCase() : 'queued';
       setStatus(normalizedStatus);
-      localStorage.setItem(CHAT_STORAGE_KEY, String(response.chatId));
+      localStorage.setItem(storageKey, String(response.chatId));
     } catch (err) {
       setStatus('error');
       setError('Chat could not be started. Please try again.');

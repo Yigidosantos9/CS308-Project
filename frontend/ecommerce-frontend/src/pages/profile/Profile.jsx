@@ -1526,7 +1526,7 @@ const Profile = () => {
               </h3>
               <div className="mt-3 space-y-2 text-sm font-semibold text-black">
                 <Link
-                  to="/support"
+                  to={user?.userType === 'SUPPORT_AGENT' ? '/support/queue' : '/support'}
                   className="flex w-full items-center justify-between rounded-lg border border-gray-200 px-3 py-2 hover:border-black"
                 >
                   <span>Chat with stylist</span>

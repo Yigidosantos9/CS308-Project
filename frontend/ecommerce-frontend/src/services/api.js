@@ -588,10 +588,11 @@ export const supportChatService = {
     }
   },
 
-  sendMessage: async (chatId, content) => {
+  sendMessage: async (chatId, content, senderType) => {
     try {
       const response = await api.post(`/support/chat/${chatId}/message`, {
-        content
+        content,
+        senderType
       });
       return response.data;
     } catch (error) {
@@ -622,9 +623,11 @@ export const supportChatService = {
     }
   },
 
-  getActiveChat: async () => {
+  getActiveChat: async (customerId) => {
     try {
-      const response = await api.get('/support/chat/active');
+      const response = await api.get('/support/chat/active', {
+        params: customerId ? { customerId } : undefined
+      });
       return response.status === 204 ? null : response.data;
     } catch (error) {
       if (error.response?.status === 204) {
@@ -653,6 +656,28 @@ export const supportChatService = {
       return response.data;
     } catch (error) {
       console.error('Error closing chat:', error);
+      throw error;
+    }
+  },
+
+  claimChat: async (chatId) => {
+    try {
+      const response = await api.post(`/support/chat/${chatId}/claim`);
+      return response.data;
+    } catch (error) {
+      console.error('Error claiming chat:', error);
+      throw error;
+    }
+  },
+
+  getChatQueue: async (agentId) => {
+    try {
+      const response = await api.get('/support/chat/queue', {
+        params: agentId ? { agentId } : undefined
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching chat queue:', error);
       throw error;
     }
   }

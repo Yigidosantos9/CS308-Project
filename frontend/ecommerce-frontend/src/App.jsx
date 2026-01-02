@@ -18,6 +18,8 @@ import Profile from './pages/profile/Profile';
 import PMDashboard from './pages/admin/PMDashboard';
 import SalesManagerDashboard from './pages/admin/SalesManagerDashboard';
 import SupportChat from './pages/support/SupportChat';
+import SupportAgentQueue from './pages/support/SupportAgentQueue';
+import SupportAgentChat from './pages/support/SupportAgentChat';
 
 function App() {
   return (
@@ -53,6 +55,8 @@ function App() {
               </PrivateRoute>
             } />
             <Route path="support" element={<SupportChat />} />
+            <Route path="support/queue" element={<SupportAgentQueue />} />
+            <Route path="support/queue/:chatId" element={<SupportAgentChat />} />
           </Route>
         </Routes>
       </Router>
