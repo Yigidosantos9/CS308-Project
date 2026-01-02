@@ -6,10 +6,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/wishlist")
@@ -34,5 +37,15 @@ public class WishlistController {
     @GetMapping
     public ResponseEntity<Wishlist> getWishlist(@RequestParam Long userId) {
         return ResponseEntity.ok(wishlistService.getWishlist(userId));
+    }
+
+    /**
+     * Get all user IDs that have a specific product in their wishlist.
+     * Used for sending discount notifications.
+     */
+    @GetMapping("/users-with-product/{productId}")
+    public ResponseEntity<List<Long>> getUsersWithProductInWishlist(@PathVariable Long productId) {
+        List<Long> userIds = wishlistService.getUserIdsWithProductInWishlist(productId);
+        return ResponseEntity.ok(userIds);
     }
 }

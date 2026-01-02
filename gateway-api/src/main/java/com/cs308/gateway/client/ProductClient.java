@@ -451,6 +451,28 @@ public class ProductClient {
         }
     }
 
+    /**
+     * Get user IDs that have a specific product in their wishlist.
+     * Used for sending discount notifications.
+     */
+    public List<Long> getUsersWithProductInWishlist(Long productId) {
+        log.debug("Calling product service: GET /wishlist/users-with-product/{}", productId);
+
+        try {
+            ResponseEntity<List<Long>> response = restTemplate.exchange(
+                    "/wishlist/users-with-product/{productId}",
+                    HttpMethod.GET,
+                    null,
+                    new ParameterizedTypeReference<List<Long>>() {
+                    },
+                    productId);
+            return response.getBody();
+        } catch (RestClientException e) {
+            log.error("Error calling product service to get users with product in wishlist", e);
+            return List.of(); // Return empty list on error - don't fail the discount operation
+        }
+    }
+
     // ==================== PRODUCT MANAGEMENT METHODS ====================
 
     public Product addProduct(com.cs308.gateway.model.product.CreateProductRequest request) {

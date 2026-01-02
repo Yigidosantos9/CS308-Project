@@ -51,13 +51,28 @@ public class SalesManagerController {
     }
 
     // Sales Manager can set discounts
+    // When a discount is applied, notify users who have this product in their
+    // wishlist
     @PostMapping("/products/{productId}/discount")
     public ResponseEntity<?> setDiscount(
             @PathVariable Long productId,
             @RequestParam Double discountRate) {
         log.info("BFF: Set discount request - productId: {}, discountRate: {}", productId, discountRate);
         try {
-            return ResponseEntity.ok(productService.setDiscount(productId, discountRate));
+            // First, get the original product to compare prices
+            Product originalProduct = productService.getProduct(productId);
+            Double originalPrice = originalProduct != null ? originalProduct.getPrice() : null;
+
+            // Apply the discount
+            Product updatedProduct = productService.setDiscount(productId, discountRate);
+
+            // If discount was applied (rate > 0), notify wishlist users
+            if (discountRate != null && discountRate > 0 && updatedProduct != null) {
+                sendDiscountNotificationsAsync(productId, updatedProduct.getName(),
+                        originalPrice, updatedProduct.getDiscountedPrice(), discountRate);
+            }
+
+            return ResponseEntity.ok(updatedProduct);
         } catch (IllegalArgumentException e) {
             log.error("Invalid discount rate: {}", e.getMessage());
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -65,6 +80,49 @@ public class SalesManagerController {
             log.error("Failed to set discount for product {}", productId, e);
             return ResponseEntity.internalServerError().body("Failed to set discount");
         }
+    }
+
+    /**
+     * Send discount notification emails to all users who have the product in their
+     * wishlist.
+     * This is done asynchronously to not block the discount response.
+     */
+    private void sendDiscountNotificationsAsync(Long productId, String productName,
+            Double originalPrice, Double discountedPrice, Double discountRate) {
+        // Run in a separate thread to not block the main request
+        new Thread(() -> {
+            try {
+                List<Long> userIds = productService.getUsersWithProductInWishlist(productId);
+                log.info("Found {} users with product {} in wishlist for discount notification",
+                        userIds.size(), productId);
+
+                int successCount = 0;
+                int failCount = 0;
+
+                for (Long userId : userIds) {
+                    try {
+                        com.cs308.gateway.model.auth.response.UserDetails user = authService.getUserById(userId);
+                        if (user != null && user.getEmail() != null) {
+                            invoiceEmailService.sendDiscountNotificationEmail(
+                                    user.getEmail(),
+                                    productName,
+                                    originalPrice,
+                                    discountedPrice,
+                                    discountRate);
+                            successCount++;
+                        }
+                    } catch (Exception e) {
+                        failCount++;
+                        log.error("Failed to send discount notification to user {}", userId, e);
+                    }
+                }
+
+                log.info("Discount notification emails sent for product {}: {} success, {} failed",
+                        productId, successCount, failCount);
+            } catch (Exception e) {
+                log.error("Failed to process discount notifications for product {}", productId, e);
+            }
+        }, "DiscountNotification-" + productId).start();
     }
 
     // Sales Manager can view invoices in date range

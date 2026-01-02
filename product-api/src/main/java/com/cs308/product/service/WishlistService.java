@@ -9,6 +9,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Service
 @RequiredArgsConstructor
 public class WishlistService {
@@ -70,5 +73,17 @@ public class WishlistService {
                     emptyWishlist.setUserId(userId);
                     return emptyWishlist;
                 });
+    }
+
+    /**
+     * Get all user IDs that have a specific product in their wishlist.
+     * Used for sending discount notifications.
+     */
+    @Transactional(readOnly = true)
+    public List<Long> getUserIdsWithProductInWishlist(Long productId) {
+        List<Wishlist> wishlists = wishlistRepository.findByItems_Product_Id(productId);
+        return wishlists.stream()
+                .map(Wishlist::getUserId)
+                .collect(Collectors.toList());
     }
 }

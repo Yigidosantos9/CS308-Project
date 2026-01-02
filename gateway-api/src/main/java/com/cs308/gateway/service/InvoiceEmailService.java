@@ -89,7 +89,8 @@ public class InvoiceEmailService {
                             "Great news! Your refund request for Order #%d has been approved.\n\n" +
                             "Product(s): %s\n" +
                             "Refund Amount: $%.2f\n\n" +
-                            "The refund will be credited to your original payment method within 5-7 business days.\n\n" +
+                            "The refund will be credited to your original payment method within 5-7 business days.\n\n"
+                            +
                             "If you have any questions, please don't hesitate to contact our support team.\n\n" +
                             "Thank you for shopping with RAWCTRL!\n\n" +
                             "Best regards,\n" +
@@ -197,8 +198,10 @@ public class InvoiceEmailService {
                     "Dear Customer,\n\n" +
                             "Your order #%d has been successfully cancelled as requested.\n\n" +
                             "Product(s): %s\n\n" +
-                            "If you paid for this order, a full refund will be processed to your original payment method within 5-7 business days.\n\n" +
-                            "If you have any questions or didn't request this cancellation, please contact our support team immediately.\n\n" +
+                            "If you paid for this order, a full refund will be processed to your original payment method within 5-7 business days.\n\n"
+                            +
+                            "If you have any questions or didn't request this cancellation, please contact our support team immediately.\n\n"
+                            +
                             "We hope to serve you again soon!\n\n" +
                             "Best regards,\n" +
                             "The RAWCTRL Team",
@@ -212,6 +215,51 @@ public class InvoiceEmailService {
         } catch (MessagingException e) {
             log.error("Failed to compose order cancellation email", e);
             // Don't throw - this is optional
+        }
+    }
+
+    /**
+     * Send discount notification email to users who have a product in their
+     * wishlist.
+     * 
+     * @param to              The recipient email address
+     * @param productName     Name of the discounted product
+     * @param originalPrice   Original price before discount
+     * @param discountedPrice New discounted price
+     * @param discountRate    Discount percentage (0-100)
+     */
+    public void sendDiscountNotificationEmail(String to, String productName,
+            Double originalPrice, Double discountedPrice, Double discountRate) {
+        MimeMessage message = mailSender.createMimeMessage();
+
+        try {
+            MimeMessageHelper helper = new MimeMessageHelper(message, true);
+            helper.setTo(to);
+            helper.setSubject("🎉 Price Drop Alert! " + productName + " is now on sale!");
+
+            String body = String.format(
+                    "Dear Customer,\n\n" +
+                            "Great news! An item on your wishlist is now on sale!\n\n" +
+                            "📦 Product: %s\n" +
+                            "💰 Original Price: $%.2f\n" +
+                            "🏷️ Sale Price: $%.2f\n" +
+                            "🔥 You Save: %.0f%%\n\n" +
+                            "Don't miss out on this amazing deal! Visit RAWCTRL now to grab it before it's gone.\n\n" +
+                            "Happy Shopping!\n\n" +
+                            "Best regards,\n" +
+                            "The RAWCTRL Team",
+                    productName != null ? productName : "N/A",
+                    originalPrice != null ? originalPrice : 0.0,
+                    discountedPrice != null ? discountedPrice : 0.0,
+                    discountRate != null ? discountRate : 0.0);
+
+            helper.setText(body, false);
+
+            mailSender.send(message);
+            log.info("Discount notification email sent to {} for product {}", to, productName);
+        } catch (MessagingException e) {
+            log.error("Failed to compose discount notification email for {}", to, e);
+            // Don't throw - discount notification emails are not critical
         }
     }
 }

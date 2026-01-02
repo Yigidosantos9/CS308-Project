@@ -93,6 +93,15 @@ public class ProductService {
         return productClient.getWishlist(userId);
     }
 
+    /**
+     * Get user IDs that have a specific product in their wishlist.
+     * Used for sending discount notifications.
+     */
+    public List<Long> getUsersWithProductInWishlist(Long productId) {
+        log.info("Processing get users with product in wishlist for productId: {}", productId);
+        return productClient.getUsersWithProductInWishlist(productId);
+    }
+
     // ==================== PRODUCT MANAGEMENT METHODS ====================
 
     public Product addProduct(com.cs308.gateway.model.product.CreateProductRequest request) {
