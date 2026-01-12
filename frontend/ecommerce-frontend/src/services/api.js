@@ -680,6 +680,21 @@ export const supportChatService = {
       console.error('Error fetching chat queue:', error);
       throw error;
     }
+  },
+
+  /**
+   * Get customer details for a chat session (for Support Agents)
+   * Returns customer info, orders, and wishlist if customer is logged in
+   * @param {number} chatId - The chat ID
+   */
+  getCustomerDetails: async (chatId) => {
+    try {
+      const response = await api.get(`/support/chat/${chatId}/customer`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching customer details:', error);
+      return null;
+    }
   }
 };
 
