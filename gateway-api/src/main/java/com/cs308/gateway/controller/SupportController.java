@@ -152,7 +152,14 @@ public class SupportController {
         }
 
         Long senderId = securityContext != null ? securityContext.getUserId() : null;
-        SupportSenderType senderType = senderId != null ? SupportSenderType.CUSTOMER : SupportSenderType.GUEST;
+        SupportSenderType senderType;
+        if (securityContext != null && securityContext.getUserType() == UserType.SUPPORT_AGENT) {
+            senderType = SupportSenderType.AGENT;
+        } else if (senderId != null) {
+            senderType = SupportSenderType.CUSTOMER;
+        } else {
+            senderType = SupportSenderType.GUEST;
+        }
         return DataBufferUtils.join(file.content())
                 .map(dataBuffer -> {
                     byte[] bytes = new byte[dataBuffer.readableByteCount()];
@@ -350,6 +357,19 @@ public class SupportController {
             } catch (Exception e) {
                 log.warn("Failed to fetch wishlist for customer {}: {}", customerId, e.getMessage());
                 response.put("wishlistItems", List.of());
+            }
+
+            // Get customer cart from Product API
+            try {
+                var cart = productService.getCart(customerId);
+                if (cart != null && cart.getItems() != null) {
+                    response.put("cartItems", cart.getItems());
+                    response.put("cartTotalPrice", cart.getTotalPrice());
+                    response.put("cartTotalQuantity", cart.getTotalQuantity());
+                }
+            } catch (Exception e) {
+                log.warn("Failed to fetch cart for customer {}: {}", customerId, e.getMessage());
+                response.put("cartItems", List.of());
             }
 
             response.put("customerId", customerId);
