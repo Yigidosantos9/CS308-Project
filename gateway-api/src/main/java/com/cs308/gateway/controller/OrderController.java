@@ -27,7 +27,7 @@ public class OrderController {
 
     // Customers can place orders (must be authenticated)
     @PostMapping
-    @RequiresRole({ UserType.CUSTOMER, UserType.PRODUCT_MANAGER })
+    @RequiresRole({ UserType.CUSTOMER, UserType.PRODUCT_MANAGER, UserType.SALES_MANAGER })
     public ResponseEntity<Order> placeOrder(
             @AuthenticationPrincipal SecurityContext securityContext,
             @RequestBody(required = false) com.cs308.gateway.model.product.CreateOrderRequest request) {
@@ -73,7 +73,12 @@ public class OrderController {
         log.info("BFF: Get invoice request - orderId: {}, userId: {}", orderId, userId);
 
         try {
-            byte[] pdfBytes = orderService.getOrderInvoice(userId, orderId, buyerName, buyerAddress, paymentMethod);
+            byte[] pdfBytes;
+            if (securityContext.getUserType() == UserType.CUSTOMER) {
+                pdfBytes = orderService.getOrderInvoice(userId, orderId, buyerName, buyerAddress, paymentMethod);
+            } else {
+                pdfBytes = orderService.getOrderInvoice(orderId);
+            }
 
             String filename = "invoice-order-" + orderId + ".pdf";
             ContentDisposition contentDisposition = ContentDisposition.attachment()
