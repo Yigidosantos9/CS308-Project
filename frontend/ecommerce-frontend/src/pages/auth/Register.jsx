@@ -312,9 +312,6 @@ const Register = () => {
               >
                 {loading ? 'Signing Up...' : 'Sign Up'}
               </button>
-              <a href="#" className="text-gray-400 text-sm hover:text-black transition-colors">
-                Forgot Password?
-              </a>
             </div>
 
           </form>

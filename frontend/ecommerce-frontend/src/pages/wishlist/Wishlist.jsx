@@ -69,10 +69,8 @@ const Wishlist = () => {
 
             await addToCart(productToAdd, 1);
 
-            // Small delay to ensure cart is updated before navigating
-            setTimeout(() => {
-                navigate('/cart');
-            }, 300);
+            // Show success feedback
+            alert('Added to cart successfully!');
 
         } catch (err) {
             console.error("Error adding to cart:", err);
@@ -196,8 +194,8 @@ const Wishlist = () => {
                                         onClick={() => handleAddToCart(item)}
                                         disabled={item.product.stock === 0 || addingToCart[item.id]}
                                         className={`flex-1 text-xs font-bold py-3 px-3 rounded-md transition-colors flex items-center justify-center gap-2 ${item.product.stock === 0
-                                                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                                : 'bg-black text-white hover:bg-gray-800 disabled:bg-gray-400'
+                                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                            : 'bg-black text-white hover:bg-gray-800 disabled:bg-gray-400'
                                             }`}
                                     >
                                         <ShoppingBag size={14} />
