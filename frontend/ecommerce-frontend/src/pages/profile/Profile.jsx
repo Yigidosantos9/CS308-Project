@@ -544,12 +544,11 @@ const Profile = () => {
     }
   };
 
-  // Check if order can be cancelled (only PROCESSING status per project requirements)
+  // Check if order can be cancelled (PROCESSING or PREPARING status)
   const canCancelOrder = (order) => {
     if (!order) return false;
-    return order.status === 'PROCESSING';
+    return order.status === 'PROCESSING' || order.status === 'PREPARING';
   };
-
   // Check if order is eligible for refund
   const isOrderEligibleForRefund = (order) => {
     if (!order) return false;
