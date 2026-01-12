@@ -40,7 +40,7 @@ public class ProductUpdateRequest {
 
     private String brand;
 
-    private ProductType productType;
+    private String productType;
 
     private TargetAudience targetAudience;
 

@@ -214,16 +214,9 @@ public class ProductService {
                 ? "nameAsc"
                 : filter.getSort();
 
-        // Resolve enums from filter
-        com.cs308.product.domain.enums.ProductType productType = null;
+        String productType = null;
         if (filter.getCategory() != null && !filter.getCategory().isBlank()) {
-            try {
-                productType = com.cs308.product.domain.enums.ProductType
-                        .valueOf(filter.getCategory().toUpperCase(java.util.Locale.ENGLISH));
-            } catch (IllegalArgumentException e) {
-                // Unknown category -> no results
-                return List.of();
-            }
+            productType = filter.getCategory();
         }
 
         com.cs308.product.domain.enums.TargetAudience targetAudience = null;

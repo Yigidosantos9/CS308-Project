@@ -73,9 +73,8 @@ public class Product {
     @Column(length = 100)
     private String brand;
 
-    @Enumerated(EnumType.STRING)
     @Column(name = "product_type", nullable = false, length = 40)
-    private ProductType productType;
+    private String productType;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "target_audience", nullable = false, length = 16)

@@ -132,31 +132,50 @@ public class ProductController {
         }
     }
 
-    // Product Manager only - Upload product image
-    @PostMapping("/images/upload")
-    @RequiresRole({ UserType.PRODUCT_MANAGER })
-    public ResponseEntity<?> uploadImage(@RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
-        log.info("BFF: Image upload request received: {}", file.getOriginalFilename());
+    // ==================== CATEGORY MANAGEMENT ====================
 
+    // Anyone can view categories
+    @GetMapping("/categories")
+    public ResponseEntity<?> getCategories() {
+        log.info("BFF: Get categories request");
         try {
-            String url = productService.uploadImage(
-                    file.getBytes(),
-                    file.getOriginalFilename(),
-                    file.getContentType());
-            if (url != null) {
-                return ResponseEntity.ok(java.util.Map.of("url", url));
-            } else {
-                return ResponseEntity.internalServerError()
-                        .body(java.util.Map.of("error", "Failed to upload image"));
-            }
-        } catch (java.io.IOException e) {
-            log.error("Error reading uploaded file", e);
-            return ResponseEntity.badRequest()
-                    .body(java.util.Map.of("error", "Failed to read file"));
+            java.util.List<?> categories = productService.getCategories();
+            return ResponseEntity.ok(categories);
         } catch (RuntimeException e) {
-            log.error("Error processing image upload request", e);
-            return ResponseEntity.internalServerError()
-                    .body(java.util.Map.of("error", e.getMessage()));
+            log.error("Error fetching categories", e);
+            return ResponseEntity.internalServerError().build();
         }
     }
+
+    // Product Manager only - Add category
+    @PostMapping("/categories")
+    @RequiresRole({ UserType.PRODUCT_MANAGER })
+    public ResponseEntity<?> addCategory(@RequestBody java.util.Map<String, String> request) {
+        String name = request.get("name");
+        log.info("BFF: Add category request - name: {}", name);
+        try {
+            Object result = productService.addCategory(name);
+            return ResponseEntity.ok(result);
+        } catch (RuntimeException e) {
+            log.error("Error adding category", e);
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", e.getMessage()));
+        }
+    }
+
+    // Product Manager only - Delete category
+    @DeleteMapping("/categories/{id}")
+    @RequiresRole({ UserType.PRODUCT_MANAGER })
+    public ResponseEntity<?> deleteCategory(@PathVariable Long id) {
+        log.info("BFF: Delete category request - id: {}", id);
+        try {
+            productService.deleteCategory(id);
+            return ResponseEntity.ok(java.util.Map.of("message", "Category deleted"));
+        } catch (RuntimeException e) {
+            log.error("Error deleting category", e);
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", e.getMessage()));
+        }
+    }
+
+    // Image upload is handled by direct gateway route to product-api
+    // See application.yml: product-images route
 }

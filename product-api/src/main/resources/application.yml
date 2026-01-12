@@ -4,6 +4,10 @@ server:
 spring:
   application:
     name: product-service
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
 
   datasource:
     url: jdbc:postgresql://cs308-postgres.postgres.database.azure.com:5432/postgres?sslmode=require

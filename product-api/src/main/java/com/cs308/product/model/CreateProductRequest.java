@@ -29,7 +29,7 @@ public class CreateProductRequest {
     private String brand;
 
     @NotNull
-    private ProductType productType;
+    private String productType;
 
     @NotNull
     private TargetAudience targetAudience;

@@ -107,6 +107,38 @@ export const productService = {
   },
 };
 
+// Category Service for Product Manager
+export const categoryService = {
+  getCategories: async () => {
+    try {
+      const response = await api.get('/products/categories');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+      throw error;
+    }
+  },
+
+  addCategory: async (name) => {
+    try {
+      const response = await api.post('/products/categories', { name });
+      return response.data;
+    } catch (error) {
+      console.error('Error adding category:', error);
+      throw error;
+    }
+  },
+
+  deleteCategory: async (id) => {
+    try {
+      await api.delete(`/products/categories/${id}`);
+    } catch (error) {
+      console.error('Error deleting category:', error);
+      throw error;
+    }
+  },
+};
+
 export const authService = {
   login: async (email, password, guestUserId) => {
     try {

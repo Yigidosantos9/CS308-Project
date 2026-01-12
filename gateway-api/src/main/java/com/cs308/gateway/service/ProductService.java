@@ -131,4 +131,21 @@ public class ProductService {
         log.info("Processing image upload request: {}", filename);
         return productClient.uploadImage(fileBytes, filename, contentType);
     }
+
+    // ==================== CATEGORY METHODS ====================
+
+    public List<?> getCategories() {
+        log.info("Processing get categories request");
+        return productClient.getCategories();
+    }
+
+    public Object addCategory(String name) {
+        log.info("Processing add category request: {}", name);
+        return productClient.addCategory(name);
+    }
+
+    public void deleteCategory(Long id) {
+        log.info("Processing delete category request: {}", id);
+        productClient.deleteCategory(id);
+    }
 }

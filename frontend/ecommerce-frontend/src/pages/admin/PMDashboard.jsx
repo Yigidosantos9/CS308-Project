@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Package, Truck, CheckCircle, Clock, ChevronDown, FileText, XCircle, RotateCcw, LogOut, Star, MessageSquare, AlertCircle, Plus, Edit, Trash2, Box, FolderPlus } from 'lucide-react';
+import { Package, Truck, CheckCircle, Clock, ChevronDown, FileText, XCircle, RotateCcw, LogOut, Star, MessageSquare, AlertCircle, Plus, Edit, Trash2, Box, FolderPlus, Tag } from 'lucide-react';
 import { useShop } from '../../context/ShopContext';
-import { orderService, reviewService, productService, authService, refundService } from '../../services/api';
+import { orderService, reviewService, productService, authService, refundService, categoryService } from '../../services/api';
 
 const DEFAULT_PRODUCT_TYPES = ['TSHIRT', 'SHIRT', 'SWEATER', 'HOODIE', 'JACKET', 'COAT', 'PANTS', 'JEANS', 'SKIRT', 'DRESS', 'SHORTS', 'UNDERWEAR', 'ACCESSORY', 'SHOES'];
 const TARGET_AUDIENCES = ['MEN', 'WOMEN', 'KIDS'];
@@ -44,7 +44,7 @@ const PMDashboard = () => {
     const [stockEditValue, setStockEditValue] = useState('');
 
     // Category management state
-    const [categories, setCategories] = useState(DEFAULT_PRODUCT_TYPES);
+    const [categories, setCategories] = useState([]);
     const [categoryModalOpen, setCategoryModalOpen] = useState(false);
     const [newCategoryName, setNewCategoryName] = useState('');
 
@@ -68,6 +68,7 @@ const PMDashboard = () => {
         fetchPendingReviews();
         fetchPendingRefunds();
         fetchProducts();
+        fetchCategories();
     }, [user, navigate]);
 
     const fetchOrders = async () => {
@@ -203,6 +204,28 @@ const PMDashboard = () => {
         }
     };
 
+    const fetchCategories = async () => {
+        try {
+            const data = await categoryService.getCategories();
+            if (Array.isArray(data) && data.length > 0) {
+                // Determine if data is strings or objects
+                if (typeof data[0] === 'string') {
+                    // Convert old string categories to objects for compatibility if necessary
+                    // But backend is updated to return objects now.
+                    // Fallback just in case backend revert didn't work or whatever.
+                    setCategories(data.map(name => ({ id: Math.random(), name })));
+                } else {
+                    setCategories(data);
+                }
+            } else {
+                setCategories([]);
+            }
+        } catch (error) {
+            console.error('Failed to fetch categories:', error);
+            // Fallback to defaults if fetch fails? No, better to show empty or error
+        }
+    };
+
     const openAddProductModal = () => {
         setEditingProduct(null);
         setProductFormData({
@@ -300,20 +323,36 @@ const PMDashboard = () => {
     };
 
     // ==================== CATEGORY MANAGEMENT ====================
-    const handleAddCategory = () => {
-        const categoryName = newCategoryName.trim().toUpperCase().replace(/\s+/g, '_');
+    const handleAddCategory = async () => {
+        const categoryName = newCategoryName.trim();
         if (!categoryName) {
             showToast('Please enter a category name', 'error');
             return;
         }
-        if (categories.includes(categoryName)) {
-            showToast('Category already exists', 'error');
-            return;
+
+        try {
+            const newCategory = await categoryService.addCategory(categoryName);
+            setCategories([...categories, newCategory]);
+            setNewCategoryName('');
+            setCategoryModalOpen(false);
+            showToast(`Category "${categoryName}" added successfully!`, 'success');
+        } catch (error) {
+            console.error('Failed to add category:', error);
+            showToast(error.response?.data?.error || 'Failed to add category', 'error');
         }
-        setCategories([...categories, categoryName]);
-        setNewCategoryName('');
-        setCategoryModalOpen(false);
-        showToast(`Category "${categoryName}" added successfully!`, 'success');
+    };
+
+    const handleDeleteCategory = async (categoryId) => {
+        if (!window.confirm('Are you sure you want to delete this category?')) return;
+
+        try {
+            await categoryService.deleteCategory(categoryId);
+            setCategories(categories.filter(c => c.id !== categoryId));
+            showToast('Category deleted successfully', 'success');
+        } catch (error) {
+            console.error('Failed to delete category:', error);
+            showToast('Failed to delete category', 'error');
+        }
     };
 
     const handleStatusUpdate = async (orderId, newStatus) => {
@@ -583,6 +622,16 @@ const PMDashboard = () => {
                     >
                         <Box className="h-4 w-4" />
                         Products ({products.length})
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('categories')}
+                        className={`px-4 py-2 rounded-lg font-medium transition flex items-center gap-2 ${activeTab === 'categories'
+                            ? 'bg-purple-600 text-white'
+                            : 'bg-white text-gray-700 border border-purple-300'
+                            }`}
+                    >
+                        <FolderPlus className="h-4 w-4" />
+                        Categories ({categories.length})
                     </button>
                 </div>
 
@@ -1057,8 +1106,8 @@ const PMDashboard = () => {
                                         onChange={handleProductFormChange}
                                         className="flex-1 border border-gray-300 rounded-lg p-2 text-sm"
                                     >
-                                        {categories.map(type => (
-                                            <option key={type} value={type}>{type.replace('_', ' ')}</option>
+                                        {categories.map(cat => (
+                                            <option key={cat.id} value={cat.name}>{cat.name.replace('_', ' ')}</option>
                                         ))}
                                     </select>
                                     <button
@@ -1306,6 +1355,50 @@ const PMDashboard = () => {
                 </div>
             )}
 
+            {/* Categories Tab Content */}
+            {activeTab === 'categories' && (
+                <div className="space-y-6">
+                    <div className="bg-white rounded-xl shadow-sm border border-purple-200 overflow-hidden">
+                        <div className="p-6 border-b border-purple-100 flex justify-between items-center">
+                            <h3 className="font-bold text-lg text-gray-800">Category Management</h3>
+                            <button
+                                onClick={() => setCategoryModalOpen(true)}
+                                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition flex items-center gap-2"
+                            >
+                                <Plus className="h-4 w-4" />
+                                Add New Category
+                            </button>
+                        </div>
+                        <div className="divide-y divide-gray-100">
+                            {categories.length === 0 ? (
+                                <div className="p-12 text-center text-gray-500">
+                                    <FolderPlus className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                                    <p>No categories found. Start by adding one!</p>
+                                </div>
+                            ) : (
+                                categories.map((cat) => (
+                                    <div key={cat.id} className="p-4 flex items-center justify-between hover:bg-gray-50 transition">
+                                        <div className="flex items-center gap-3">
+                                            <div className="h-10 w-10 rounded-lg bg-purple-100 flex items-center justify-center text-purple-600">
+                                                <Tag className="h-5 w-5" />
+                                            </div>
+                                            <span className="font-medium text-gray-700">{cat.name.replace('_', ' ')}</span>
+                                        </div>
+                                        <button
+                                            onClick={() => handleDeleteCategory(cat.id)}
+                                            className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition"
+                                            title="Delete Category"
+                                        >
+                                            <Trash2 className="h-5 w-5" />
+                                        </button>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Add Category Modal */}
             {categoryModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
@@ -1337,8 +1430,8 @@ const PMDashboard = () => {
                             <div className="max-h-32 overflow-y-auto border border-gray-200 rounded-lg p-2">
                                 <div className="flex flex-wrap gap-1">
                                     {categories.map(cat => (
-                                        <span key={cat} className="px-2 py-1 bg-gray-100 rounded text-xs">
-                                            {cat.replace('_', ' ')}
+                                        <span key={cat.id} className="px-2 py-1 bg-gray-100 rounded text-xs">
+                                            {cat.name.replace('_', ' ')}
                                         </span>
                                     ))}
                                 </div>

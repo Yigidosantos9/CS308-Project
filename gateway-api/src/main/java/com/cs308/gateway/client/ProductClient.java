@@ -594,4 +594,54 @@ public class ProductClient {
             throw new RuntimeException("Failed to upload image", e);
         }
     }
+
+    // ==================== CATEGORY METHODS ====================
+
+    public List<?> getCategories() {
+        log.debug("Calling product service: GET /categories");
+
+        try {
+            ResponseEntity<List> response = restTemplate.exchange(
+                    "/categories",
+                    HttpMethod.GET,
+                    null,
+                    List.class);
+            return response.getBody();
+        } catch (RestClientException e) {
+            log.error("Error calling product service to get categories", e);
+            throw new RuntimeException("Failed to get categories", e);
+        }
+    }
+
+    public Object addCategory(String name) {
+        log.debug("Calling product service: POST /categories with name: {}", name);
+
+        try {
+            java.util.Map<String, String> request = java.util.Map.of("name", name);
+            ResponseEntity<Object> response = restTemplate.postForEntity(
+                    "/categories",
+                    request,
+                    Object.class);
+            return response.getBody();
+        } catch (RestClientException e) {
+            log.error("Error calling product service to add category", e);
+            throw new RuntimeException("Failed to add category: " + e.getMessage(), e);
+        }
+    }
+
+    public void deleteCategory(Long id) {
+        log.debug("Calling product service: DELETE /categories/{}", id);
+
+        try {
+            restTemplate.exchange(
+                    "/categories/{id}",
+                    HttpMethod.DELETE,
+                    null,
+                    Void.class,
+                    id);
+        } catch (RestClientException e) {
+            log.error("Error calling product service to delete category", e);
+            throw new RuntimeException("Failed to delete category", e);
+        }
+    }
 }

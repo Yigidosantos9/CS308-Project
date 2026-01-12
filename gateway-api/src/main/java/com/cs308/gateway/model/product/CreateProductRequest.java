@@ -48,7 +48,7 @@ public class CreateProductRequest {
     private String brand;
 
     @NotNull(message = "Product type is required")
-    private ProductType productType;
+    private String productType;
 
     @NotNull(message = "Target audience is required")
     private TargetAudience targetAudience;

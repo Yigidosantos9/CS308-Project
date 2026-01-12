@@ -1,11 +1,18 @@
 server:
   port: ${GATEWAY_PORT:8080}
+  max-http-request-header-size: 10MB
 
 spring:
   application:
     name: gateway-api
   main:
     web-application-type: reactive
+  codec:
+    max-in-memory-size: 50MB
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
   mail:
     # Mailtrap Configuration (Default)
     # host: sandbox.smtp.mailtrap.io
@@ -40,6 +47,22 @@ spring:
             - Path=/api/membership/**
           filters:
             - StripPrefix=1
+
+        # Direct route for image uploads - bypasses BFF to handle multipart correctly
+        - id: product-images
+          uri: ${PRODUCT_SERVICE_URI:http://localhost:9001}
+          predicates:
+            - Path=/api/products/images/**
+          filters:
+            - StripPrefix=2
+
+        # Direct route for categories
+        - id: product-categories
+          uri: ${PRODUCT_SERVICE_URI:http://localhost:9001}
+          predicates:
+            - Path=/api/products/categories, /api/products/categories/**
+          filters:
+            - StripPrefix=2
 
         - id: product-service
           uri: ${PRODUCT_SERVICE_URI:http://localhost:9001}

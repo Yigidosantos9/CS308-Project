@@ -23,7 +23,7 @@ public class ProductUpdateRequest {
     private String serialNumber;
     private String description;
     private String brand;
-    private ProductType productType;
+    private String productType;
     private TargetAudience targetAudience;
     private WarrantyStatus warrantyStatus;
     private String distributorInfo;
