@@ -43,6 +43,10 @@ const PMDashboard = () => {
     const [stockEditId, setStockEditId] = useState(null);
     const [stockEditValue, setStockEditValue] = useState('');
 
+    // Delete validation state
+    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+    const [productToDelete, setProductToDelete] = useState(null);
+
     // Category management state
     const [categories, setCategories] = useState([]);
     const [categoryModalOpen, setCategoryModalOpen] = useState(false);
@@ -292,11 +296,19 @@ const PMDashboard = () => {
         }
     };
 
-    const handleDeleteProduct = async (productId) => {
-        if (!window.confirm('Are you sure you want to delete this product?')) return;
+    const handleDeleteProduct = (productId) => {
+        const product = products.find(p => p.id === productId);
+        setProductToDelete(product);
+        setDeleteModalOpen(true);
+    };
+
+    const confirmDeleteProduct = async () => {
+        if (!productToDelete) return;
         try {
-            await productService.deleteProduct(productId);
+            await productService.deleteProduct(productToDelete.id);
             showToast('Product deleted successfully!', 'success');
+            setDeleteModalOpen(false);
+            setProductToDelete(null);
             fetchProducts();
         } catch (error) {
             console.error('Failed to delete product:', error);
@@ -1394,6 +1406,38 @@ const PMDashboard = () => {
                                     </div>
                                 ))
                             )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Delete Confirmation Modal */}
+            {deleteModalOpen && productToDelete && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden transform transition-all scale-100 p-6">
+                        <div className="flex flex-col items-center text-center">
+                            <div className="h-12 w-12 rounded-full bg-red-100 flex items-center justify-center mb-4">
+                                <AlertCircle className="h-6 w-6 text-red-600" />
+                            </div>
+                            <h3 className="text-lg font-bold text-gray-900 mb-2">Delete Product?</h3>
+                            <p className="text-sm text-gray-500 mb-6">
+                                Are you sure you want to delete <span className="font-semibold text-gray-800">"{productToDelete.name}"</span>?
+                                This action cannot be undone.
+                            </p>
+                            <div className="flex gap-3 w-full">
+                                <button
+                                    onClick={() => setDeleteModalOpen(false)}
+                                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={confirmDeleteProduct}
+                                    className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition"
+                                >
+                                    Delete
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
