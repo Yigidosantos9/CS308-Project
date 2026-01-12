@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Package, Truck, CheckCircle, Clock, ChevronDown, FileText, XCircle, RotateCcw, LogOut, Star, MessageSquare, AlertCircle, Plus, Edit, Trash2, Box, FolderPlus, Tag } from 'lucide-react';
+import { Package, Truck, CheckCircle, Clock, ChevronDown, XCircle, LogOut, Star, MessageSquare, Plus, Edit, Trash2, Box, FolderPlus, Tag, AlertCircle } from 'lucide-react';
 import { useShop } from '../../context/ShopContext';
-import { orderService, reviewService, productService, authService, refundService, categoryService } from '../../services/api';
+import { orderService, reviewService, productService, authService, categoryService } from '../../services/api';
 
-const DEFAULT_PRODUCT_TYPES = ['TSHIRT', 'SHIRT', 'SWEATER', 'HOODIE', 'JACKET', 'COAT', 'PANTS', 'JEANS', 'SKIRT', 'DRESS', 'SHORTS', 'UNDERWEAR', 'ACCESSORY', 'SHOES'];
 const TARGET_AUDIENCES = ['MEN', 'WOMEN', 'KIDS'];
 const WARRANTY_STATUSES = ['NONE', 'LIMITED', 'STANDARD', 'EXTENDED'];
 const SEASONS = ['SPRING', 'SUMMER', 'FALL', 'WINTER', 'ALL_SEASON'];
@@ -17,18 +16,11 @@ const PMDashboard = () => {
     const { user, logout } = useShop();
     const [orders, setOrders] = useState([]);
     const [pendingReviews, setPendingReviews] = useState([]);
-    const [pendingRefunds, setPendingRefunds] = useState([]);
     const [loading, setLoading] = useState(true);
     const [expandedOrderId, setExpandedOrderId] = useState(null);
     const [activeTab, setActiveTab] = useState('orders');
     const [productNames, setProductNames] = useState({});
     const [userNames, setUserNames] = useState({});
-
-    // Refund rejection modal state
-    const [rejectModalOpen, setRejectModalOpen] = useState(false);
-    const [selectedRefundOrder, setSelectedRefundOrder] = useState(null);
-    const [rejectionReason, setRejectionReason] = useState('');
-    const [processingRefund, setProcessingRefund] = useState(false);
 
     // Product management state
     const [products, setProducts] = useState([]);
@@ -63,14 +55,13 @@ const PMDashboard = () => {
     };
 
     useEffect(() => {
-        // Check if user is product manager OR sales manager
-        if (!user || (user.userType !== 'PRODUCT_MANAGER' && user.userType !== 'SALES_MANAGER')) {
+        // Check if user is product manager
+        if (!user || user.userType !== 'PRODUCT_MANAGER') {
             navigate('/');
             return;
         }
         fetchOrders();
         fetchPendingReviews();
-        fetchPendingRefunds();
         fetchProducts();
         fetchCategories();
     }, [user, navigate]);
@@ -154,50 +145,6 @@ const PMDashboard = () => {
         }
     };
 
-    const fetchPendingRefunds = async () => {
-        try {
-            const data = await refundService.getPendingRefundRequests();
-            setPendingRefunds(data || []);
-
-            // Fetch user names for refund requests
-            const userIds = [...new Set((data || []).map(r => r.userId).filter(Boolean))];
-            const userData = {};
-            for (const uid of userIds) {
-                if (!userNames[uid]) {
-                    try {
-                        const fetchedUser = await authService.getUserById(uid);
-                        const fullName = [fetchedUser?.firstName, fetchedUser?.lastName].filter(Boolean).join(' ').trim();
-                        userData[uid] = fullName || fetchedUser?.email || `Customer #${uid}`;
-                    } catch {
-                        userData[uid] = `Customer #${uid}`;
-                    }
-                }
-            }
-            setUserNames(prev => ({ ...prev, ...userData }));
-
-            // Fetch product names for refund items
-            const allProductIds = [...new Set(
-                (data || []).flatMap(order =>
-                    (order.items || []).map(item => item.productId)
-                ).filter(Boolean)
-            )];
-            const productData = {};
-            for (const id of allProductIds) {
-                if (!productNames[id]) {
-                    try {
-                        const product = await productService.getProductById(id);
-                        productData[id] = product?.name || `Product #${id}`;
-                    } catch {
-                        productData[id] = `Product #${id}`;
-                    }
-                }
-            }
-            setProductNames(prev => ({ ...prev, ...productData }));
-        } catch (error) {
-            console.error('Failed to fetch pending refunds:', error);
-        }
-    };
-
     // ==================== PRODUCT MANAGEMENT ====================
     const fetchProducts = async () => {
         try {
@@ -212,11 +159,7 @@ const PMDashboard = () => {
         try {
             const data = await categoryService.getCategories();
             if (Array.isArray(data) && data.length > 0) {
-                // Determine if data is strings or objects
                 if (typeof data[0] === 'string') {
-                    // Convert old string categories to objects for compatibility if necessary
-                    // But backend is updated to return objects now.
-                    // Fallback just in case backend revert didn't work or whatever.
                     setCategories(data.map(name => ({ id: Math.random(), name })));
                 } else {
                     setCategories(data);
@@ -226,7 +169,6 @@ const PMDashboard = () => {
             }
         } catch (error) {
             console.error('Failed to fetch categories:', error);
-            // Fallback to defaults if fetch fails? No, better to show empty or error
         }
     };
 
@@ -400,50 +342,6 @@ const PMDashboard = () => {
         }
     };
 
-    // ==================== REFUND HANDLERS ====================
-    const handleApproveRefund = async (orderId) => {
-        if (processingRefund) return;
-
-        setProcessingRefund(true);
-        try {
-            await refundService.approveRefund(orderId);
-            fetchPendingRefunds();
-            fetchOrders();
-            showToast('Refund approved! Stock restored and customer notified.', 'success');
-        } catch (error) {
-            console.error('Failed to approve refund:', error);
-            showToast('Failed to approve refund: ' + (error.response?.data?.message || error.message), 'error');
-        } finally {
-            setProcessingRefund(false);
-        }
-    };
-
-    const openRejectModal = (order) => {
-        setSelectedRefundOrder(order);
-        setRejectionReason('');
-        setRejectModalOpen(true);
-    };
-
-    const handleRejectRefund = async () => {
-        if (!selectedRefundOrder || processingRefund) return;
-
-        setProcessingRefund(true);
-        try {
-            await refundService.rejectRefund(selectedRefundOrder.id, rejectionReason || null);
-            setRejectModalOpen(false);
-            setSelectedRefundOrder(null);
-            setRejectionReason('');
-            fetchPendingRefunds();
-            fetchOrders();
-            showToast('Refund request rejected. Customer notified.', 'success');
-        } catch (error) {
-            console.error('Failed to reject refund:', error);
-            showToast('Failed to reject refund: ' + (error.response?.data?.message || error.message), 'error');
-        } finally {
-            setProcessingRefund(false);
-        }
-    };
-
     const getStatusIcon = (status) => {
         switch (status) {
             case 'PREPARING':
@@ -454,8 +352,6 @@ const PMDashboard = () => {
                 return <CheckCircle className="h-4 w-4" />;
             case 'CANCELLED':
                 return <XCircle className="h-4 w-4" />;
-            case 'REFUNDED':
-                return <RotateCcw className="h-4 w-4" />;
             default:
                 return <Package className="h-4 w-4" />;
         }
@@ -513,8 +409,8 @@ const PMDashboard = () => {
                 {/* Header */}
                 <div className="mb-8 flex items-center justify-between">
                     <div>
-                        <h1 className="text-3xl font-bold text-gray-900">Manager Dashboard</h1>
-                        <p className="text-gray-600 mt-2">Manage orders, reviews, and refund requests</p>
+                        <h1 className="text-3xl font-bold text-gray-900">Product Manager Dashboard</h1>
+                        <p className="text-gray-600 mt-2">Manage orders, reviews, and products</p>
                     </div>
                     <button
                         onClick={() => {
@@ -529,7 +425,7 @@ const PMDashboard = () => {
                 </div>
 
                 {/* Stats */}
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
                     <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-200">
                         <div className="flex items-center justify-between">
                             <div>
@@ -572,17 +468,6 @@ const PMDashboard = () => {
                             <CheckCircle className="h-8 w-8 text-green-400" />
                         </div>
                     </div>
-                    <div className="bg-white rounded-xl p-5 shadow-sm border border-orange-200 border-2">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm text-gray-500">Pending Refunds</p>
-                                <p className="text-2xl font-bold text-orange-600">
-                                    {pendingRefunds.length}
-                                </p>
-                            </div>
-                            <AlertCircle className="h-8 w-8 text-orange-400" />
-                        </div>
-                    </div>
                 </div>
 
                 {/* Tabs */}
@@ -604,16 +489,6 @@ const PMDashboard = () => {
                             }`}
                     >
                         Pending Delivery
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('refunds')}
-                        className={`px-4 py-2 rounded-lg font-medium transition flex items-center gap-2 ${activeTab === 'refunds'
-                            ? 'bg-orange-600 text-white'
-                            : 'bg-white text-gray-700 border border-orange-300'
-                            }`}
-                    >
-                        <RotateCcw className="h-4 w-4" />
-                        Pending Refunds ({pendingRefunds.length})
                     </button>
                     <button
                         onClick={() => setActiveTab('reviews')}
@@ -647,91 +522,7 @@ const PMDashboard = () => {
                     </button>
                 </div>
 
-                {/* Pending Refunds List */}
-                {activeTab === 'refunds' && (
-                    <div className="space-y-4">
-                        {pendingRefunds.length === 0 ? (
-                            <div className="bg-white rounded-xl p-12 text-center shadow-sm border border-gray-200">
-                                <RotateCcw className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                                <p className="text-gray-600">No pending refund requests</p>
-                            </div>
-                        ) : (
-                            pendingRefunds.map(order => (
-                                <div
-                                    key={order.id}
-                                    className="bg-white rounded-xl shadow-sm border border-orange-200 overflow-hidden"
-                                >
-                                    <div className="p-5 bg-orange-50">
-                                        <div className="flex items-start justify-between">
-                                            <div className="flex-1">
-                                                <div className="flex items-center gap-3 mb-2">
-                                                    <span className="font-bold text-lg">Order #{order.id}</span>
-                                                    <span className="text-sm text-gray-500">
-                                                        by {userNames[order.userId] || `Customer #${order.userId}`}
-                                                    </span>
-                                                    <span className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium bg-orange-100 text-orange-800">
-                                                        <Clock className="h-3 w-3" />
-                                                        Refund Pending
-                                                    </span>
-                                                </div>
-
-                                                <div className="text-sm text-gray-600 mb-3">
-                                                    <p><span className="font-medium">Order Date:</span> {new Date(order.orderDate).toLocaleDateString()}</p>
-                                                    <p><span className="font-medium">Total Amount:</span> ${order.totalPrice?.toFixed(2)}</p>
-                                                    {order.refundRequestedAt && (
-                                                        <p><span className="font-medium">Refund Requested:</span> {new Date(order.refundRequestedAt).toLocaleDateString()}</p>
-                                                    )}
-                                                </div>
-
-                                                {/* Refund Reason */}
-                                                {order.refundReason && (
-                                                    <div className="bg-white rounded-lg p-3 border border-orange-200 mb-3">
-                                                        <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Customer's Reason for Refund:</p>
-                                                        <p className="text-gray-700">{order.refundReason}</p>
-                                                    </div>
-                                                )}
-
-                                                {/* Order Items */}
-                                                <div className="bg-white rounded-lg p-3 border border-gray-200">
-                                                    <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Order Items:</p>
-                                                    <div className="space-y-2">
-                                                        {order.items?.map((item, index) => (
-                                                            <div key={index} className="flex justify-between text-sm">
-                                                                <span>{productNames[item.productId] || `Product #${item.productId}`} x{item.quantity}</span>
-                                                                <span className="font-medium">${item.price?.toFixed(2)}</span>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div className="flex gap-2 ml-4">
-                                                <button
-                                                    onClick={() => handleApproveRefund(order.id)}
-                                                    disabled={processingRefund}
-                                                    className="px-4 py-2 bg-green-500 text-white text-sm rounded-lg hover:bg-green-600 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                                                >
-                                                    <CheckCircle className="h-4 w-4" />
-                                                    Approve Refund
-                                                </button>
-                                                <button
-                                                    onClick={() => openRejectModal(order)}
-                                                    disabled={processingRefund}
-                                                    className="px-4 py-2 bg-red-500 text-white text-sm rounded-lg hover:bg-red-600 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                                                >
-                                                    <XCircle className="h-4 w-4" />
-                                                    Reject
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))
-                        )}
-                    </div>
-                )}
-
-                {/* Orders List - Only show when not in reviews or refunds tab */}
+                {/* Orders List */}
                 {(activeTab === 'orders' || activeTab === 'pending') && (
                     <div className="space-y-4">
                         {orders
@@ -766,12 +557,6 @@ const PMDashboard = () => {
                                                     {getStatusIcon(order.status)}
                                                     {order.status}
                                                 </span>
-                                                {order.refundStatus === 'PENDING' && (
-                                                    <span className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium bg-orange-100 text-orange-800">
-                                                        <AlertCircle className="h-3 w-3" />
-                                                        Refund Pending
-                                                    </span>
-                                                )}
                                             </div>
                                         </div>
                                     </div>
@@ -1028,6 +813,50 @@ const PMDashboard = () => {
                                 </table>
                             </div>
                         )}
+                    </div>
+                )}
+
+                {/* Categories Tab Content */}
+                {activeTab === 'categories' && (
+                    <div className="space-y-6">
+                        <div className="bg-white rounded-xl shadow-sm border border-purple-200 overflow-hidden">
+                            <div className="p-6 border-b border-purple-100 flex justify-between items-center">
+                                <h3 className="font-bold text-lg text-gray-800">Category Management</h3>
+                                <button
+                                    onClick={() => setCategoryModalOpen(true)}
+                                    className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition flex items-center gap-2"
+                                >
+                                    <Plus className="h-4 w-4" />
+                                    Add New Category
+                                </button>
+                            </div>
+                            <div className="divide-y divide-gray-100">
+                                {categories.length === 0 ? (
+                                    <div className="p-12 text-center text-gray-500">
+                                        <FolderPlus className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                                        <p>No categories found. Start by adding one!</p>
+                                    </div>
+                                ) : (
+                                    categories.map((cat) => (
+                                        <div key={cat.id} className="p-4 flex items-center justify-between hover:bg-gray-50 transition">
+                                            <div className="flex items-center gap-3">
+                                                <div className="h-10 w-10 rounded-lg bg-purple-100 flex items-center justify-center text-purple-600">
+                                                    <Tag className="h-5 w-5" />
+                                                </div>
+                                                <span className="font-medium text-gray-700">{cat.name.replace('_', ' ')}</span>
+                                            </div>
+                                            <button
+                                                onClick={() => handleDeleteCategory(cat.id)}
+                                                className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition"
+                                                title="Delete Category"
+                                            >
+                                                <Trash2 className="h-5 w-5" />
+                                            </button>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </div>
                     </div>
                 )}
             </div>
@@ -1313,99 +1142,6 @@ const PMDashboard = () => {
                             >
                                 Cancel
                             </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-            {rejectModalOpen && selectedRefundOrder && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl">
-                        <h3 className="text-xl font-bold mb-4">Reject Refund Request</h3>
-                        <p className="text-gray-600 mb-4">
-                            You are about to reject the refund request for Order #{selectedRefundOrder.id}.
-                            You may optionally provide a reason that will be sent to the customer.
-                        </p>
-
-                        <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Rejection Reason (optional)
-                            </label>
-                            <textarea
-                                value={rejectionReason}
-                                onChange={(e) => setRejectionReason(e.target.value)}
-                                placeholder="E.g., Item was used, Outside of refund window, etc."
-                                className="w-full border border-gray-300 rounded-lg p-3 text-sm resize-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                                rows={4}
-                                maxLength={1000}
-                            />
-                            <p className="text-xs text-gray-500 mt-1">
-                                {rejectionReason.length}/1000 characters
-                            </p>
-                        </div>
-
-                        <div className="flex gap-3">
-                            <button
-                                onClick={handleRejectRefund}
-                                disabled={processingRefund}
-                                className="flex-1 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                {processingRefund ? 'Processing...' : 'Confirm Rejection'}
-                            </button>
-                            <button
-                                onClick={() => {
-                                    setRejectModalOpen(false);
-                                    setSelectedRefundOrder(null);
-                                    setRejectionReason('');
-                                }}
-                                disabled={processingRefund}
-                                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition disabled:opacity-50"
-                            >
-                                Cancel
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Categories Tab Content */}
-            {activeTab === 'categories' && (
-                <div className="space-y-6">
-                    <div className="bg-white rounded-xl shadow-sm border border-purple-200 overflow-hidden">
-                        <div className="p-6 border-b border-purple-100 flex justify-between items-center">
-                            <h3 className="font-bold text-lg text-gray-800">Category Management</h3>
-                            <button
-                                onClick={() => setCategoryModalOpen(true)}
-                                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition flex items-center gap-2"
-                            >
-                                <Plus className="h-4 w-4" />
-                                Add New Category
-                            </button>
-                        </div>
-                        <div className="divide-y divide-gray-100">
-                            {categories.length === 0 ? (
-                                <div className="p-12 text-center text-gray-500">
-                                    <FolderPlus className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                                    <p>No categories found. Start by adding one!</p>
-                                </div>
-                            ) : (
-                                categories.map((cat) => (
-                                    <div key={cat.id} className="p-4 flex items-center justify-between hover:bg-gray-50 transition">
-                                        <div className="flex items-center gap-3">
-                                            <div className="h-10 w-10 rounded-lg bg-purple-100 flex items-center justify-center text-purple-600">
-                                                <Tag className="h-5 w-5" />
-                                            </div>
-                                            <span className="font-medium text-gray-700">{cat.name.replace('_', ' ')}</span>
-                                        </div>
-                                        <button
-                                            onClick={() => handleDeleteCategory(cat.id)}
-                                            className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition"
-                                            title="Delete Category"
-                                        >
-                                            <Trash2 className="h-5 w-5" />
-                                        </button>
-                                    </div>
-                                ))
-                            )}
                         </div>
                     </div>
                 </div>

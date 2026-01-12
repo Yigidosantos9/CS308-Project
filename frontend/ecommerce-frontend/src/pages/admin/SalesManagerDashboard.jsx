@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileText, Download, Calendar, Search, LogOut, DollarSign, TrendingUp, RefreshCw, Tag, Percent, BarChart3 } from 'lucide-react';
+import { FileText, Download, Calendar, Search, LogOut, DollarSign, TrendingUp, RefreshCw, Tag, Percent, BarChart3, RotateCcw, CheckCircle, XCircle, Clock, AlertCircle, Package } from 'lucide-react';
 import { useShop } from '../../context/ShopContext';
-import { salesManagerService } from '../../services/api';
+import { salesManagerService, refundService, productService, authService } from '../../services/api';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const SalesManagerDashboard = () => {
@@ -40,6 +40,25 @@ const SalesManagerDashboard = () => {
     // Revenue chart state
     const [revenueStats, setRevenueStats] = useState(null);
     const [revenueLoading, setRevenueLoading] = useState(false);
+
+    // ==================== REFUND MANAGEMENT STATE ====================
+    const [pendingRefunds, setPendingRefunds] = useState([]);
+    const [refundsLoading, setRefundsLoading] = useState(false);
+    const [processingRefund, setProcessingRefund] = useState(false);
+    const [rejectModalOpen, setRejectModalOpen] = useState(false);
+    const [selectedRefundOrder, setSelectedRefundOrder] = useState(null);
+    const [rejectionReason, setRejectionReason] = useState('');
+    const [productNames, setProductNames] = useState({});
+    const [userNames, setUserNames] = useState({});
+
+    // Toast notification state
+    const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+
+    const showToast = (message, type = 'success') => {
+        setToast({ show: true, message, type });
+        const timeout = type === 'error' ? 8000 : 4000;
+        setTimeout(() => setToast({ show: false, message: '', type: 'success' }), timeout);
+    };
 
     // Check authorization
     useEffect(() => {
@@ -118,6 +137,114 @@ const SalesManagerDashboard = () => {
             fetchRevenueStats();
         }
     }, [activeTab, fetchRevenueStats]);
+
+    // ==================== REFUND MANAGEMENT ====================
+    const fetchPendingRefunds = useCallback(async () => {
+        setRefundsLoading(true);
+        try {
+            const data = await refundService.getPendingRefundRequests();
+            setPendingRefunds(data || []);
+
+            // Fetch user names for refund requests
+            const userIds = [...new Set((data || []).map(r => r.userId).filter(Boolean))];
+            const userData = {};
+            for (const uid of userIds) {
+                if (!userNames[uid]) {
+                    try {
+                        const fetchedUser = await authService.getUserById(uid);
+                        const fullName = [fetchedUser?.firstName, fetchedUser?.lastName].filter(Boolean).join(' ').trim();
+                        userData[uid] = fullName || fetchedUser?.email || `Customer #${uid}`;
+                    } catch {
+                        userData[uid] = `Customer #${uid}`;
+                    }
+                }
+            }
+            setUserNames(prev => ({ ...prev, ...userData }));
+
+            // Fetch product names for refund items
+            const allProductIds = [...new Set(
+                (data || []).flatMap(order =>
+                    (order.items || []).map(item => item.productId)
+                ).filter(Boolean)
+            )];
+            const productData = {};
+            for (const id of allProductIds) {
+                if (!productNames[id]) {
+                    try {
+                        const product = await productService.getProductById(id);
+                        productData[id] = product?.name || `Product #${id}`;
+                    } catch {
+                        productData[id] = `Product #${id}`;
+                    }
+                }
+            }
+            setProductNames(prev => ({ ...prev, ...productData }));
+        } catch (error) {
+            console.error('Failed to fetch pending refunds:', error);
+        } finally {
+            setRefundsLoading(false);
+        }
+    }, [userNames, productNames]);
+
+    useEffect(() => {
+        if (activeTab === 'refunds') {
+            fetchPendingRefunds();
+        }
+    }, [activeTab]);
+
+    // Also fetch refund count on initial load for the badge
+    useEffect(() => {
+        const fetchRefundCount = async () => {
+            try {
+                const data = await refundService.getPendingRefundRequests();
+                setPendingRefunds(data || []);
+            } catch (error) {
+                console.error('Failed to fetch pending refunds:', error);
+            }
+        };
+        fetchRefundCount();
+    }, []);
+
+    const handleApproveRefund = async (orderId) => {
+        if (processingRefund) return;
+
+        setProcessingRefund(true);
+        try {
+            await refundService.approveRefund(orderId);
+            fetchPendingRefunds();
+            showToast('Refund approved! Stock restored and customer notified.', 'success');
+        } catch (error) {
+            console.error('Failed to approve refund:', error);
+            showToast('Failed to approve refund: ' + (error.response?.data?.message || error.message), 'error');
+        } finally {
+            setProcessingRefund(false);
+        }
+    };
+
+    const openRejectModal = (order) => {
+        setSelectedRefundOrder(order);
+        setRejectionReason('');
+        setRejectModalOpen(true);
+    };
+
+    const handleRejectRefund = async () => {
+        if (!selectedRefundOrder || processingRefund) return;
+
+        setProcessingRefund(true);
+        try {
+            await refundService.rejectRefund(selectedRefundOrder.id, rejectionReason || null);
+            setRejectModalOpen(false);
+            setSelectedRefundOrder(null);
+            setRejectionReason('');
+            fetchPendingRefunds();
+            showToast('Refund request rejected. Customer notified.', 'success');
+        } catch (error) {
+            console.error('Failed to reject refund:', error);
+            showToast('Failed to reject refund: ' + (error.response?.data?.message || error.message), 'error');
+        } finally {
+            setProcessingRefund(false);
+        }
+    };
 
     // Handle discount rate change
     const handleDiscountRateChange = (productId, value) => {
@@ -227,6 +354,27 @@ const SalesManagerDashboard = () => {
 
     return (
         <div className="min-h-screen bg-gray-50">
+            {/* Toast Notification */}
+            {toast.show && (
+                <div className={`fixed top-4 right-4 z-50 px-6 py-4 rounded-xl shadow-lg flex items-center gap-3 transform transition-all duration-300 ${toast.type === 'success'
+                    ? 'bg-green-600 text-white'
+                    : 'bg-red-600 text-white'
+                    }`}>
+                    {toast.type === 'success' ? (
+                        <CheckCircle className="h-5 w-5" />
+                    ) : (
+                        <XCircle className="h-5 w-5" />
+                    )}
+                    <span className="font-medium">{toast.message}</span>
+                    <button
+                        onClick={() => setToast({ show: false, message: '', type: 'success' })}
+                        className="ml-2 hover:opacity-75"
+                    >
+                        ×
+                    </button>
+                </div>
+            )}
+
             {/* Header */}
             <header className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg">
                 <div className="max-w-7xl mx-auto px-4 py-6">
@@ -248,7 +396,7 @@ const SalesManagerDashboard = () => {
 
             {/* Tab Navigation */}
             <div className="max-w-7xl mx-auto px-4 mt-6">
-                <div className="flex gap-2 border-b border-gray-200">
+                <div className="flex gap-2 border-b border-gray-200 flex-wrap">
                     <button
                         onClick={() => setActiveTab('invoices')}
                         className={`px-6 py-3 font-medium transition-colors ${activeTab === 'invoices'
@@ -259,6 +407,23 @@ const SalesManagerDashboard = () => {
                         <div className="flex items-center gap-2">
                             <FileText size={18} />
                             Invoices
+                        </div>
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('refunds')}
+                        className={`px-6 py-3 font-medium transition-colors ${activeTab === 'refunds'
+                            ? 'text-orange-600 border-b-2 border-orange-600'
+                            : 'text-gray-500 hover:text-gray-700'
+                            }`}
+                    >
+                        <div className="flex items-center gap-2">
+                            <RotateCcw size={18} />
+                            Pending Refunds
+                            {pendingRefunds.length > 0 && (
+                                <span className="px-2 py-0.5 bg-orange-500 text-white text-xs rounded-full">
+                                    {pendingRefunds.length}
+                                </span>
+                            )}
                         </div>
                     </button>
                     <button
@@ -289,6 +454,112 @@ const SalesManagerDashboard = () => {
             </div>
 
             <main className="max-w-7xl mx-auto px-4 py-8">
+                {/* ==================== REFUNDS TAB ==================== */}
+                {activeTab === 'refunds' && (
+                    <>
+                        {/* Refund Stats Card */}
+                        <div className="bg-white rounded-xl shadow-sm p-6 mb-6 border border-orange-200">
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 bg-orange-100 rounded-lg">
+                                    <AlertCircle className="text-orange-600" size={24} />
+                                </div>
+                                <div>
+                                    <p className="text-sm text-gray-500">Pending Refund Requests</p>
+                                    <p className="text-2xl font-bold text-orange-600">{pendingRefunds.length}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Pending Refunds List */}
+                        <div className="space-y-4">
+                            {refundsLoading ? (
+                                <div className="p-12 text-center bg-white rounded-xl">
+                                    <RefreshCw size={32} className="animate-spin mx-auto text-orange-500 mb-4" />
+                                    <p className="text-gray-500">Loading refund requests...</p>
+                                </div>
+                            ) : pendingRefunds.length === 0 ? (
+                                <div className="bg-white rounded-xl p-12 text-center shadow-sm border border-gray-200">
+                                    <RotateCcw className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                                    <p className="text-gray-600">No pending refund requests</p>
+                                    <p className="text-sm text-gray-400 mt-2">All refund requests have been processed</p>
+                                </div>
+                            ) : (
+                                pendingRefunds.map(order => (
+                                    <div
+                                        key={order.id}
+                                        className="bg-white rounded-xl shadow-sm border border-orange-200 overflow-hidden"
+                                    >
+                                        <div className="p-5 bg-orange-50">
+                                            <div className="flex items-start justify-between">
+                                                <div className="flex-1">
+                                                    <div className="flex items-center gap-3 mb-2">
+                                                        <span className="font-bold text-lg">Order #{order.id}</span>
+                                                        <span className="text-sm text-gray-500">
+                                                            by {userNames[order.userId] || `Customer #${order.userId}`}
+                                                        </span>
+                                                        <span className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium bg-orange-100 text-orange-800">
+                                                            <Clock className="h-3 w-3" />
+                                                            Refund Pending
+                                                        </span>
+                                                    </div>
+
+                                                    <div className="text-sm text-gray-600 mb-3">
+                                                        <p><span className="font-medium">Order Date:</span> {new Date(order.orderDate).toLocaleDateString()}</p>
+                                                        <p><span className="font-medium">Total Amount:</span> ${order.totalPrice?.toFixed(2)}</p>
+                                                        {order.refundRequestedAt && (
+                                                            <p><span className="font-medium">Refund Requested:</span> {new Date(order.refundRequestedAt).toLocaleDateString()}</p>
+                                                        )}
+                                                    </div>
+
+                                                    {/* Refund Reason */}
+                                                    {order.refundReason && (
+                                                        <div className="bg-white rounded-lg p-3 border border-orange-200 mb-3">
+                                                            <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Customer's Reason for Refund:</p>
+                                                            <p className="text-gray-700">{order.refundReason}</p>
+                                                        </div>
+                                                    )}
+
+                                                    {/* Order Items */}
+                                                    <div className="bg-white rounded-lg p-3 border border-gray-200">
+                                                        <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Order Items:</p>
+                                                        <div className="space-y-2">
+                                                            {order.items?.map((item, index) => (
+                                                                <div key={index} className="flex justify-between text-sm">
+                                                                    <span>{productNames[item.productId] || `Product #${item.productId}`} x{item.quantity}</span>
+                                                                    <span className="font-medium">${item.price?.toFixed(2)}</span>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex gap-2 ml-4">
+                                                    <button
+                                                        onClick={() => handleApproveRefund(order.id)}
+                                                        disabled={processingRefund}
+                                                        className="px-4 py-2 bg-green-500 text-white text-sm rounded-lg hover:bg-green-600 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                                    >
+                                                        <CheckCircle className="h-4 w-4" />
+                                                        Approve Refund
+                                                    </button>
+                                                    <button
+                                                        onClick={() => openRejectModal(order)}
+                                                        disabled={processingRefund}
+                                                        className="px-4 py-2 bg-red-500 text-white text-sm rounded-lg hover:bg-red-600 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                                    >
+                                                        <XCircle className="h-4 w-4" />
+                                                        Reject
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </>
+                )}
+
                 {activeTab === 'invoices' && (
                     <>
                         {/* Stats Cards */}
@@ -745,9 +1016,59 @@ const SalesManagerDashboard = () => {
                     </>
                 )}
             </main>
-        </div >
+
+            {/* Reject Refund Modal */}
+            {rejectModalOpen && selectedRefundOrder && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl">
+                        <h3 className="text-xl font-bold mb-4">Reject Refund Request</h3>
+                        <p className="text-gray-600 mb-4">
+                            You are about to reject the refund request for Order #{selectedRefundOrder.id}.
+                            You may optionally provide a reason that will be sent to the customer.
+                        </p>
+
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Rejection Reason (optional)
+                            </label>
+                            <textarea
+                                value={rejectionReason}
+                                onChange={(e) => setRejectionReason(e.target.value)}
+                                placeholder="E.g., Item was used, Outside of refund window, etc."
+                                className="w-full border border-gray-300 rounded-lg p-3 text-sm resize-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                                rows={4}
+                                maxLength={1000}
+                            />
+                            <p className="text-xs text-gray-500 mt-1">
+                                {rejectionReason.length}/1000 characters
+                            </p>
+                        </div>
+
+                        <div className="flex gap-3">
+                            <button
+                                onClick={handleRejectRefund}
+                                disabled={processingRefund}
+                                className="flex-1 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {processingRefund ? 'Processing...' : 'Confirm Rejection'}
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setRejectModalOpen(false);
+                                    setSelectedRefundOrder(null);
+                                    setRejectionReason('');
+                                }}
+                                disabled={processingRefund}
+                                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition disabled:opacity-50"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
     );
 };
 
 export default SalesManagerDashboard;
-
