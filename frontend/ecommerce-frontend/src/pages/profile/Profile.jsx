@@ -1539,10 +1539,6 @@ const Profile = () => {
                   <span>Chat with stylist</span>
                   <ArrowIcon />
                 </Link>
-                <button className="flex w-full items-center justify-between rounded-lg border border-gray-200 px-3 py-2 hover:border-black">
-                  <span>Book a fitting</span>
-                  <ArrowIcon />
-                </button>
               </div>
             </div>
 

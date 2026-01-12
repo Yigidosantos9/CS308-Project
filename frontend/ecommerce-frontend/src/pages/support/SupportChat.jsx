@@ -22,11 +22,6 @@ const SupportChat = () => {
   const endRef = useRef(null);
   const fileInputRef = useRef(null);
 
-  const displayName = useMemo(() => {
-    if (!user) return 'Guest';
-    return user.firstName || user.email?.split('@')[0] || 'Customer';
-  }, [user]);
-
   const storageKey = useMemo(() => {
     const userStorageId = user?.userId || user?.email;
     if (userStorageId) {
@@ -45,10 +40,11 @@ const SupportChat = () => {
     const startChat = async () => {
       try {
         setStatus('starting');
+        const customerId = user?.userType === 'CUSTOMER' ? user.userId : undefined;
         const response = await supportChatService.startChat({
           source: 'web',
           note: 'Customer initiated chat',
-          customerId: user?.userId || undefined,
+          customerId,
         });
         if (!isMounted) return;
         setChatId(response.chatId);
@@ -77,7 +73,8 @@ const SupportChat = () => {
       if (user?.userId || user?.email) {
         localStorage.removeItem(`${CHAT_STORAGE_KEY_PREFIX}:guest`);
         try {
-          const activeChat = await supportChatService.getActiveChat(user.userId);
+          const customerId = user?.userType === 'CUSTOMER' ? user.userId : undefined;
+          const activeChat = customerId ? await supportChatService.getActiveChat(customerId) : null;
           if (!isMounted) return;
           if (activeChat?.chatId) {
             setChatId(activeChat.chatId);
@@ -127,7 +124,8 @@ const SupportChat = () => {
     const pollMessages = async () => {
       try {
         if (user?.userId) {
-          const activeChat = await supportChatService.getActiveChat(user.userId);
+        const customerId = user?.userType === 'CUSTOMER' ? user.userId : undefined;
+        const activeChat = customerId ? await supportChatService.getActiveChat(customerId) : null;
           if (activeChat?.chatId && activeChat.chatId !== chatId) {
             switchToChat(activeChat.chatId, activeChat.status);
             return;
@@ -318,10 +316,11 @@ const SupportChat = () => {
       fileInputRef.current.value = '';
     }
     try {
+      const customerId = user?.userType === 'CUSTOMER' ? user.userId : undefined;
       const response = await supportChatService.startChat({
         source: 'web',
         note: 'Customer initiated chat',
-        customerId: user?.userId || undefined,
+        customerId,
       });
       setChatId(response.chatId);
       const normalizedStatus = response.status ? response.status.toLowerCase() : 'queued';
@@ -372,7 +371,7 @@ const SupportChat = () => {
             <div className="flex items-center justify-between border-b border-black/10 pb-4">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.3em] text-gray-400">Conversation</p>
-                <p className="text-sm font-semibold text-black">Chat with {displayName}</p>
+                <p className="text-sm font-semibold text-black">Chat with Support</p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <span className="rounded-full bg-black px-3 py-1 text-xs font-semibold text-white">Chat ID {chatId || '...'}</span>

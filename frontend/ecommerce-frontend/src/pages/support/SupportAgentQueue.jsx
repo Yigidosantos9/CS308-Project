@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { RefreshCcw, Users } from 'lucide-react';
 
@@ -13,20 +13,33 @@ const SupportAgentQueue = () => {
   const [lastUpdated, setLastUpdated] = useState(null);
   const [error, setError] = useState('');
   const [customerNames, setCustomerNames] = useState({});
+  const customerNamesRef = useRef({});
+  const isInitialLoadRef = useRef(true);
+  const fetchIdRef = useRef(0);
+  const isFetchingRef = useRef(false);
 
   const loadQueue = async () => {
+    if (isFetchingRef.current) return;
+    isFetchingRef.current = true;
+    let fetchId = 0;
     try {
-      setIsLoading(true);
-      const data = await supportChatService.getChatQueue(user?.userId);
+      fetchId = ++fetchIdRef.current;
+      if (isInitialLoadRef.current) {
+        setIsLoading(true);
+      }
+      const data = await supportChatService.getChatQueue();
+      if (fetchIdRef.current !== fetchId) return;
       const nextQueue = Array.isArray(data) ? data : [];
       setQueue(nextQueue);
-      const customerIds = Array.from(new Set(
-        nextQueue.map((item) => item.customerId).filter(Boolean)
-      ));
+      setLastUpdated(new Date());
+      setError('');
+      const customerIds = Array.from(
+        new Set(nextQueue.map((item) => item.customerId).filter(Boolean))
+      );
       if (customerIds.length > 0) {
-        const missingIds = customerIds.filter((id) => !customerNames[id]);
+        const missingIds = customerIds.filter((id) => !customerNamesRef.current[id]);
         if (missingIds.length > 0) {
-          const entries = await Promise.all(
+          Promise.all(
             missingIds.map(async (id) => {
               try {
                 const userInfo = await authService.getUserById(id);
@@ -36,16 +49,22 @@ const SupportAgentQueue = () => {
                 return [id, `Customer #${id}`];
               }
             })
-          );
-          setCustomerNames((prev) => Object.fromEntries([...Object.entries(prev), ...entries]));
+          ).then((entries) => {
+            if (fetchIdRef.current !== fetchId) return;
+            setCustomerNames((prev) => Object.fromEntries([...Object.entries(prev), ...entries]));
+          });
         }
       }
-      setLastUpdated(new Date());
-      setError('');
     } catch (err) {
-      setError('Queue could not be loaded.');
+      if (fetchIdRef.current === fetchId) {
+        setError('Queue could not be loaded.');
+      }
     } finally {
-      setIsLoading(false);
+      if (fetchIdRef.current === fetchId && isInitialLoadRef.current) {
+        setIsLoading(false);
+        isInitialLoadRef.current = false;
+      }
+      isFetchingRef.current = false;
     }
   };
 
@@ -95,6 +114,10 @@ const SupportAgentQueue = () => {
       clearInterval(interval);
     };
   }, [user]);
+
+  useEffect(() => {
+    customerNamesRef.current = customerNames;
+  }, [customerNames]);
 
   return (
     <div className="min-h-[calc(100vh-160px)] bg-gradient-to-br from-[#fef7ec] via-[#f5f5f5] to-[#e9f5ff] px-6 py-10">

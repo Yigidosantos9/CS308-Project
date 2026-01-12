@@ -186,8 +186,9 @@ public class SupportChatService {
                         && agentId != null
                         && agentId.equals(session.getAgentId()))
                         || (session.getStatus() == SupportChatStatus.CLOSED
-                        && agentId != null
-                        && agentId.equals(session.getAgentId())))
+                        && (agentId == null
+                        || agentId.equals(session.getAgentId())
+                        || session.getAgentId() == null)))
                 .sorted(Comparator
                         .comparing((SupportChatSession session) -> session.getStatus() == SupportChatStatus.QUEUED ? 0
                                 : session.getStatus() == SupportChatStatus.ACTIVE ? 1 : 2)

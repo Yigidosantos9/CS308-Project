@@ -46,7 +46,17 @@ const SupportAgentChat = () => {
         await supportChatService.claimChat(parsedChatId);
       } catch (err) {
         if (!isActive) return;
-        setError('Chat could not be claimed.');
+        const errorMessage = err.response?.data?.error;
+        const normalizedMessage = errorMessage?.toLowerCase();
+        if (normalizedMessage?.includes('closed')) {
+          setError('Chat is closed.');
+          return;
+        }
+        if (normalizedMessage?.includes('claimed')) {
+          setError('Chat is already claimed.');
+          return;
+        }
+        setError(errorMessage || 'Chat could not be claimed.');
       }
     };
 
@@ -55,7 +65,11 @@ const SupportAgentChat = () => {
         const chatInfo = await supportChatService.getChat(parsedChatId);
         if (!isActive) return;
         if (chatInfo?.status) {
-          setStatus(chatInfo.status.toLowerCase());
+          const normalizedStatus = chatInfo.status.toLowerCase();
+          setStatus(normalizedStatus);
+          if (normalizedStatus === 'closed') {
+            setError('Chat is closed.');
+          }
         }
         const newMessages = await supportChatService.getMessages(parsedChatId, lastMessageIdRef.current);
         if (Array.isArray(newMessages) && newMessages.length > 0) {

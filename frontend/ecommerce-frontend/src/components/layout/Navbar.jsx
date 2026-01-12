@@ -92,7 +92,6 @@ const Navbar = () => {
             className="hidden md:flex items-center gap-2 hover:opacity-60 transition-opacity"
           >
             <Headset className="w-5 h-5" />
-            <span className="text-sm font-medium">Support</span>
           </Link>
 
           {/* Wishlist - Hidden for Product Manager and Sales Manager */}
