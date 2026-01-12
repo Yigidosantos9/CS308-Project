@@ -203,8 +203,6 @@ const Profile = () => {
   };
 
   const toggles = [
-    { label: 'Email Notifications', enabled: true },
-    { label: 'SMS Notifications', enabled: false },
     { label: 'Order Updates', enabled: true },
     { label: 'Promotional Offers', enabled: true },
   ];
