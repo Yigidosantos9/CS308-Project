@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FileText, Download, Calendar, Search, LogOut, DollarSign, TrendingUp, RefreshCw, Tag, Percent, BarChart3, RotateCcw, CheckCircle, XCircle, Clock, AlertCircle, Package } from 'lucide-react';
 import { useShop } from '../../context/ShopContext';
-import { salesManagerService, refundService, productService, authService } from '../../services/api';
+import { salesManagerService, refundService, productService, authService, orderService } from '../../services/api';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const SalesManagerDashboard = () => {
@@ -294,14 +294,19 @@ const SalesManagerDashboard = () => {
     };
 
     // Download individual PDF
-    const handleDownloadPdf = async (orderId) => {
-        try {
-            await salesManagerService.downloadInvoicePdf(orderId);
-        } catch (err) {
-            console.error('Failed to download invoice:', err);
-            alert('Failed to download invoice PDF');
-        }
-    };
+const handleDownloadPdf = async (order) => {
+    try {
+        await orderService.getInvoice(
+            order.id,
+            order.buyerName,
+            order.buyerAddress,
+            order.paymentMethod
+        );
+    } catch (err) {
+        console.error('Failed to download invoice:', err);
+        alert('Failed to download invoice PDF');
+    }
+};
 
     // Logout handler
     const handleLogout = () => {
@@ -729,7 +734,7 @@ const SalesManagerDashboard = () => {
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-center">
                                                         <button
-                                                            onClick={() => handleDownloadPdf(order.id)}
+                                                            onClick={() => handleDownloadPdf(order)}
                                                             className="inline-flex items-center gap-1 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg hover:bg-emerald-100 transition-colors text-sm font-medium"
                                                         >
                                                             <Download size={14} />

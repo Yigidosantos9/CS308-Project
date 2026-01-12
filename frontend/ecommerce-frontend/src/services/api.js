@@ -750,20 +750,48 @@ export const salesManagerService = {
   },
 
   /**
-   * Download invoice PDF for a specific order
-   * @param {number} orderId - The order ID
+   * Download invoice PDF for a specific order (Sales Manager endpoint)
+   * Uses POST /api/sales/invoices/pdf with InvoiceRequest body
+   * @param {Object} order - The full order object
    */
-  downloadInvoicePdf: async (orderId) => {
+  downloadInvoicePdf: async (order) => {
     try {
-      const response = await api.get(`/orders/${orderId}/invoice`, {
+      // Format dates
+      const orderDate = order.orderDate ? new Date(order.orderDate) : new Date();
+      const issueDate = orderDate.toISOString().split('T')[0]; // YYYY-MM-DD
+      const dueDate = new Date(orderDate.getTime() + 30 * 24 * 60 * 60 * 1000)
+        .toISOString().split('T')[0]; // 30 days from order date
+
+      // Build the InvoiceRequest object that the backend expects
+      const invoiceRequest = {
+        invoiceNumber: order.invoiceNumber || `INV-${order.id}`,
+        issueDate: issueDate,
+        dueDate: dueDate,
+        sellerName: 'RAWCTRL Store',
+        sellerAddress: '123 Fashion Street, New York, NY 10001',
+        buyerName: order.buyerName || `Customer #${order.userId}`,
+        buyerAddress: order.buyerAddress || 'Address not provided',
+        taxRate: 0.0,
+        shippingFee: 0.0,
+        currencySymbol: '$',
+        items: (order.items || []).map(item => ({
+          description: item.productName || item.name || `Product #${item.productId}`,
+          quantity: item.quantity || 1,
+          unitPrice: item.unitPrice || (item.price / (item.quantity || 1)),
+          total: item.price || (item.unitPrice * item.quantity)
+        }))
+      };
+
+      const response = await api.post('/sales/invoices/pdf', invoiceRequest, {
         responseType: 'blob'
       });
+
       // Create download link and trigger download
       const blob = new Blob([response.data], { type: 'application/pdf' });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `invoice-order-${orderId}.pdf`;
+      link.download = `invoice-${invoiceRequest.invoiceNumber}.pdf`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
