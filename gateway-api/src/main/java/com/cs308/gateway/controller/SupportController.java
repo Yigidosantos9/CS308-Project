@@ -7,6 +7,12 @@ import com.cs308.gateway.model.support.SupportChatStatus;
 import com.cs308.gateway.model.support.SupportMessageRequest;
 import com.cs308.gateway.model.support.SupportSenderType;
 import com.cs308.gateway.model.auth.enums.UserType;
+import com.cs308.gateway.model.auth.response.UserDetails;
+import com.cs308.gateway.model.product.Order;
+import com.cs308.gateway.model.product.Wishlist;
+import com.cs308.gateway.client.AuthClient;
+import com.cs308.gateway.client.OrderClient;
+import com.cs308.gateway.service.ProductService;
 import com.cs308.gateway.security.SecurityContext;
 import com.cs308.gateway.service.SupportChatService;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +28,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.http.codec.multipart.FilePart;
 import reactor.core.publisher.Mono;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -32,6 +39,9 @@ import java.util.Map;
 public class SupportController {
 
     private final SupportChatService supportChatService;
+    private final AuthClient authClient;
+    private final OrderClient orderClient;
+    private final ProductService productService;
     private static final long MAX_FILE_BYTES = 5 * 1024 * 1024;
 
     // Anyone (guests or customers) can initiate chat
@@ -117,7 +127,8 @@ public class SupportController {
             senderType = senderId != null ? SupportSenderType.CUSTOMER : SupportSenderType.GUEST;
         }
 
-        SupportChatMessage message = supportChatService.addMessage(chatId, senderId, senderType, messageRequest.getContent());
+        SupportChatMessage message = supportChatService.addMessage(chatId, senderId, senderType,
+                messageRequest.getContent());
         return ResponseEntity.ok(message);
     }
 
@@ -163,8 +174,7 @@ public class SupportController {
                             senderType,
                             file.filename(),
                             file.headers().getContentType() != null ? file.headers().getContentType().toString() : null,
-                            bytes
-                    );
+                            bytes);
                     if (message == null) {
                         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "Upload failed"));
                     }
@@ -189,11 +199,13 @@ public class SupportController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
         String contentType = storedFile.getAttachment().getContentType();
-        MediaType mediaType = (contentType != null) ? MediaType.parseMediaType(contentType) : MediaType.APPLICATION_OCTET_STREAM;
+        MediaType mediaType = (contentType != null) ? MediaType.parseMediaType(contentType)
+                : MediaType.APPLICATION_OCTET_STREAM;
         Resource resource = new ByteArrayResource(storedFile.getBytes());
         return ResponseEntity.ok()
                 .contentType(mediaType)
-                .header("Content-Disposition", "attachment; filename=\"" + storedFile.getAttachment().getFilename() + "\"")
+                .header("Content-Disposition",
+                        "attachment; filename=\"" + storedFile.getAttachment().getFilename() + "\"")
                 .body(resource);
     }
 
@@ -283,16 +295,72 @@ public class SupportController {
         return ResponseEntity.ok(Map.of(
                 "chatId", session.getId(),
                 "status", session.getStatus(),
-                "agentId", session.getAgentId()
-        ));
+                "agentId", session.getAgentId()));
     }
 
     // Support Agents can view customer details (if logged in)
     @GetMapping("/chat/{chatId}/customer")
     public ResponseEntity<?> getCustomerDetails(@PathVariable Long chatId) {
         log.info("BFF: Get customer details request - chatId: {}", chatId);
-        // TODO: Implement get customer details
-        return ResponseEntity.ok().build();
+
+        SupportChatSession session = supportChatService.getSession(chatId);
+        if (session == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Chat not found"));
+        }
+
+        Long customerId = session.getCustomerId();
+        if (customerId == null) {
+            // Guest user - no customer details available
+            return ResponseEntity.ok(Map.of("isGuest", true));
+        }
+
+        try {
+            Map<String, Object> response = new HashMap<>();
+
+            // Get customer info from Auth API
+            try {
+                UserDetails userDetails = authClient.getUserById(customerId);
+                if (userDetails != null) {
+                    response.put("firstName", userDetails.getFirstName());
+                    response.put("lastName", userDetails.getLastName());
+                    response.put("email", userDetails.getEmail());
+                    response.put("phoneNumber", userDetails.getPhoneNumber());
+                }
+            } catch (Exception e) {
+                log.warn("Failed to fetch user details for customer {}: {}", customerId, e.getMessage());
+            }
+
+            // Get customer orders from Order API
+            try {
+                List<Order> orders = orderClient.getUserOrders(customerId);
+                if (orders != null) {
+                    response.put("orders", orders);
+                }
+            } catch (Exception e) {
+                log.warn("Failed to fetch orders for customer {}: {}", customerId, e.getMessage());
+                response.put("orders", List.of());
+            }
+
+            // Get customer wishlist from Product API
+            try {
+                Wishlist wishlist = productService.getWishlist(customerId);
+                if (wishlist != null && wishlist.getItems() != null) {
+                    response.put("wishlistItems", wishlist.getItems());
+                }
+            } catch (Exception e) {
+                log.warn("Failed to fetch wishlist for customer {}: {}", customerId, e.getMessage());
+                response.put("wishlistItems", List.of());
+            }
+
+            response.put("customerId", customerId);
+            response.put("isGuest", false);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Error fetching customer details for chat {}: {}", chatId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to fetch customer details"));
+        }
     }
 
     private boolean isAuthorizedForSession(SecurityContext securityContext, SupportChatSession session) {

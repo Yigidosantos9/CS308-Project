@@ -218,6 +218,7 @@ const Profile = () => {
         email: user.email || '',
         phone: user.phoneNumber || '',
         birthDate: user.birthDate || '',
+        taxId: user.taxId || '',
       }));
     }
   }, [user]);
@@ -545,10 +546,10 @@ const Profile = () => {
     }
   };
 
-  // Check if order can be cancelled (only PROCESSING or PREPARING)
+  // Check if order can be cancelled (only PROCESSING status per project requirements)
   const canCancelOrder = (order) => {
     if (!order) return false;
-    return order.status === 'PROCESSING' || order.status === 'PREPARING';
+    return order.status === 'PROCESSING';
   };
 
   // Check if order is eligible for refund
@@ -638,6 +639,12 @@ const Profile = () => {
             label="Birth Date"
             icon={<Calendar className="h-4 w-4" />}
             value={formState.birthDate || 'Not set'}
+            readOnly
+          />
+          <LabelInput
+            label="Tax ID"
+            icon={<ShieldCheck className="h-4 w-4" />}
+            value={formState.taxId || 'Not set'}
             readOnly
           />
         </div>

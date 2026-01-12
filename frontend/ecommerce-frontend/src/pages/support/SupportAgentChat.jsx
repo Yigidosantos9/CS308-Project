@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { MessageCircle, SendHorizontal } from 'lucide-react';
+import { MessageCircle, SendHorizontal, ChevronDown, ChevronUp, Package, Heart, User } from 'lucide-react';
 
 import { API_BASE_URL, supportChatService } from '../../services/api';
 import { useShop } from '../../context/ShopContext';
@@ -18,6 +18,11 @@ const SupportAgentChat = () => {
   const messageIdsRef = useRef(new Set());
   const pollRef = useRef(null);
   const endRef = useRef(null);
+
+  // Customer details state for Support Agent panel
+  const [customerDetails, setCustomerDetails] = useState(null);
+  const [customerDetailsLoading, setCustomerDetailsLoading] = useState(false);
+  const [showCustomerPanel, setShowCustomerPanel] = useState(true);
 
   const agentName = useMemo(() => {
     if (!user) return 'Agent';
@@ -112,6 +117,25 @@ const SupportAgentChat = () => {
     }
   }, [messages]);
 
+  // Fetch customer details when chat is loaded
+  useEffect(() => {
+    const fetchCustomerDetails = async () => {
+      if (!chatId || user?.userType !== 'SUPPORT_AGENT') return;
+
+      setCustomerDetailsLoading(true);
+      try {
+        const details = await supportChatService.getCustomerDetails(Number(chatId));
+        setCustomerDetails(details);
+      } catch (err) {
+        console.error('Failed to fetch customer details:', err);
+      } finally {
+        setCustomerDetailsLoading(false);
+      }
+    };
+
+    fetchCustomerDetails();
+  }, [chatId, user]);
+
   const handleSend = async (event) => {
     event.preventDefault();
     if (!input.trim() || !chatId) return;
@@ -179,6 +203,112 @@ const SupportAgentChat = () => {
             </div>
           </div>
         </div>
+
+        {/* Customer Details Panel - Support Agent View */}
+        {customerDetails && (
+          <div className="rounded-3xl border border-black/10 bg-white/90 shadow-[0_15px_45px_rgba(0,0,0,0.08)] backdrop-blur overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setShowCustomerPanel(!showCustomerPanel)}
+              className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition"
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-blue-600">
+                  <User className="h-5 w-5" />
+                </div>
+                <div className="text-left">
+                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-gray-400">Customer Info</p>
+                  <p className="text-sm font-semibold text-black">
+                    {customerDetails.firstName} {customerDetails.lastName}
+                    {customerDetails.email && <span className="text-gray-500 font-normal ml-2">({customerDetails.email})</span>}
+                  </p>
+                </div>
+              </div>
+              {showCustomerPanel ? <ChevronUp className="h-5 w-5 text-gray-400" /> : <ChevronDown className="h-5 w-5 text-gray-400" />}
+            </button>
+
+            {showCustomerPanel && (
+              <div className="border-t border-black/10 p-4 space-y-4">
+                {/* Customer Basic Info */}
+                {customerDetails.phoneNumber && (
+                  <div className="text-sm text-gray-600">
+                    <span className="font-medium">Phone:</span> {customerDetails.phoneNumber}
+                  </div>
+                )}
+
+                {/* Previous Orders */}
+                <div>
+                  <h4 className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500 mb-2 flex items-center gap-2">
+                    <Package className="h-4 w-4" />
+                    Recent Orders ({customerDetails.orders?.length || 0})
+                  </h4>
+                  {customerDetails.orders && customerDetails.orders.length > 0 ? (
+                    <div className="space-y-2 max-h-40 overflow-y-auto">
+                      {customerDetails.orders.slice(0, 5).map((order) => (
+                        <div key={order.id} className="flex items-center justify-between bg-gray-50 rounded-lg p-2 text-sm">
+                          <div>
+                            <span className="font-medium">Order #{order.id}</span>
+                            <span className="text-gray-400 ml-2 text-xs">
+                              {new Date(order.orderDate).toLocaleDateString()}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-gray-600">${order.totalPrice?.toFixed(2)}</span>
+                            <span className={`text-xs px-2 py-0.5 rounded-full ${order.status === 'DELIVERED' ? 'bg-green-100 text-green-700' :
+                                order.status === 'IN_TRANSIT' ? 'bg-blue-100 text-blue-700' :
+                                  order.status === 'PROCESSING' ? 'bg-yellow-100 text-yellow-700' :
+                                    order.status === 'CANCELLED' ? 'bg-red-100 text-red-700' :
+                                      'bg-gray-100 text-gray-700'
+                              }`}>
+                              {order.status}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-400">No orders found</p>
+                  )}
+                </div>
+
+                {/* Wishlist Items */}
+                <div>
+                  <h4 className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500 mb-2 flex items-center gap-2">
+                    <Heart className="h-4 w-4" />
+                    Wishlist ({customerDetails.wishlistItems?.length || 0})
+                  </h4>
+                  {customerDetails.wishlistItems && customerDetails.wishlistItems.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {customerDetails.wishlistItems.slice(0, 6).map((item, idx) => (
+                        <span key={idx} className="text-xs bg-pink-50 text-pink-700 px-2 py-1 rounded-full">
+                          {item.productName || item.product?.name || `Product #${item.productId}`}
+                        </span>
+                      ))}
+                      {customerDetails.wishlistItems.length > 6 && (
+                        <span className="text-xs text-gray-400">+{customerDetails.wishlistItems.length - 6} more</span>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-400">Wishlist is empty</p>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {customerDetailsLoading && (
+          <div className="rounded-3xl border border-black/10 bg-white/90 p-4 shadow-sm text-center text-sm text-gray-500">
+            Loading customer details...
+          </div>
+        )}
+
+        {!customerDetails && !customerDetailsLoading && (
+          <div className="rounded-3xl border border-black/10 bg-yellow-50 p-4 shadow-sm text-center text-sm text-yellow-700">
+            <User className="h-5 w-5 inline mr-2" />
+            Guest user - No customer details available
+          </div>
+        )}
 
         <section className="rounded-3xl border border-black/10 bg-white p-6 shadow-[0_20px_50px_rgba(0,0,0,0.08)]">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-black/10 pb-4">

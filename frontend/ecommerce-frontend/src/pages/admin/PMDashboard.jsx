@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Package, Truck, CheckCircle, Clock, ChevronDown, FileText, XCircle, RotateCcw, LogOut, Star, MessageSquare, AlertCircle, Plus, Edit, Trash2, Box } from 'lucide-react';
+import { Package, Truck, CheckCircle, Clock, ChevronDown, FileText, XCircle, RotateCcw, LogOut, Star, MessageSquare, AlertCircle, Plus, Edit, Trash2, Box, FolderPlus } from 'lucide-react';
 import { useShop } from '../../context/ShopContext';
 import { orderService, reviewService, productService, authService, refundService } from '../../services/api';
 
-const PRODUCT_TYPES = ['TSHIRT', 'SHIRT', 'SWEATER', 'HOODIE', 'JACKET', 'COAT', 'PANTS', 'JEANS', 'SKIRT', 'DRESS', 'SHORTS', 'UNDERWEAR', 'ACCESSORY', 'SHOES'];
+const DEFAULT_PRODUCT_TYPES = ['TSHIRT', 'SHIRT', 'SWEATER', 'HOODIE', 'JACKET', 'COAT', 'PANTS', 'JEANS', 'SKIRT', 'DRESS', 'SHORTS', 'UNDERWEAR', 'ACCESSORY', 'SHOES'];
 const TARGET_AUDIENCES = ['MEN', 'WOMEN', 'KIDS'];
 const WARRANTY_STATUSES = ['NONE', 'LIMITED', 'STANDARD', 'EXTENDED'];
 const SEASONS = ['SPRING', 'SUMMER', 'FALL', 'WINTER', 'ALL_SEASON'];
@@ -42,6 +42,11 @@ const PMDashboard = () => {
     const [savingProduct, setSavingProduct] = useState(false);
     const [stockEditId, setStockEditId] = useState(null);
     const [stockEditValue, setStockEditValue] = useState('');
+
+    // Category management state
+    const [categories, setCategories] = useState(DEFAULT_PRODUCT_TYPES);
+    const [categoryModalOpen, setCategoryModalOpen] = useState(false);
+    const [newCategoryName, setNewCategoryName] = useState('');
 
     // Toast notification state
     const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
@@ -292,6 +297,23 @@ const PMDashboard = () => {
             console.error('Failed to update stock:', error);
             showToast('Failed to update stock', 'error');
         }
+    };
+
+    // ==================== CATEGORY MANAGEMENT ====================
+    const handleAddCategory = () => {
+        const categoryName = newCategoryName.trim().toUpperCase().replace(/\s+/g, '_');
+        if (!categoryName) {
+            showToast('Please enter a category name', 'error');
+            return;
+        }
+        if (categories.includes(categoryName)) {
+            showToast('Category already exists', 'error');
+            return;
+        }
+        setCategories([...categories, categoryName]);
+        setNewCategoryName('');
+        setCategoryModalOpen(false);
+        showToast(`Category "${categoryName}" added successfully!`, 'success');
     };
 
     const handleStatusUpdate = async (orderId, newStatus) => {
@@ -1028,16 +1050,26 @@ const PMDashboard = () => {
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Category *</label>
-                                <select
-                                    name="productType"
-                                    value={productFormData.productType}
-                                    onChange={handleProductFormChange}
-                                    className="w-full border border-gray-300 rounded-lg p-2 text-sm"
-                                >
-                                    {PRODUCT_TYPES.map(type => (
-                                        <option key={type} value={type}>{type.replace('_', ' ')}</option>
-                                    ))}
-                                </select>
+                                <div className="flex gap-2">
+                                    <select
+                                        name="productType"
+                                        value={productFormData.productType}
+                                        onChange={handleProductFormChange}
+                                        className="flex-1 border border-gray-300 rounded-lg p-2 text-sm"
+                                    >
+                                        {categories.map(type => (
+                                            <option key={type} value={type}>{type.replace('_', ' ')}</option>
+                                        ))}
+                                    </select>
+                                    <button
+                                        type="button"
+                                        onClick={() => setCategoryModalOpen(true)}
+                                        className="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-700 transition-colors"
+                                        title="Add New Category"
+                                    >
+                                        <FolderPlus className="h-5 w-5" />
+                                    </button>
+                                </div>
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Target Audience *</label>
@@ -1266,6 +1298,66 @@ const PMDashboard = () => {
                                 }}
                                 disabled={processingRefund}
                                 className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition disabled:opacity-50"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Add Category Modal */}
+            {categoryModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+                    <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-xl">
+                        <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+                            <FolderPlus className="h-5 w-5 text-indigo-600" />
+                            Add New Category
+                        </h2>
+
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Category Name</label>
+                            <input
+                                type="text"
+                                value={newCategoryName}
+                                onChange={(e) => setNewCategoryName(e.target.value)}
+                                placeholder="e.g., POLO_SHIRT"
+                                className="w-full border border-gray-300 rounded-lg p-2 text-sm"
+                                onKeyDown={(e) => e.key === 'Enter' && handleAddCategory()}
+                            />
+                            <p className="text-xs text-gray-500 mt-1">
+                                Category will be converted to uppercase. Spaces will become underscores.
+                            </p>
+                        </div>
+
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Existing Categories ({categories.length})
+                            </label>
+                            <div className="max-h-32 overflow-y-auto border border-gray-200 rounded-lg p-2">
+                                <div className="flex flex-wrap gap-1">
+                                    {categories.map(cat => (
+                                        <span key={cat} className="px-2 py-1 bg-gray-100 rounded text-xs">
+                                            {cat.replace('_', ' ')}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-3">
+                            <button
+                                onClick={handleAddCategory}
+                                className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-medium"
+                            >
+                                Add Category
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setCategoryModalOpen(false);
+                                    setNewCategoryName('');
+                                }}
+                                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
                             >
                                 Cancel
                             </button>

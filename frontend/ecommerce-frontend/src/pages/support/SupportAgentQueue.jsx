@@ -49,12 +49,26 @@ const SupportAgentQueue = () => {
     }
   };
 
-  const handleOpenChat = async (chatId) => {
+  const handleOpenChat = async (chatId, status) => {
+    // For closed chats, just navigate to view without claiming
+    if (status?.toLowerCase() === 'closed') {
+      navigate(`/support/queue/${chatId}`);
+      return;
+    }
+
     try {
       await supportChatService.claimChat(chatId);
       navigate(`/support/queue/${chatId}`);
     } catch (err) {
-      setError('Chat could not be claimed.');
+      // If chat not found (404), refresh the queue
+      if (err.response?.status === 404) {
+        setError('Chat no longer exists. Refreshing queue...');
+        await loadQueue();
+      } else if (err.response?.status === 409) {
+        setError(err.response?.data?.error || 'Chat is already claimed or closed.');
+      } else {
+        setError(err.response?.data?.error || 'Chat could not be claimed.');
+      }
     }
   };
 
@@ -160,36 +174,36 @@ const SupportAgentQueue = () => {
                   : 'bg-gray-500 text-white';
               const buttonLabel = isClosed ? 'View' : 'Open';
               return (
-              <div
-                key={item.chatId}
-                className={`flex flex-col gap-3 rounded-2xl border border-black/10 px-5 py-4 md:flex-row md:items-center md:justify-between ${cardClass}`}
-              >
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-gray-400">
-                    {item.queuePosition ? `Queue #${item.queuePosition}` : isClosed ? 'Closed chat' : 'Active chat'}
-                  </p>
-                  <p className="text-lg font-bold text-black">Chat {item.chatId}</p>
-                  <p className="text-sm text-gray-600">
-                    {item.customerId ? (customerNames[item.customerId] || `Customer #${item.customerId}`) : 'Guest customer'}
-                  </p>
+                <div
+                  key={item.chatId}
+                  className={`flex flex-col gap-3 rounded-2xl border border-black/10 px-5 py-4 md:flex-row md:items-center md:justify-between ${cardClass}`}
+                >
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.3em] text-gray-400">
+                      {item.queuePosition ? `Queue #${item.queuePosition}` : isClosed ? 'Closed chat' : 'Active chat'}
+                    </p>
+                    <p className="text-lg font-bold text-black">Chat {item.chatId}</p>
+                    <p className="text-sm text-gray-600">
+                      {item.customerId ? (customerNames[item.customerId] || `Customer #${item.customerId}`) : 'Guest customer'}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] ${badgeClass}`}>
+                      {status}
+                    </span>
+                    <span className="text-xs font-semibold text-gray-500">
+                      {item.createdAt ? new Date(item.createdAt).toLocaleString() : 'Just now'}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenChat(item.chatId, status)}
+                      className="rounded-full border border-black px-3 py-1 text-xs font-semibold text-black transition hover:bg-black hover:text-white"
+                    >
+                      {buttonLabel}
+                    </button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] ${badgeClass}`}>
-                    {status}
-                  </span>
-                  <span className="text-xs font-semibold text-gray-500">
-                    {item.createdAt ? new Date(item.createdAt).toLocaleString() : 'Just now'}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => handleOpenChat(item.chatId)}
-                    className="rounded-full border border-black px-3 py-1 text-xs font-semibold text-black transition hover:bg-black hover:text-white"
-                  >
-                    {buttonLabel}
-                  </button>
-                </div>
-              </div>
-            );
+              );
             })}
           </div>
         </section>
