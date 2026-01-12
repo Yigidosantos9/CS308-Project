@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { MessageCircle, SendHorizontal, ChevronDown, ChevronUp, Package, Heart, User } from 'lucide-react';
+import { MessageCircle, SendHorizontal, ChevronDown, ChevronUp, Package, Heart, User, Paperclip, ShoppingCart } from 'lucide-react';
 
 import { API_BASE_URL, supportChatService } from '../../services/api';
 import { useShop } from '../../context/ShopContext';
@@ -18,6 +18,8 @@ const SupportAgentChat = () => {
   const messageIdsRef = useRef(new Set());
   const pollRef = useRef(null);
   const endRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const [selectedFile, setSelectedFile] = useState(null);
 
   // Customer details state for Support Agent panel
   const [customerDetails, setCustomerDetails] = useState(null);
@@ -152,23 +154,57 @@ const SupportAgentChat = () => {
 
   const handleSend = async (event) => {
     event.preventDefault();
-    if (!input.trim() || !chatId) return;
+    if ((!input.trim() && !selectedFile) || !chatId) return;
 
     try {
       setIsSending(true);
       const parsedChatId = Number(chatId);
-      const response = await supportChatService.sendMessage(parsedChatId, input.trim(), 'AGENT');
-      if (response?.id && !messageIdsRef.current.has(response.id)) {
-        messageIdsRef.current.add(response.id);
-        lastMessageIdRef.current = Math.max(lastMessageIdRef.current, response.id || 0);
-        setMessages((prev) => [...prev, response]);
+
+      // Upload file first if selected
+      if (selectedFile) {
+        const fileResponse = await supportChatService.uploadFile(parsedChatId, selectedFile);
+        if (fileResponse?.id && !messageIdsRef.current.has(fileResponse.id)) {
+          messageIdsRef.current.add(fileResponse.id);
+          lastMessageIdRef.current = Math.max(lastMessageIdRef.current, fileResponse.id || 0);
+          setMessages((prev) => [...prev, fileResponse]);
+        }
+        setSelectedFile(null);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
       }
-      setInput('');
+
+      // Send text message if provided
+      if (input.trim()) {
+        const response = await supportChatService.sendMessage(parsedChatId, input.trim(), 'AGENT');
+        if (response?.id && !messageIdsRef.current.has(response.id)) {
+          messageIdsRef.current.add(response.id);
+          lastMessageIdRef.current = Math.max(lastMessageIdRef.current, response.id || 0);
+          setMessages((prev) => [...prev, response]);
+        }
+        setInput('');
+      }
     } catch (err) {
       setError('Message could not be sent.');
     } finally {
       setIsSending(false);
     }
+  };
+
+  const handleFileChange = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      setSelectedFile(null);
+      return;
+    }
+    setSelectedFile(file);
+  };
+
+  const formatFileSize = (size) => {
+    if (!size && size !== 0) return '';
+    if (size < 1024) return `${size} B`;
+    if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
+    return `${(size / (1024 * 1024)).toFixed(1)} MB`;
   };
 
   const handleEndChat = async () => {
@@ -269,10 +305,10 @@ const SupportAgentChat = () => {
                           <div className="flex items-center gap-2">
                             <span className="text-gray-600">${order.totalPrice?.toFixed(2)}</span>
                             <span className={`text-xs px-2 py-0.5 rounded-full ${order.status === 'DELIVERED' ? 'bg-green-100 text-green-700' :
-                                order.status === 'IN_TRANSIT' ? 'bg-blue-100 text-blue-700' :
-                                  order.status === 'PROCESSING' ? 'bg-yellow-100 text-yellow-700' :
-                                    order.status === 'CANCELLED' ? 'bg-red-100 text-red-700' :
-                                      'bg-gray-100 text-gray-700'
+                              order.status === 'IN_TRANSIT' ? 'bg-blue-100 text-blue-700' :
+                                order.status === 'PROCESSING' ? 'bg-yellow-100 text-yellow-700' :
+                                  order.status === 'CANCELLED' ? 'bg-red-100 text-red-700' :
+                                    'bg-gray-100 text-gray-700'
                               }`}>
                               {order.status}
                             </span>
@@ -304,6 +340,35 @@ const SupportAgentChat = () => {
                     </div>
                   ) : (
                     <p className="text-sm text-gray-400">Wishlist is empty</p>
+                  )}
+                </div>
+
+                {/* Cart Items */}
+                <div>
+                  <h4 className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500 mb-2 flex items-center gap-2">
+                    <ShoppingCart className="h-4 w-4" />
+                    Cart ({customerDetails.cartItems?.length || 0})
+                    {customerDetails.cartTotalPrice > 0 && (
+                      <span className="text-gray-600 font-normal">- ${customerDetails.cartTotalPrice?.toFixed(2)}</span>
+                    )}
+                  </h4>
+                  {customerDetails.cartItems && customerDetails.cartItems.length > 0 ? (
+                    <div className="space-y-2 max-h-32 overflow-y-auto">
+                      {customerDetails.cartItems.slice(0, 5).map((item, idx) => (
+                        <div key={idx} className="flex items-center justify-between bg-orange-50 rounded-lg p-2 text-sm">
+                          <span className="font-medium truncate">{item.productName || item.product?.name || `Product #${item.productId}`}</span>
+                          <div className="flex items-center gap-2 text-xs text-gray-600">
+                            <span>x{item.quantity}</span>
+                            {item.size && <span className="bg-gray-200 px-1 rounded">{item.size}</span>}
+                          </div>
+                        </div>
+                      ))}
+                      {customerDetails.cartItems.length > 5 && (
+                        <p className="text-xs text-gray-400">+{customerDetails.cartItems.length - 5} more items</p>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-400">Cart is empty</p>
                   )}
                 </div>
               </div>
@@ -399,6 +464,26 @@ const SupportAgentChat = () => {
           </div>
 
           <form onSubmit={handleSend} className="mt-6 flex flex-col gap-3">
+            {selectedFile && (
+              <div className="flex items-center justify-between rounded-2xl border border-black/10 bg-white px-4 py-2 text-xs">
+                <div>
+                  <p className="font-semibold">{selectedFile.name}</p>
+                  <p className="text-gray-500">{formatFileSize(selectedFile.size)}</p>
+                </div>
+                <button
+                  type="button"
+                  className="text-xs font-semibold text-gray-500 hover:text-black"
+                  onClick={() => {
+                    setSelectedFile(null);
+                    if (fileInputRef.current) {
+                      fileInputRef.current.value = '';
+                    }
+                  }}
+                >
+                  Remove
+                </button>
+              </div>
+            )}
             <textarea
               value={input}
               onChange={(event) => setInput(event.target.value)}
@@ -409,14 +494,32 @@ const SupportAgentChat = () => {
             />
             <div className="flex flex-wrap items-center justify-between gap-3">
               <p className="text-xs text-gray-500">Respond within 2 minutes for best experience.</p>
-              <button
-                type="submit"
-                disabled={status === 'closed' || status === 'error' || isSending}
-                className="inline-flex items-center gap-2 rounded-full bg-black px-5 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                Send
-                <SendHorizontal className="h-4 w-4" />
-              </button>
+              <div className="flex items-center gap-3">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  className="hidden"
+                  onChange={handleFileChange}
+                  disabled={status === 'closed' || status === 'error' || isSending}
+                />
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-2 rounded-full border border-black px-4 py-2 text-sm font-semibold text-black transition hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={status === 'closed' || status === 'error' || isSending}
+                >
+                  <Paperclip className="h-4 w-4" />
+                  Attach
+                </button>
+                <button
+                  type="submit"
+                  disabled={status === 'closed' || status === 'error' || isSending}
+                  className="inline-flex items-center gap-2 rounded-full bg-black px-5 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Send
+                  <SendHorizontal className="h-4 w-4" />
+                </button>
+              </div>
             </div>
           </form>
         </section>

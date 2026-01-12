@@ -1,5 +1,6 @@
 import { Outlet } from 'react-router-dom';
 import Navbar from './Navbar';
+import FloatingChatButton from '../support/FloatingChatButton';
 
 const MainLayout = () => {
   return (
@@ -13,6 +14,7 @@ const MainLayout = () => {
       <footer className="bg-white text-center p-6 mt-auto border-t">
         <p className="text-gray-500 text-sm">© 2025 RAWCTRL. All rights reserved.</p>
       </footer>
+      <FloatingChatButton />
     </div>
   );
 };
