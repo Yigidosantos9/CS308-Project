@@ -12,9 +12,17 @@ const Wishlist = () => {
     const [error, setError] = useState(null);
     const [addingToCart, setAddingToCart] = useState({});
 
+    // Redirect support agents away from wishlist
+    useEffect(() => {
+        if (user?.userType === 'SUPPORT_AGENT') {
+            navigate('/support/queue');
+        }
+    }, [user, navigate]);
+
     useEffect(() => {
         const loadWishlist = async () => {
-            if (!user) {
+            // Don't load wishlist for support agents
+            if (!user || user?.userType === 'SUPPORT_AGENT') {
                 setLoading(false);
                 return;
             }

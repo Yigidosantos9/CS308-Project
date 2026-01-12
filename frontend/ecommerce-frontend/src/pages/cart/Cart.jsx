@@ -1,9 +1,23 @@
+import { useEffect } from 'react';
 import { useShop } from '../../context/ShopContext';
 import { Trash2, Plus, Minus } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const Cart = () => {
-  const { cart, removeFromCart, updateQuantity } = useShop();
+  const { cart, removeFromCart, updateQuantity, user } = useShop();
+  const navigate = useNavigate();
+
+  // Redirect support agents away from cart
+  useEffect(() => {
+    if (user?.userType === 'SUPPORT_AGENT') {
+      navigate('/support/queue');
+    }
+  }, [user, navigate]);
+
+  // If support agent, render nothing while redirecting
+  if (user?.userType === 'SUPPORT_AGENT') {
+    return null;
+  }
 
   // Calculate Prices (product prices are VAT included)
   const VAT_RATE = 0.18; // 18% VAT

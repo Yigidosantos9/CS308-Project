@@ -94,15 +94,15 @@ const Navbar = () => {
             <Headset className="w-5 h-5" />
           </Link>
 
-          {/* Wishlist - Hidden for Product Manager and Sales Manager */}
-          {user?.userType !== 'PRODUCT_MANAGER' && user?.userType !== 'SALES_MANAGER' && (
+          {/* Wishlist - Hidden for Product Manager, Sales Manager, and Support Agent */}
+          {user?.userType !== 'PRODUCT_MANAGER' && user?.userType !== 'SALES_MANAGER' && user?.userType !== 'SUPPORT_AGENT' && (
             <Link to="/wishlist" className="hover:opacity-60 transition-opacity">
               <Heart className="w-6 h-6" />
             </Link>
           )}
 
-          {/* Cart - Hidden for Product Manager and Sales Manager */}
-          {user?.userType !== 'PRODUCT_MANAGER' && user?.userType !== 'SALES_MANAGER' && (
+          {/* Cart - Hidden for Product Manager, Sales Manager, and Support Agent */}
+          {user?.userType !== 'PRODUCT_MANAGER' && user?.userType !== 'SALES_MANAGER' && user?.userType !== 'SUPPORT_AGENT' && (
             <Link to="/cart" className="relative hover:opacity-60 transition-opacity">
               <ShoppingBag className="w-6 h-6" />
               {cartItemCount > 0 && (

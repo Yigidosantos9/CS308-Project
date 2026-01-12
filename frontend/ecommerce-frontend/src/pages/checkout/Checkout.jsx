@@ -33,6 +33,11 @@ const Checkout = () => {
             navigate('/login');
             return;
         }
+        // Redirect support agents away from checkout
+        if (user?.userType === 'SUPPORT_AGENT') {
+            navigate('/support/queue');
+            return;
+        }
         if (!orderComplete && cart.length === 0) {
             navigate('/cart', { replace: true });
             return;

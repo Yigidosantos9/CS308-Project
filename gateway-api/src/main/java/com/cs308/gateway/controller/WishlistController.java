@@ -1,6 +1,8 @@
 package com.cs308.gateway.controller;
 
+import com.cs308.gateway.model.auth.enums.UserType;
 import com.cs308.gateway.model.product.Wishlist;
+import com.cs308.gateway.security.RequiresRole;
 import com.cs308.gateway.security.SecurityContext;
 import com.cs308.gateway.service.ProductService;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/wishlist")
 @RequiredArgsConstructor
+@RequiresRole({ UserType.CUSTOMER })
 public class WishlistController {
 
     private final ProductService productService;

@@ -192,7 +192,7 @@ const ProductDetails = () => {
 
     // Check if product is in wishlist
     const checkWishlist = async () => {
-      if (!user || isProductManager) {
+      if (!user || isProductManager || user?.userType === 'SUPPORT_AGENT') {
         setIsInWishlist(false);
         return;
       }
@@ -220,7 +220,7 @@ const ProductDetails = () => {
       alert('Please login to add items to your wishlist');
       return;
     }
-    if (isProductManager) return;
+    if (isProductManager || user?.userType === 'SUPPORT_AGENT') return;
 
     // Require size selection when adding to wishlist
     if (!isInWishlist && !selectedSize) {
@@ -457,8 +457,8 @@ const ProductDetails = () => {
               </div>
             </div>
 
-            {/* Quantity Selector */}
-            {user?.userType !== 'PRODUCT_MANAGER' && user?.userType !== 'SALES_MANAGER' && displayProduct.stock > 0 && (() => {
+            {/* Quantity Selector - Hidden for Product Manager, Sales Manager, and Support Agent */}
+            {user?.userType !== 'PRODUCT_MANAGER' && user?.userType !== 'SALES_MANAGER' && user?.userType !== 'SUPPORT_AGENT' && displayProduct.stock > 0 && (() => {
               const inCartQuantity = getCartQuantityForProduct(displayProduct.id);
               const availableToAdd = displayProduct.stock - inCartQuantity;
               const maxQuantity = Math.max(0, availableToAdd);
@@ -500,8 +500,8 @@ const ProductDetails = () => {
               );
             })()}
 
-            {/* Add to Cart Button - Hidden for Product Manager */}
-            {user?.userType !== 'PRODUCT_MANAGER' && user?.userType !== 'SALES_MANAGER' && (() => {
+            {/* Add to Cart Button - Hidden for Product Manager, Sales Manager, and Support Agent */}
+            {user?.userType !== 'PRODUCT_MANAGER' && user?.userType !== 'SALES_MANAGER' && user?.userType !== 'SUPPORT_AGENT' && (() => {
               const inCartQuantity = getCartQuantityForProduct(displayProduct.id);
               const availableToAdd = displayProduct.stock - inCartQuantity;
               const isDisabled = displayProduct.stock === 0 || availableToAdd <= 0;
