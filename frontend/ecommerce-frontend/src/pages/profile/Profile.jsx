@@ -1463,8 +1463,13 @@ const Profile = () => {
                   User profile
                 </p>
                 <p className="text-2xl font-black">
-                  {formState.firstName || 'User'} {formState.lastName}
-                </p>
+  {formState.firstName || 'User'} {formState.lastName}
+  {user?.userId && (
+    <span className="ml-2 text-sm font-normal text-white/50">
+      #{user.userId}
+    </span>
+  )}
+</p>
                 <p className="text-sm text-white/70">
                   RAWCTRL member
                 </p>
