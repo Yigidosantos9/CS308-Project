@@ -2,7 +2,7 @@ package com.cs308.product.service;
 
 import com.cs308.product.domain.Product;
 import com.cs308.product.domain.enums.Fit;
-import com.cs308.product.domain.enums.ProductType;
+
 import com.cs308.product.domain.enums.Season;
 import com.cs308.product.domain.enums.TargetAudience;
 import com.cs308.product.domain.enums.WarrantyStatus;
@@ -121,7 +121,7 @@ class ProductServiceTest {
         request.setSerialNumber("IMG-SER-001");
         request.setDescription("Desc");
         request.setBrand("Brand");
-        request.setProductType(ProductType.JACKET);
+        request.setProductType("JACKET");
         request.setTargetAudience(TargetAudience.UNISEX);
         request.setWarrantyStatus(WarrantyStatus.STANDARD);
         request.setDistributorInfo("Dist Info");
@@ -146,7 +146,7 @@ class ProductServiceTest {
                 .serialNumber("SERIAL-001")
                 .description("Warm winter jacket")
                 .brand("CS308")
-                .productType(ProductType.JACKET)
+                .productType("JACKET")
                 .targetAudience(TargetAudience.UNISEX)
                 .warrantyStatus(WarrantyStatus.STANDARD)
                 .distributorInfo("CS308 Distributors")

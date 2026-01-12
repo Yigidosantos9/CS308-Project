@@ -1,7 +1,7 @@
 package com.cs308.product.repository;
 
 import com.cs308.product.domain.Product;
-import com.cs308.product.domain.enums.ProductType;
+
 import com.cs308.product.domain.enums.TargetAudience;
 import com.cs308.product.domain.enums.WarrantyStatus;
 import org.junit.jupiter.api.Test;
@@ -30,7 +30,7 @@ public class ProductRepositoryTest {
         product.setSerialNumber("SN123");
         product.setDescription("Test Description");
         product.setBrand("Test Brand");
-        product.setProductType(ProductType.TSHIRT);
+        product.setProductType("TSHIRT");
         product.setTargetAudience(TargetAudience.UNISEX);
         product.setWarrantyStatus(WarrantyStatus.STANDARD);
         product.setDistributorInfo("Distributor Info");

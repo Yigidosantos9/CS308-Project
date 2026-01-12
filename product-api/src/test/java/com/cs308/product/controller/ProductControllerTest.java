@@ -1,7 +1,7 @@
 package com.cs308.product.controller;
 
 import com.cs308.product.domain.Product;
-import com.cs308.product.domain.enums.ProductType;
+
 import com.cs308.product.domain.enums.TargetAudience;
 import com.cs308.product.domain.enums.WarrantyStatus;
 import com.cs308.product.model.ProductUpdateRequest;
@@ -48,7 +48,7 @@ class ProductControllerTest {
                 request.setSerialNumber("SER-123");
                 request.setDescription("Premium leather jacket");
                 request.setBrand("CS308");
-                request.setProductType(ProductType.JACKET);
+                request.setProductType("JACKET");
                 request.setTargetAudience(TargetAudience.UNISEX);
                 request.setWarrantyStatus(WarrantyStatus.STANDARD);
                 request.setDistributorInfo("CS308 Dist");
@@ -90,7 +90,7 @@ class ProductControllerTest {
                                 .model("JK-002")
                                 .serialNumber("SER-456")
                                 .description("Updated desc")
-                                .productType(ProductType.JACKET)
+                                .productType("JACKET")
                                 .targetAudience(TargetAudience.UNISEX)
                                 .warrantyStatus(WarrantyStatus.STANDARD)
                                 .distributorInfo("CS308 Dist")
