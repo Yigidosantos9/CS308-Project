@@ -41,5 +41,5 @@ management:
 # Azure Blob Storage configuration
 azure:
   storage:
-    connection-string: ${AZURE_STORAGE_CONNECTION_STRING:DefaultEndpointsProtocol=https;AccountName=cs308blob;AccountKey=a48evfESymlBPBwCEO4MYiPCYbpS5+ONoshGHlASCk7apqOL/O5hqCIvf62l30IJCPb3o4DoEddi+AStQKbT+g==;EndpointSuffix=core.windows.net}
+    connection-string: DefaultEndpointsProtocol=https;AccountName=cs308blob;AccountKey=a48evfESymlBPBwCEO4MYiPCYbpS5+ONoshGHlASCk7apqOL/O5hqCIvf62l30IJCPb3o4DoEddi+AStQKbT+g==;EndpointSuffix=core.windows.net
     container-name: ${AZURE_STORAGE_CONTAINER:container}
