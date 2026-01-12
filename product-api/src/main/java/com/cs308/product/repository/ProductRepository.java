@@ -20,7 +20,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
                         "WHERE (:qPattern IS NULL OR LOWER(p.name) LIKE :qPattern " +
                         "OR LOWER(p.description) LIKE :qPattern " +
                         "OR LOWER(p.brand) LIKE :qPattern) " +
-                        "AND (:productType IS NULL OR LOWER(p.productType) = LOWER(:productType)) " +
+                        "AND (:productType IS NULL OR LOWER(p.productType) = :productType) " +
                         "AND (:targetAudience IS NULL OR p.targetAudience = :targetAudience) " +
                         "AND (:color IS NULL OR v.color = :color) " +
                         "AND (:descriptionPattern IS NULL OR LOWER(p.description) LIKE :descriptionPattern)")
@@ -37,7 +37,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
                         "WHERE (:qPattern IS NULL OR LOWER(p.name) LIKE :qPattern " +
                         "OR LOWER(p.description) LIKE :qPattern " +
                         "OR LOWER(p.brand) LIKE :qPattern) " +
-                        "AND (:productType IS NULL OR LOWER(p.productType) = LOWER(:productType)) " +
+                        "AND (:productType IS NULL OR LOWER(p.productType) = :productType) " +
                         "AND (:targetAudience IS NULL OR p.targetAudience = :targetAudience) " +
                         "AND (:color IS NULL OR v.color = :color) " +
                         "AND (:descriptionPattern IS NULL OR LOWER(p.description) LIKE :descriptionPattern) " +
@@ -56,7 +56,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
                         "WHERE (:qPattern IS NULL OR LOWER(p.name) LIKE :qPattern " +
                         "OR LOWER(p.description) LIKE :qPattern " +
                         "OR LOWER(p.brand) LIKE :qPattern) " +
-                        "AND (:productType IS NULL OR LOWER(p.productType) = LOWER(:productType)) " +
+                        "AND (:productType IS NULL OR LOWER(p.productType) = :productType) " +
                         "AND (:targetAudience IS NULL OR p.targetAudience = :targetAudience) " +
                         "AND (:color IS NULL OR v.color = :color) " +
                         "AND (:descriptionPattern IS NULL OR LOWER(p.description) LIKE :descriptionPattern) " +

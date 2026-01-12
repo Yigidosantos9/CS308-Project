@@ -216,7 +216,7 @@ public class ProductService {
 
         String productType = null;
         if (filter.getCategory() != null && !filter.getCategory().isBlank()) {
-            productType = filter.getCategory();
+            productType = filter.getCategory().toLowerCase();
         }
 
         com.cs308.product.domain.enums.TargetAudience targetAudience = null;
