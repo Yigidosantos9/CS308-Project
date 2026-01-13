@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { MessageCircle, SendHorizontal, ChevronDown, ChevronUp, Package, Heart, User, Paperclip, ShoppingCart } from 'lucide-react';
 
-import { API_BASE_URL, supportChatService } from '../../services/api';
+import { supportChatService } from '../../services/api';
 import { useShop } from '../../context/ShopContext';
 
 const SupportAgentChat = () => {
@@ -228,7 +228,24 @@ const SupportAgentChat = () => {
           ? 'Waiting in queue'
           : 'Starting chat...';
 
-  const getFileUrl = (attachment) => `${API_BASE_URL}/support/chat/${attachment.chatId}/file/${attachment.id}`;
+  const handleDownloadAttachment = async (attachment) => {
+    if (!attachment) return;
+    try {
+      const response = await supportChatService.downloadFile(attachment.chatId, attachment.id);
+      const contentType = response.headers?.['content-type'] || 'application/octet-stream';
+      const blob = new Blob([response.data], { type: contentType });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = attachment.filename || 'attachment';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      setError('Unable to download file.');
+    }
+  };
 
   return (
     <div className="min-h-[calc(100vh-160px)] bg-gradient-to-br from-[#fef7ec] via-[#f5f5f5] to-[#ffe8e0] px-6 py-10">
@@ -444,12 +461,13 @@ const SupportAgentChat = () => {
                         <p className="font-semibold">{message.attachment.filename}</p>
                         <div className="mt-1 flex items-center justify-between text-[10px] uppercase tracking-[0.2em]">
                           <span>{message.attachment.size} bytes</span>
-                          <a
-                            href={getFileUrl(message.attachment)}
+                          <button
+                            type="button"
+                            onClick={() => handleDownloadAttachment(message.attachment)}
                             className={`${isAgent ? 'text-white underline' : 'text-black underline'}`}
                           >
                             Download
-                          </a>
+                          </button>
                         </div>
                       </div>
                     )}
