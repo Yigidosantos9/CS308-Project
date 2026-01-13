@@ -213,6 +213,12 @@ public class OrderController {
 
     // ==================== INVOICE ENDPOINT ====================
 
+    @PutMapping("/{id}/force-date")
+    public ResponseEntity<?> forceOrderDate(@PathVariable Long id, @RequestParam int daysAgo) {
+        orderService.forceUpdateDates(id, daysAgo);
+        return ResponseEntity.ok().build();
+    }
+
     @GetMapping(value = "/{id}/invoice", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<ByteArrayResource> getInvoice(@PathVariable Long id,
             @RequestParam(required = false) String buyerName,

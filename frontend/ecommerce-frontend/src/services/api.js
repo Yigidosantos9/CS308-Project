@@ -9,7 +9,7 @@ const api = axios.create({
 // Add request interceptor to attach auth token
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('authToken');
+    const token = sessionStorage.getItem('authToken');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -147,7 +147,7 @@ export const authService = {
         params: guestUserId ? { guestUserId } : undefined,
       });
       if (response.data?.token) {
-        localStorage.setItem('authToken', response.data.token);
+        sessionStorage.setItem('authToken', response.data.token);
         // Also store user data for persistence
         const userData = {
           userId: response.data.userId,
@@ -156,7 +156,7 @@ export const authService = {
           lastName: response.data.lastName,
           userType: response.data.userType
         };
-        localStorage.setItem('userData', JSON.stringify(userData));
+        sessionStorage.setItem('userData', JSON.stringify(userData));
       }
       return response.data;
     } catch (error) {
@@ -190,9 +190,9 @@ export const authService = {
   },
 
   logout: () => {
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('userData');
-    localStorage.removeItem('user');
+    sessionStorage.removeItem('authToken');
+    sessionStorage.removeItem('userData');
+    sessionStorage.removeItem('user');
   },
 
   getUserById: async (userId) => {
@@ -206,11 +206,11 @@ export const authService = {
   },
 
   getToken: () => {
-    return localStorage.getItem('authToken');
+    return sessionStorage.getItem('authToken');
   },
 
   isAuthenticated: () => {
-    return !!localStorage.getItem('authToken');
+    return !!sessionStorage.getItem('authToken');
   }
 };
 
@@ -234,7 +234,7 @@ export const reviewService = {
     }
   },
   addReview: async (reviewData) => {
-    const token = localStorage.getItem('authToken');
+    const token = sessionStorage.getItem('authToken');
     return await api.post('/reviews', reviewData, {
       headers: { Authorization: `Bearer ${token}` }
     });
@@ -749,22 +749,22 @@ export const salesManagerService = {
     }
   },
 
-/**
- * Set price on a product (Sales Manager action)
- * @param {number} productId - The product ID
- * @param {number} price - The new price
- */
-setProductPrice:  async (productId, price) => {
-  try {
-    const response = await api.put(`/sales/products/${productId}/price`, null, {
-      params: { price }
-    });
-    return response. data;
-  } catch (error) {
-    console.error('Error setting product price:', error);
-    throw error;
-  }
-},
+  /**
+   * Set price on a product (Sales Manager action)
+   * @param {number} productId - The product ID
+   * @param {number} price - The new price
+   */
+  setProductPrice: async (productId, price) => {
+    try {
+      const response = await api.put(`/sales/products/${productId}/price`, null, {
+        params: { price }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error setting product price:', error);
+      throw error;
+    }
+  },
   /**
    * Download invoice PDF for a specific order (Sales Manager endpoint)
    * Uses POST /api/sales/invoices/pdf with InvoiceRequest body

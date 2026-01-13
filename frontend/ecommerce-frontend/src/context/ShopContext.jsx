@@ -70,13 +70,13 @@ export const ShopProvider = ({ children }) => {
   }, []);
 
   const checkAuth = async () => {
-    const token = localStorage.getItem('authToken');
-    const storedUserData = localStorage.getItem('userData');
+    const token = sessionStorage.getItem('authToken');
+    const storedUserData = sessionStorage.getItem('userData');
 
     // 🔒 If there is NO token, force logged-out state
     if (!token) {
       if (storedUserData) {
-        localStorage.removeItem('userData');
+        sessionStorage.removeItem('userData');
       }
       setUser(null);
       setLoading(false);
@@ -90,7 +90,7 @@ export const ShopProvider = ({ children }) => {
         setUser(parsedUser);
       } catch (e) {
         console.error('Failed to parse stored user data:', e);
-        localStorage.removeItem('userData');
+        sessionStorage.removeItem('userData');
       }
     }
 
@@ -100,7 +100,7 @@ export const ShopProvider = ({ children }) => {
       setUser(userData);
 
       // Update stored user data
-      localStorage.setItem('userData', JSON.stringify(userData));
+      sessionStorage.setItem('userData', JSON.stringify(userData));
 
       // Merge guest cart with user cart if guest had items
       const guestId = localStorage.getItem('guestUserId');
@@ -166,8 +166,8 @@ export const ShopProvider = ({ children }) => {
 
       // If token is invalid/expired → really log out
       if (error.response?.status === 401) {
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('userData');
+        sessionStorage.removeItem('authToken');
+        sessionStorage.removeItem('userData');
         setUser(null);
       }
     } finally {
@@ -308,8 +308,8 @@ export const ShopProvider = ({ children }) => {
 
   // Logout function
   const logout = () => {
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('userData');
+    sessionStorage.removeItem('authToken');
+    sessionStorage.removeItem('userData');
     setUser(null);
     setCart([]);
   };

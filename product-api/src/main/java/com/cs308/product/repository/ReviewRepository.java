@@ -53,4 +53,9 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
      * Get recent approved reviews for home page display
      */
     List<Review> findTop10ByApprovedTrueAndCommentIsNotNullOrderByCreatedAtDesc();
+
+    /**
+     * Delete all reviews for a product (cascade delete support)
+     */
+    void deleteByProductId(Long productId);
 }

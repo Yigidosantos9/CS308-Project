@@ -153,4 +153,19 @@ public class AuthenticationService {
                 .homeAddress(user.getHomeAddress())
                 .build();
     }
+
+    public UserDetails updateUser(Long userId, String taxId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
+
+        // Encrypt and update taxId if provided
+        if (taxId != null && !taxId.isEmpty()) {
+            user.setTaxId(encryptionService.encrypt(taxId));
+        }
+
+        userRepository.save(user);
+
+        // Return updated user details
+        return getUserById(userId);
+    }
 }
