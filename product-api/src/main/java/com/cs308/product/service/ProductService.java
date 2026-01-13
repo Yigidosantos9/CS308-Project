@@ -18,6 +18,10 @@ import java.util.Optional;
 public class ProductService {
 
     private final ProductRepository productRepository;
+    private final com.cs308.product.repository.ReviewRepository reviewRepository;
+    private final com.cs308.product.repository.CartItemRepository cartItemRepository;
+    private final com.cs308.product.repository.WishlistItemRepository wishlistItemRepository;
+    private final com.cs308.product.repository.OrderItemRepository orderItemRepository;
 
     public Product addProduct(com.cs308.product.model.CreateProductRequest request) {
         Product product = new Product();
@@ -307,7 +311,14 @@ public class ProductService {
                 sort);
     }
 
+    @org.springframework.transaction.annotation.Transactional
     public void delete(Long id) {
+        // Manually cascade delete dependent items
+        cartItemRepository.deleteByProductId(id);
+        wishlistItemRepository.deleteByProductId(id);
+        orderItemRepository.deleteByProductId(id);
+        reviewRepository.deleteByProductId(id);
+
         productRepository.deleteById(id);
     }
 }

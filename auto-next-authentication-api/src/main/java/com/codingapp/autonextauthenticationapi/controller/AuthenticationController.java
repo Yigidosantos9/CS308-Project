@@ -9,8 +9,10 @@ import com.codingapp.autonextauthenticationapi.service.AuthenticationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -42,6 +44,11 @@ public class AuthenticationController {
     @GetMapping("/users/{userId}")
     public UserDetails getUserById(@PathVariable Long userId) {
         return authenticationService.getUserById(userId);
+    }
+
+    @PutMapping("/users/{userId}/tax-id")
+    public UserDetails updateTaxId(@PathVariable Long userId, @RequestParam String taxId) {
+        return authenticationService.updateUser(userId, taxId);
     }
 
 }

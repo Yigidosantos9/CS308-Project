@@ -354,6 +354,31 @@ public class OrderService {
     // ==================== ENCRYPTION HELPERS ====================
 
     /**
+     * FORCE UPDATE DATES (DEMO ONLY)
+     * Manually backdate an order and its delivery date.
+     * 
+     * @param orderId The ID of the order to update
+     * @param daysAgo Number of days to shift the order back
+     */
+    @Transactional
+    public void forceUpdateDates(Long orderId, int daysAgo) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found with id: " + orderId));
+
+        LocalDateTime newOrderDate = LocalDateTime.now().minusDays(daysAgo);
+        order.setOrderDate(newOrderDate);
+
+        // If delivered, also backdate delivery date (e.g., to 3 days after new order
+        // date)
+        if (order.getStatus() == OrderStatus.DELIVERED) {
+            // Assume delivery took 3 days
+            order.setDeliveredAt(newOrderDate.plusDays(3));
+        }
+
+        orderRepository.save(order);
+    }
+
+    /**
      * Decrypt sensitive fields in an order for API responses
      * Handles backwards compatibility with existing unencrypted data
      */
