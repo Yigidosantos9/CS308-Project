@@ -727,6 +727,18 @@ export const supportChatService = {
       console.error('Error fetching customer details:', error);
       return null;
     }
+  },
+
+  downloadFile: async (chatId, fileId) => {
+    try {
+      const response = await api.get(`/support/chat/${chatId}/file/${fileId}`, {
+        responseType: 'blob'
+      });
+      return response;
+    } catch (error) {
+      console.error('Error downloading chat file:', error);
+      throw error;
+    }
   }
 };
 

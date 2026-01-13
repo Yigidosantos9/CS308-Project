@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { MessageCircle, Paperclip, SendHorizontal } from 'lucide-react';
 
-import { API_BASE_URL, supportChatService } from '../../services/api';
+import { supportChatService } from '../../services/api';
 import { useShop } from '../../context/ShopContext';
 
 const CHAT_STORAGE_KEY_PREFIX = 'supportChatId';
@@ -272,7 +272,24 @@ const SupportChat = () => {
     setSelectedFile(file);
   };
 
-  const getFileUrl = (attachment) => `${API_BASE_URL}/support/chat/${attachment.chatId}/file/${attachment.id}`;
+  const handleDownloadAttachment = async (attachment) => {
+    if (!attachment) return;
+    try {
+      const response = await supportChatService.downloadFile(attachment.chatId, attachment.id);
+      const contentType = response.headers?.['content-type'] || 'application/octet-stream';
+      const blob = new Blob([response.data], { type: contentType });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = attachment.filename || 'attachment';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      setError('Unable to download file.');
+    }
+  };
 
   const formatFileSize = (size) => {
     if (!size && size !== 0) return '';
@@ -418,12 +435,13 @@ const SupportChat = () => {
                           <p className="font-semibold">{message.attachment.filename}</p>
                           <div className="mt-1 flex items-center justify-between text-[10px] uppercase tracking-[0.2em]">
                             <span>{formatFileSize(message.attachment.size)}</span>
-                            <a
-                              href={getFileUrl(message.attachment)}
+                            <button
+                              type="button"
+                              onClick={() => handleDownloadAttachment(message.attachment)}
                               className={`${isCustomer ? 'text-white underline' : 'text-black underline'}`}
                             >
                               Download
-                            </a>
+                            </button>
                           </div>
                         </div>
                       )}
