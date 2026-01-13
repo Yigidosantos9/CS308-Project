@@ -9,13 +9,11 @@ const SalesManagerDashboard = () => {
     const navigate = useNavigate();
     const { user, logout } = useShop();
 
-    // Active tab state
     const [activeTab, setActiveTab] = useState('invoices');
 
-    // Date range state - default to last 30 days
     const today = new Date();
     const thirtyDaysAgo = new Date(today);
-    thirtyDaysAgo. setDate(thirtyDaysAgo.getDate() - 30);
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
     const formatDateForInput = (date) => date.toISOString().split('T')[0];
 
@@ -25,11 +23,9 @@ const SalesManagerDashboard = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    // Stats
     const [totalRevenue, setTotalRevenue] = useState(0);
     const [orderCount, setOrderCount] = useState(0);
 
-    // Discount management state
     const [products, setProducts] = useState([]);
     const [productsLoading, setProductsLoading] = useState(false);
     const [discountRates, setDiscountRates] = useState({});
@@ -37,17 +33,14 @@ const SalesManagerDashboard = () => {
     const [discountSuccess, setDiscountSuccess] = useState(null);
     const [productSearch, setProductSearch] = useState('');
 
-    // Price management state
     const [priceValues, setPriceValues] = useState({});
     const [applyingPrice, setApplyingPrice] = useState(null);
     const [priceSuccess, setPriceSuccess] = useState(null);
     const [expandedPriceCards, setExpandedPriceCards] = useState({});
 
-    // Revenue chart state
     const [revenueStats, setRevenueStats] = useState(null);
     const [revenueLoading, setRevenueLoading] = useState(false);
 
-    // Refund management state
     const [pendingRefunds, setPendingRefunds] = useState([]);
     const [refundsLoading, setRefundsLoading] = useState(false);
     const [processingRefund, setProcessingRefund] = useState(false);
@@ -57,26 +50,23 @@ const SalesManagerDashboard = () => {
     const [productNames, setProductNames] = useState({});
     const [userNames, setUserNames] = useState({});
 
-    // Toast notification state
-    const [toast, setToast] = useState({ show: false, message:  '', type: 'success' });
+    const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
     const showToast = (message, type = 'success') => {
         setToast({ show: true, message, type });
         const timeout = type === 'error' ? 8000 : 4000;
-        setTimeout(() => setToast({ show: false, message: '', type:  'success' }), timeout);
+        setTimeout(() => setToast({ show: false, message:  '', type:  'success' }), timeout);
     };
 
-    // Toggle price card expansion
     const togglePriceCard = (productId) => {
         setExpandedPriceCards(prev => ({
-            ... prev,
-            [productId]: !prev[productId]
+            ...prev,
+            [productId]: ! prev[productId]
         }));
     };
 
-    // Check authorization
     useEffect(() => {
-        if (!user) {
+        if (! user) {
             navigate('/login');
             return;
         }
@@ -86,9 +76,8 @@ const SalesManagerDashboard = () => {
         }
     }, [user, navigate]);
 
-    // Fetch invoices on load and when dates change
     const fetchInvoices = useCallback(async () => {
-        if (!startDate || ! endDate) return;
+        if (! startDate || !endDate) return;
 
         setLoading(true);
         setError(null);
@@ -113,7 +102,6 @@ const SalesManagerDashboard = () => {
         fetchInvoices();
     }, [fetchInvoices]);
 
-    // Fetch products for discount/price management
     const fetchProducts = useCallback(async () => {
         setProductsLoading(true);
         try {
@@ -132,7 +120,6 @@ const SalesManagerDashboard = () => {
         }
     }, [activeTab, fetchProducts]);
 
-    // Fetch revenue stats
     const fetchRevenueStats = useCallback(async () => {
         setRevenueLoading(true);
         try {
@@ -151,7 +138,6 @@ const SalesManagerDashboard = () => {
         }
     }, [activeTab, fetchRevenueStats]);
 
-    // Fetch pending refunds
     const fetchPendingRefunds = useCallback(async () => {
         setRefundsLoading(true);
         try {
@@ -164,7 +150,7 @@ const SalesManagerDashboard = () => {
                 if (! userNames[uid]) {
                     try {
                         const fetchedUser = await authService.getUserById(uid);
-                        const fullName = [fetchedUser?. firstName, fetchedUser?.lastName]. filter(Boolean).join(' ').trim();
+                        const fullName = [fetchedUser?. firstName, fetchedUser?.lastName].filter(Boolean).join(' ').trim();
                         userData[uid] = fullName || fetchedUser?.email || `Customer #${uid}`;
                     } catch {
                         userData[uid] = `Customer #${uid}`;
@@ -183,7 +169,7 @@ const SalesManagerDashboard = () => {
                 if (!productNames[id]) {
                     try {
                         const product = await productService. getProductById(id);
-                        productData[id] = product?.name || `Product #${id}`;
+                        productData[id] = product?. name || `Product #${id}`;
                     } catch {
                         productData[id] = `Product #${id}`;
                     }
@@ -209,7 +195,7 @@ const SalesManagerDashboard = () => {
                 const data = await refundService.getPendingRefundRequests();
                 setPendingRefunds(data || []);
             } catch (error) {
-                console. error('Failed to fetch pending refunds:', error);
+                console.error('Failed to fetch pending refunds:', error);
             }
         };
         fetchRefundCount();
@@ -224,8 +210,8 @@ const SalesManagerDashboard = () => {
             fetchPendingRefunds();
             showToast('Refund approved!  Stock restored and customer notified.', 'success');
         } catch (error) {
-            console. error('Failed to approve refund:', error);
-            showToast('Failed to approve refund:  ' + (error.response?.data?.message || error.message), 'error');
+            console.error('Failed to approve refund:', error);
+            showToast('Failed to approve refund:  ' + (error. response?.data?.message || error.message), 'error');
         } finally {
             setProcessingRefund(false);
         }
@@ -249,22 +235,20 @@ const SalesManagerDashboard = () => {
             fetchPendingRefunds();
             showToast('Refund request rejected.  Customer notified.', 'success');
         } catch (error) {
-            console. error('Failed to reject refund:', error);
-            showToast('Failed to reject refund: ' + (error.response?.data?.message || error. message), 'error');
+            console.error('Failed to reject refund:', error);
+            showToast('Failed to reject refund: ' + (error.response?. data?.message || error.message), 'error');
         } finally {
             setProcessingRefund(false);
         }
     };
 
-    // Handle discount rate change
     const handleDiscountRateChange = (productId, value) => {
         setDiscountRates(prev => ({
             ...prev,
-            [productId]:  value
+            [productId]: value
         }));
     };
 
-    // Apply discount to a product
     const handleApplyDiscount = async (productId) => {
         const rate = parseFloat(discountRates[productId]);
         if (isNaN(rate) || rate < 0 || rate > 100) {
@@ -287,7 +271,6 @@ const SalesManagerDashboard = () => {
         }
     };
 
-    // Remove discount from a product
     const handleRemoveDiscount = async (productId) => {
         setApplyingDiscount(productId);
         try {
@@ -295,25 +278,23 @@ const SalesManagerDashboard = () => {
             setProducts(prev => prev.map(p => p.id === productId ? updatedProduct : p));
             setDiscountRates(prev => ({ ...prev, [productId]: '' }));
             setDiscountSuccess(productId);
-            showToast('Discount removed successfully! ', 'success');
+            showToast('Discount removed successfully!', 'success');
             setTimeout(() => setDiscountSuccess(null), 3000);
         } catch (err) {
             console.error('Failed to remove discount:', err);
-            showToast('Failed to remove discount. Please try again.', 'error');
+            showToast('Failed to remove discount. Please try again. ', 'error');
         } finally {
             setApplyingDiscount(null);
         }
     };
 
-    // Handle price value change
     const handlePriceChange = (productId, value) => {
         setPriceValues(prev => ({
             ...prev,
-            [productId]:  value
+            [productId]: value
         }));
     };
 
-    // Apply new price to a product
     const handleApplyPrice = async (productId) => {
         const price = parseFloat(priceValues[productId]);
         if (isNaN(price) || price < 0) {
@@ -323,8 +304,8 @@ const SalesManagerDashboard = () => {
 
         setApplyingPrice(productId);
         try {
-            const updatedProduct = await salesManagerService. setProductPrice(productId, price);
-            setProducts(prev => prev.map(p => p.id === productId ? updatedProduct : p));
+            const updatedProduct = await salesManagerService.setProductPrice(productId, price);
+            setProducts(prev => prev.map(p => p. id === productId ?  updatedProduct : p));
             setPriceSuccess(productId);
             setPriceValues(prev => ({ ...prev, [productId]: '' }));
             setExpandedPriceCards(prev => ({ ... prev, [productId]: false }));
@@ -338,7 +319,6 @@ const SalesManagerDashboard = () => {
         }
     };
 
-    // Download individual PDF
     const handleDownloadPdf = async (order) => {
         try {
             await orderService.getInvoice(
@@ -349,34 +329,28 @@ const SalesManagerDashboard = () => {
             );
             showToast('Invoice PDF downloaded successfully!', 'success');
         } catch (err) {
-            console. error('Failed to download invoice:', err);
+            console.error('Failed to download invoice:', err);
             showToast('Failed to download invoice PDF', 'error');
         }
     };
 
-    // Print invoice
     const handlePrintInvoice = async (order) => {
         try {
-            // Get the PDF blob
-            const blob = await orderService.getInvoiceBlob(
+            const blob = await orderService. getInvoiceBlob(
                 order.id,
                 order.buyerName,
                 order.buyerAddress,
                 order. paymentMethod
             );
 
-            // Create a URL for the blob
-            const url = window. URL.createObjectURL(blob);
-
-            // Open in new window for printing
+            const url = window.URL.createObjectURL(blob);
             const printWindow = window.open(url, '_blank');
 
             if (printWindow) {
-                printWindow. onload = () => {
+                printWindow.onload = () => {
                     printWindow.print();
                 };
             } else {
-                // If popup blocked, fallback to download
                 showToast('Popup blocked.  Downloading PDF instead... ', 'error');
                 handleDownloadPdf(order);
             }
@@ -386,13 +360,11 @@ const SalesManagerDashboard = () => {
         }
     };
 
-    // Logout handler
     const handleLogout = () => {
         logout();
         navigate('/');
     };
 
-    // Format date for display
     const formatDate = (dateString) => {
         if (!dateString) return 'N/A';
         const date = new Date(dateString);
@@ -405,7 +377,6 @@ const SalesManagerDashboard = () => {
         });
     };
 
-    // Format currency
     const formatCurrency = (amount) => {
         return new Intl. NumberFormat('en-US', {
             style: 'currency',
@@ -413,7 +384,6 @@ const SalesManagerDashboard = () => {
         }).format(amount || 0);
     };
 
-    // Get status color
     const getStatusColor = (status) => {
         switch (status) {
             case 'DELIVERED':  return 'bg-green-100 text-green-800';
@@ -425,7 +395,6 @@ const SalesManagerDashboard = () => {
         }
     };
 
-    // Filter products based on search
     const filteredProducts = products.filter(product =>
         product.name?. toLowerCase().includes(productSearch.toLowerCase()) ||
         product.model?.toLowerCase().includes(productSearch.toLowerCase())
@@ -450,7 +419,7 @@ const SalesManagerDashboard = () => {
                     )}
                     <span className="font-medium">{toast.message}</span>
                     <button
-                        onClick={() => setToast({ show: false, message: '', type: 'success' })}
+                        onClick={() => setToast({ show:  false, message: '', type: 'success' })}
                         className="ml-2 hover:opacity-75"
                     >
                         ×
@@ -553,7 +522,7 @@ const SalesManagerDashboard = () => {
                         </div>
 
                         <div className="space-y-4">
-                            {refundsLoading ?  (
+                            {refundsLoading ? (
                                 <div className="p-12 text-center bg-white rounded-xl">
                                     <RefreshCw size={32} className="animate-spin mx-auto text-orange-500 mb-4" />
                                     <p className="text-gray-500">Loading refund requests...</p>
@@ -624,7 +593,7 @@ const SalesManagerDashboard = () => {
                                                     <button
                                                         onClick={() => openRejectModal(order)}
                                                         disabled={processingRefund}
-                                                        className="px-4 py-2 bg-red-500 text-white text-sm rounded-lg hover:bg-red-600 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                                        className="px-4 py-2 bg-red-500 text-white text-sm rounded-lg hover:bg-red-600 transition disabled: opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                                                     >
                                                         <XCircle className="h-4 w-4" />
                                                         Reject
@@ -746,7 +715,7 @@ const SalesManagerDashboard = () => {
                                 </h2>
                             </div>
 
-                            {loading ?  (
+                            {loading ? (
                                 <div className="p-12 text-center">
                                     <RefreshCw size={32} className="animate-spin mx-auto text-emerald-500 mb-4" />
                                     <p className="text-gray-500">Loading invoices...</p>
@@ -808,7 +777,7 @@ const SalesManagerDashboard = () => {
                                                             {/* Download PDF Button */}
                                                             <button
                                                                 onClick={() => handleDownloadPdf(order)}
-                                                                className="group relative inline-flex items-center gap-1. 5 px-3 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover: from-red-600 hover:to-red-700 transition-all duration-200 shadow-sm hover:shadow-md text-sm font-medium"
+                                                                className="inline-flex items-center gap-1. 5 px-3 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg hover:bg-emerald-100 hover:border-emerald-300 transition-all duration-200 text-sm font-medium"
                                                                 title="Download PDF"
                                                             >
                                                                 <Download size={14} />
@@ -818,7 +787,7 @@ const SalesManagerDashboard = () => {
                                                             {/* Print Button */}
                                                             <button
                                                                 onClick={() => handlePrintInvoice(order)}
-                                                                className="group relative inline-flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover: to-blue-700 transition-all duration-200 shadow-sm hover:shadow-md text-sm font-medium"
+                                                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-teal-50 text-teal-700 border border-teal-200 rounded-lg hover:bg-teal-100 hover:border-teal-300 transition-all duration-200 text-sm font-medium"
                                                                 title="Print Invoice"
                                                             >
                                                                 <Printer size={14} />
@@ -857,7 +826,7 @@ const SalesManagerDashboard = () => {
                                         placeholder="Search products..."
                                         value={productSearch}
                                         onChange={(e) => setProductSearch(e.target.value)}
-                                        className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 w-64"
+                                        className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus: ring-emerald-500 focus:border-emerald-500 w-64"
                                     />
                                 </div>
                             </div>
@@ -878,7 +847,7 @@ const SalesManagerDashboard = () => {
                                 {filteredProducts.map((product) => (
                                     <div
                                         key={product.id}
-                                        className={`bg-white rounded-xl shadow-sm border p-5 transition-all duration-200 ${product.discountRate ?  'border-emerald-300 bg-emerald-50/30' : 'border-gray-100'
+                                        className={`bg-white rounded-xl shadow-sm border p-5 transition-all duration-200 ${product.discountRate ? 'border-emerald-300 bg-emerald-50/30' : 'border-gray-100'
                                             } ${discountSuccess === product.id || priceSuccess === product.id ?  'ring-2 ring-emerald-500' : ''}`}
                                     >
                                         {/* Product Info */}
@@ -913,7 +882,7 @@ const SalesManagerDashboard = () => {
                                                         {formatCurrency(product. price)}
                                                     </span>
                                                     <button
-                                                        onClick={() => togglePriceCard(product. id)}
+                                                        onClick={() => togglePriceCard(product.id)}
                                                         className={`p-1. 5 rounded-md transition-all duration-200 ${expandedPriceCards[product.id]
                                                             ? 'bg-blue-100 text-blue-600'
                                                             : 'bg-gray-200 text-gray-500 hover:bg-blue-50 hover:text-blue-500'
@@ -1008,7 +977,7 @@ const SalesManagerDashboard = () => {
                                                 <button
                                                     onClick={() => handleApplyDiscount(product.id)}
                                                     disabled={applyingDiscount === product.id}
-                                                    className="flex-1 px-3 py-1.5 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors text-xs font-medium disabled: opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1"
+                                                    className="flex-1 px-3 py-1.5 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1"
                                                 >
                                                     {applyingDiscount === product.id ?  (
                                                         <RefreshCw size={12} className="animate-spin" />
@@ -1070,7 +1039,7 @@ const SalesManagerDashboard = () => {
                                     <button
                                         onClick={fetchRevenueStats}
                                         disabled={revenueLoading}
-                                        className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50"
+                                        className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover: bg-emerald-700 transition-colors disabled:opacity-50"
                                     >
                                         <RefreshCw size={16} className={revenueLoading ?  'animate-spin' : ''} />
                                         Refresh
@@ -1099,7 +1068,7 @@ const SalesManagerDashboard = () => {
                                         </div>
                                         <div>
                                             <p className="text-sm text-gray-500">Total Cost (50%)</p>
-                                            <p className="text-2xl font-bold text-red-600">${revenueStats. totalCost?.toFixed(2) || '0.00'}</p>
+                                            <p className="text-2xl font-bold text-red-600">${revenueStats.totalCost?.toFixed(2) || '0.00'}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -1170,7 +1139,7 @@ const SalesManagerDashboard = () => {
                     <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl">
                         <h3 className="text-xl font-bold mb-4">Reject Refund Request</h3>
                         <p className="text-gray-600 mb-4">
-                            You are about to reject the refund request for Order #{selectedRefundOrder. id}.
+                            You are about to reject the refund request for Order #{selectedRefundOrder.id}. 
                             You may optionally provide a reason that will be sent to the customer. 
                         </p>
 
