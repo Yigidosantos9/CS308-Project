@@ -350,25 +350,33 @@ const PMDashboard = () => {
     };
 
     // ==================== CATEGORY MANAGEMENT ====================
-    const handleAddCategory = async () => {
-        const categoryName = newCategoryName.trim();
-        if (!categoryName) {
-            showToast('Please enter a category name', 'error');
-            return;
-        }
+// ==================== CATEGORY MANAGEMENT ====================
+const handleAddCategory = async () => {
+    const categoryName = newCategoryName.trim();
+    if (! categoryName) {
+        showToast('Please enter a category name', 'error');
+        return;
+    }
 
-        try {
-            const newCategory = await categoryService.addCategory(categoryName);
-            setCategories([...categories, newCategory]);
-            setNewCategoryName('');
-            setCategoryModalOpen(false);
-            showToast(`Category "${categoryName}" added successfully!`, 'success');
-        } catch (error) {
-            console.error('Failed to add category:', error);
-            showToast(error.response?.data?.error || 'Failed to add category', 'error');
-        }
-    };
+    try {
+        const newCategory = await categoryService.addCategory(categoryName);
+        setCategories([...categories, newCategory]);
+        setNewCategoryName('');
+        setCategoryModalOpen(false);
+        showToast(`Category "${categoryName}" added successfully! `, 'success');
 
+        // Auto-select the newly created category in the product form if the modal is open
+        if (productModalOpen) {
+            setProductFormData(prev => ({
+                ... prev,
+                productType: newCategory. name
+            }));
+        }
+    } catch (error) {
+        console.error('Failed to add category:', error);
+        showToast(error.response?.data?.error || 'Failed to add category', 'error');
+    }
+};
     const handleDeleteCategory = async (categoryId) => {
         if (!window.confirm('Are you sure you want to delete this category?')) return;
 
