@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileText, Download, Calendar, Search, LogOut, DollarSign, TrendingUp, RefreshCw, Tag, Percent, BarChart3, RotateCcw, CheckCircle, XCircle, Clock, AlertCircle, ChevronDown, ChevronUp, Edit3 } from 'lucide-react';
+import { FileText, Download, Calendar, Search, LogOut, DollarSign, TrendingUp, RefreshCw, Tag, Percent, BarChart3, RotateCcw, CheckCircle, XCircle, Clock, AlertCircle, ChevronDown, ChevronUp, Edit3, Printer } from 'lucide-react';
 import { useShop } from '../../context/ShopContext';
 import { salesManagerService, refundService, productService, authService, orderService } from '../../services/api';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -15,7 +15,7 @@ const SalesManagerDashboard = () => {
     // Date range state - default to last 30 days
     const today = new Date();
     const thirtyDaysAgo = new Date(today);
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    thirtyDaysAgo. setDate(thirtyDaysAgo.getDate() - 30);
 
     const formatDateForInput = (date) => date.toISOString().split('T')[0];
 
@@ -63,7 +63,7 @@ const SalesManagerDashboard = () => {
     const showToast = (message, type = 'success') => {
         setToast({ show: true, message, type });
         const timeout = type === 'error' ? 8000 : 4000;
-        setTimeout(() => setToast({ show: false, message:  '', type:  'success' }), timeout);
+        setTimeout(() => setToast({ show: false, message: '', type:  'success' }), timeout);
     };
 
     // Toggle price card expansion
@@ -88,7 +88,7 @@ const SalesManagerDashboard = () => {
 
     // Fetch invoices on load and when dates change
     const fetchInvoices = useCallback(async () => {
-        if (! startDate || !endDate) return;
+        if (!startDate || ! endDate) return;
 
         setLoading(true);
         setError(null);
@@ -164,7 +164,7 @@ const SalesManagerDashboard = () => {
                 if (! userNames[uid]) {
                     try {
                         const fetchedUser = await authService.getUserById(uid);
-                        const fullName = [fetchedUser?. firstName, fetchedUser?.lastName].filter(Boolean).join(' ').trim();
+                        const fullName = [fetchedUser?. firstName, fetchedUser?.lastName]. filter(Boolean).join(' ').trim();
                         userData[uid] = fullName || fetchedUser?.email || `Customer #${uid}`;
                     } catch {
                         userData[uid] = `Customer #${uid}`;
@@ -183,7 +183,7 @@ const SalesManagerDashboard = () => {
                 if (!productNames[id]) {
                     try {
                         const product = await productService. getProductById(id);
-                        productData[id] = product?. name || `Product #${id}`;
+                        productData[id] = product?.name || `Product #${id}`;
                     } catch {
                         productData[id] = `Product #${id}`;
                     }
@@ -249,8 +249,8 @@ const SalesManagerDashboard = () => {
             fetchPendingRefunds();
             showToast('Refund request rejected.  Customer notified.', 'success');
         } catch (error) {
-            console.error('Failed to reject refund:', error);
-            showToast('Failed to reject refund: ' + (error.response?. data?.message || error.message), 'error');
+            console. error('Failed to reject refund:', error);
+            showToast('Failed to reject refund: ' + (error.response?.data?.message || error. message), 'error');
         } finally {
             setProcessingRefund(false);
         }
@@ -295,11 +295,11 @@ const SalesManagerDashboard = () => {
             setProducts(prev => prev.map(p => p.id === productId ? updatedProduct : p));
             setDiscountRates(prev => ({ ...prev, [productId]: '' }));
             setDiscountSuccess(productId);
-            showToast('Discount removed successfully!', 'success');
+            showToast('Discount removed successfully! ', 'success');
             setTimeout(() => setDiscountSuccess(null), 3000);
         } catch (err) {
             console.error('Failed to remove discount:', err);
-            showToast('Failed to remove discount. Please try again. ', 'error');
+            showToast('Failed to remove discount. Please try again.', 'error');
         } finally {
             setApplyingDiscount(null);
         }
@@ -309,7 +309,7 @@ const SalesManagerDashboard = () => {
     const handlePriceChange = (productId, value) => {
         setPriceValues(prev => ({
             ...prev,
-            [productId]: value
+            [productId]:  value
         }));
     };
 
@@ -327,7 +327,7 @@ const SalesManagerDashboard = () => {
             setProducts(prev => prev.map(p => p.id === productId ? updatedProduct : p));
             setPriceSuccess(productId);
             setPriceValues(prev => ({ ...prev, [productId]: '' }));
-            setExpandedPriceCards(prev => ({ ...prev, [productId]: false }));
+            setExpandedPriceCards(prev => ({ ... prev, [productId]: false }));
             showToast(`Price updated to $${price. toFixed(2)} successfully!`, 'success');
             setTimeout(() => setPriceSuccess(null), 3000);
         } catch (err) {
@@ -347,9 +347,42 @@ const SalesManagerDashboard = () => {
                 order. buyerAddress,
                 order. paymentMethod
             );
+            showToast('Invoice PDF downloaded successfully!', 'success');
         } catch (err) {
             console. error('Failed to download invoice:', err);
-            alert('Failed to download invoice PDF');
+            showToast('Failed to download invoice PDF', 'error');
+        }
+    };
+
+    // Print invoice
+    const handlePrintInvoice = async (order) => {
+        try {
+            // Get the PDF blob
+            const blob = await orderService.getInvoiceBlob(
+                order.id,
+                order.buyerName,
+                order.buyerAddress,
+                order. paymentMethod
+            );
+
+            // Create a URL for the blob
+            const url = window. URL.createObjectURL(blob);
+
+            // Open in new window for printing
+            const printWindow = window.open(url, '_blank');
+
+            if (printWindow) {
+                printWindow. onload = () => {
+                    printWindow.print();
+                };
+            } else {
+                // If popup blocked, fallback to download
+                showToast('Popup blocked.  Downloading PDF instead... ', 'error');
+                handleDownloadPdf(order);
+            }
+        } catch (err) {
+            console.error('Failed to print invoice:', err);
+            showToast('Failed to print invoice', 'error');
         }
     };
 
@@ -366,7 +399,7 @@ const SalesManagerDashboard = () => {
         return date.toLocaleDateString('en-US', {
             year: 'numeric',
             month: 'short',
-            day:  'numeric',
+            day: 'numeric',
             hour: '2-digit',
             minute: '2-digit'
         });
@@ -387,8 +420,8 @@ const SalesManagerDashboard = () => {
             case 'IN_TRANSIT': return 'bg-blue-100 text-blue-800';
             case 'PREPARING': return 'bg-yellow-100 text-yellow-800';
             case 'CANCELLED': return 'bg-red-100 text-red-800';
-            case 'REFUNDED': return 'bg-purple-100 text-purple-800';
-            default:  return 'bg-gray-100 text-gray-800';
+            case 'REFUNDED':  return 'bg-purple-100 text-purple-800';
+            default: return 'bg-gray-100 text-gray-800';
         }
     };
 
@@ -520,7 +553,7 @@ const SalesManagerDashboard = () => {
                         </div>
 
                         <div className="space-y-4">
-                            {refundsLoading ? (
+                            {refundsLoading ?  (
                                 <div className="p-12 text-center bg-white rounded-xl">
                                     <RefreshCw size={32} className="animate-spin mx-auto text-orange-500 mb-4" />
                                     <p className="text-gray-500">Loading refund requests...</p>
@@ -543,7 +576,7 @@ const SalesManagerDashboard = () => {
                                                     <div className="flex items-center gap-3 mb-2">
                                                         <span className="font-bold text-lg">Order #{order.id}</span>
                                                         <span className="text-sm text-gray-500">
-                                                            by {userNames[order.userId] || `Customer #${order. userId}`}
+                                                            by {userNames[order.userId] || `Customer #${order.userId}`}
                                                         </span>
                                                         <span className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium bg-orange-100 text-orange-800">
                                                             <Clock className="h-3 w-3" />
@@ -555,7 +588,7 @@ const SalesManagerDashboard = () => {
                                                         <p><span className="font-medium">Order Date:</span> {new Date(order.orderDate).toLocaleDateString()}</p>
                                                         <p><span className="font-medium">Total Amount:</span> ${order.totalPrice?. toFixed(2)}</p>
                                                         {order.refundRequestedAt && (
-                                                            <p><span className="font-medium">Refund Requested:</span> {new Date(order.refundRequestedAt).toLocaleDateString()}</p>
+                                                            <p><span className="font-medium">Refund Requested: </span> {new Date(order.refundRequestedAt).toLocaleDateString()}</p>
                                                         )}
                                                     </div>
 
@@ -571,8 +604,8 @@ const SalesManagerDashboard = () => {
                                                         <div className="space-y-2">
                                                             {order.items?. map((item, index) => (
                                                                 <div key={index} className="flex justify-between text-sm">
-                                                                    <span>{productNames[item.productId] || `Product #${item.productId}`} x{item.quantity}</span>
-                                                                    <span className="font-medium">${item.price?.toFixed(2)}</span>
+                                                                    <span>{productNames[item.productId] || `Product #${item. productId}`} x{item.quantity}</span>
+                                                                    <span className="font-medium">${item.price?. toFixed(2)}</span>
                                                                 </div>
                                                             ))}
                                                         </div>
@@ -683,7 +716,7 @@ const SalesManagerDashboard = () => {
                                 <button
                                     onClick={fetchInvoices}
                                     disabled={loading}
-                                    className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled: cursor-not-allowed"
                                 >
                                     {loading ? (
                                         <>
@@ -709,11 +742,11 @@ const SalesManagerDashboard = () => {
                         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                             <div className="px-6 py-4 border-b border-gray-200">
                                 <h2 className="text-lg font-semibold text-gray-900">
-                                    Invoices ({invoices. length})
+                                    Invoices ({invoices.length})
                                 </h2>
                             </div>
 
-                            {loading ? (
+                            {loading ?  (
                                 <div className="p-12 text-center">
                                     <RefreshCw size={32} className="animate-spin mx-auto text-emerald-500 mb-4" />
                                     <p className="text-gray-500">Loading invoices...</p>
@@ -770,14 +803,28 @@ const SalesManagerDashboard = () => {
                                                     <td className="px-6 py-4 whitespace-nowrap text-right font-medium text-gray-900">
                                                         {formatCurrency(order.totalPrice)}
                                                     </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-center">
-                                                        <button
-                                                            onClick={() => handleDownloadPdf(order)}
-                                                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg hover:bg-emerald-100 transition-colors text-sm font-medium"
-                                                        >
-                                                            <Download size={14} />
-                                                            PDF
-                                                        </button>
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <div className="flex items-center justify-center gap-2">
+                                                            {/* Download PDF Button */}
+                                                            <button
+                                                                onClick={() => handleDownloadPdf(order)}
+                                                                className="group relative inline-flex items-center gap-1. 5 px-3 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover: from-red-600 hover:to-red-700 transition-all duration-200 shadow-sm hover:shadow-md text-sm font-medium"
+                                                                title="Download PDF"
+                                                            >
+                                                                <Download size={14} />
+                                                                <span>PDF</span>
+                                                            </button>
+
+                                                            {/* Print Button */}
+                                                            <button
+                                                                onClick={() => handlePrintInvoice(order)}
+                                                                className="group relative inline-flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover: to-blue-700 transition-all duration-200 shadow-sm hover:shadow-md text-sm font-medium"
+                                                                title="Print Invoice"
+                                                            >
+                                                                <Printer size={14} />
+                                                                <span>Print</span>
+                                                            </button>
+                                                        </div>
                                                     </td>
                                                 </tr>
                                             ))}
@@ -956,12 +1003,12 @@ const SalesManagerDashboard = () => {
                                                     />
                                                     <Percent size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
                                                 </div>
-                            </div>
+                                            </div>
                                             <div className="flex gap-2">
                                                 <button
-                                                    onClick={() => handleApplyDiscount(product. id)}
+                                                    onClick={() => handleApplyDiscount(product.id)}
                                                     disabled={applyingDiscount === product.id}
-                                                    className="flex-1 px-3 py-1.5 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1"
+                                                    className="flex-1 px-3 py-1.5 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors text-xs font-medium disabled: opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1"
                                                 >
                                                     {applyingDiscount === product.id ?  (
                                                         <RefreshCw size={12} className="animate-spin" />
@@ -1023,7 +1070,7 @@ const SalesManagerDashboard = () => {
                                     <button
                                         onClick={fetchRevenueStats}
                                         disabled={revenueLoading}
-                                        className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover: bg-emerald-700 transition-colors disabled:opacity-50"
+                                        className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50"
                                     >
                                         <RefreshCw size={16} className={revenueLoading ?  'animate-spin' : ''} />
                                         Refresh
@@ -1087,7 +1134,7 @@ const SalesManagerDashboard = () => {
                                 <div className="h-80 flex items-center justify-center">
                                     <RefreshCw size={32} className="animate-spin text-emerald-500" />
                                 </div>
-                            ) : revenueStats?. dailyData?. length > 0 ? (
+                            ) : revenueStats?. dailyData?.length > 0 ? (
                                 <ResponsiveContainer width="100%" height={400}>
                                     <BarChart data={revenueStats.dailyData}>
                                         <CartesianGrid strokeDasharray="3 3" />
@@ -1123,7 +1170,7 @@ const SalesManagerDashboard = () => {
                     <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl">
                         <h3 className="text-xl font-bold mb-4">Reject Refund Request</h3>
                         <p className="text-gray-600 mb-4">
-                            You are about to reject the refund request for Order #{selectedRefundOrder.id}.
+                            You are about to reject the refund request for Order #{selectedRefundOrder. id}.
                             You may optionally provide a reason that will be sent to the customer. 
                         </p>
 
@@ -1150,7 +1197,7 @@ const SalesManagerDashboard = () => {
                                 disabled={processingRefund}
                                 className="flex-1 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                {processingRefund ? 'Processing.. .' : 'Confirm Rejection'}
+                                {processingRefund ? 'Processing...' : 'Confirm Rejection'}
                             </button>
                             <button
                                 onClick={() => {
