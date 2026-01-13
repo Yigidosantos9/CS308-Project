@@ -212,27 +212,100 @@ const PMDashboard = () => {
 
     const handleSaveProduct = async () => {
         if (savingProduct) return;
+
+        // Validation
+        if (!productFormData.name?. trim()) {
+            showToast('Product name is required', 'error');
+            return;
+        }
+        if (!productFormData.price || isNaN(parseFloat(productFormData.price)) || parseFloat(productFormData.price) < 0) {
+            showToast('Please enter a valid price', 'error');
+            return;
+        }
+        if (! productFormData.stock || isNaN(parseInt(productFormData. stock, 10)) || parseInt(productFormData. stock, 10) < 0) {
+            showToast('Please enter a valid stock quantity', 'error');
+            return;
+        }
+        if (!productFormData.model?. trim()) {
+            showToast('Model is required', 'error');
+            return;
+        }
+        if (!productFormData.serialNumber?. trim()) {
+            showToast('Serial number is required', 'error');
+            return;
+        }
+        if (!productFormData.description?. trim()) {
+            showToast('Description is required', 'error');
+            return;
+        }
+        if (!productFormData.distributorInfo?.trim()) {
+            showToast('Distributor info is required', 'error');
+            return;
+        }
+
         setSavingProduct(true);
+
         try {
+            // Build the payload matching CreateProductRequest structure
             const payload = {
-                ...productFormData,
+                name: productFormData. name. trim(),
                 price: parseFloat(productFormData.price),
-                stock: parseInt(productFormData.stock, 10),
-                season: productFormData.season || null,
-                fit: productFormData.fit || null
+                stock: parseInt(productFormData. stock, 10),
+                model: productFormData.model. trim(),
+                serialNumber: productFormData.serialNumber.trim(),
+                description:  productFormData.description.trim(),
+                brand: productFormData.brand?. trim() || null,
+                productType: productFormData. productType,
+                targetAudience: productFormData.targetAudience,
+                warrantyStatus: productFormData.warrantyStatus,
+                distributorInfo: productFormData. distributorInfo.trim(),
+                // Only include optional fields if they have values
+                ...(productFormData. season && { season:  productFormData.season }),
+                ...(productFormData.fit && { fit: productFormData.fit }),
+                ...(productFormData.material?. trim() && { material: productFormData. material.trim() }),
+                ...(productFormData.careInstructions?.trim() && { careInstructions: productFormData.careInstructions.trim() }),
+                // Send imageUrls as array of strings
+                imageUrls: productFormData.imageUrls || []
             };
+
+            console.log('Saving product with payload:', payload);
+
             if (editingProduct) {
                 await productService.updateProduct(editingProduct.id, payload);
-                showToast('Product updated successfully!', 'success');
+                showToast('Product updated successfully! ', 'success');
             } else {
                 await productService.addProduct(payload);
                 showToast('Product added successfully!', 'success');
             }
+
             setProductModalOpen(false);
             fetchProducts();
         } catch (error) {
-            console.error('Failed to save product:', error);
-            showToast('Failed to save product: ' + (error.response?.data?.message || error.message), 'error');
+            console. error('Failed to save product:', error);
+
+            // Extract error message from response
+            let errorMessage = 'Failed to save product';
+            if (error.response?.data) {
+                if (typeof error.response.data === 'string') {
+                    errorMessage = error.response.data;
+                } else if (error.response. data.message) {
+                    errorMessage = error.response. data.message;
+                } else if (error. response.data.error) {
+                    errorMessage = error. response.data.error;
+                } else if (error. response.data.errors) {
+                    // Handle validation errors
+                    const errors = error.response. data.errors;
+                    if (Array.isArray(errors)) {
+                        errorMessage = errors.join(', ');
+                    } else if (typeof errors === 'object') {
+                        errorMessage = Object. values(errors).flat().join(', ');
+                    }
+                }
+            } else if (error. message) {
+                errorMessage = error. message;
+            }
+
+            showToast(errorMessage, 'error');
         } finally {
             setSavingProduct(false);
         }
