@@ -597,12 +597,15 @@ const ProductDetails = () => {
               </button>
             ) : (
               user && (
-                <span className="text-sm text-gray-500">
-                  {isProductManager
-                    ? 'Product managers cannot submit reviews.'
-                    : 'You can review after ordering this product'}
-                </span>
+               <span className="text-sm text-gray-500">
+                {user?.userType === 'PRODUCT_MANAGER'
+                   ? 'Product Managers cannot submit reviews.'
+                   : user?.userType === 'SALES_MANAGER'
+                  ? 'Sales Managers cannot submit reviews.'
+                  : 'You can review after ordering this product.'}
+               </span>
               )
+
             )}
           </div>
 
