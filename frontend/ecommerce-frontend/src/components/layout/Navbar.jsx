@@ -43,9 +43,18 @@ const Navbar = () => {
       <div className="container mx-auto flex justify-between items-center">
 
         {/* 1. Logo */}
-        <Link to="/" className="text-4xl font-black tracking-tighter uppercase bg-black text-white px-3 py-1">
-          RAWCTRL
-        </Link>
+        <Link
+        to="/"
+         className={[
+           'text-4xl font-black tracking-[0.015em] uppercase',
+           'px-3 py-1 rounded-lg',
+          'bg-black [#F5F5F5] ',
+          'dark:bg-[#F5F5F5] dark:text-black',
+           ].join(' ')}
+>
+  RAWCTRL
+</Link>
+
 
         {/* 2. Desktop Navigation (Hidden on Mobile) */}
         <div className="hidden md:flex gap-12 font-semibold text-lg tracking-wide">
