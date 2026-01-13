@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Package, Truck, CheckCircle, Clock, ChevronDown, XCircle, LogOut, Star, MessageSquare, Plus, Edit, Trash2, Box, FolderPlus, Tag, AlertCircle } from 'lucide-react';
+import { Package, Truck, CheckCircle, Clock, ChevronDown, XCircle, LogOut, Star, MessageSquare, Plus, Edit, Trash2, Box, FolderPlus, Tag, AlertCircle, MapPin, User, Hash, DollarSign, ShoppingBag } from 'lucide-react';
 import { useShop } from '../../context/ShopContext';
 import { orderService, reviewService, productService, authService, categoryService } from '../../services/api';
 
@@ -41,6 +41,8 @@ const PMDashboard = () => {
 
     // Category management state
     const [categories, setCategories] = useState([]);
+    // Delivery list filter state
+    const [deliveryStatusFilter, setDeliveryStatusFilter] = useState('ALL');
     const [categoryModalOpen, setCategoryModalOpen] = useState(false);
     const [newCategoryName, setNewCategoryName] = useState('');
 
@@ -454,873 +456,1097 @@ const handleAddCategory = async () => {
                 return 'bg-gray-100 text-gray-800';
         }
     };
-
-    if (loading) {
-        return (
-            <div className="min-h-screen flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
-            </div>
-        );
+// Filter orders based on delivery status
+const getFilteredDeliveries = () => {
+    if (deliveryStatusFilter === 'ALL') {
+        return orders;
     }
+    return orders. filter(order => order.status === deliveryStatusFilter);
+};
 
+// Calculate total quantity for an order
+const getTotalQuantity = (order) => {
+    return (order.items || []).reduce((sum, item) => sum + (item.quantity || 0), 0);
+};
+if (loading) {
     return (
-        <div className="min-h-screen bg-gray-50 py-8">
-            {/* Toast Notification */}
-            {toast.show && (
-                <div className={`fixed top-4 right-4 z-50 px-6 py-4 rounded-xl shadow-lg flex items-center gap-3 transform transition-all duration-300 ${toast.type === 'success'
-                    ? 'bg-green-600 text-white'
-                    : 'bg-red-600 text-white'
-                    }`}>
-                    {toast.type === 'success' ? (
-                        <CheckCircle className="h-5 w-5" />
-                    ) : (
-                        <XCircle className="h-5 w-5" />
-                    )}
-                    <span className="font-medium">{toast.message}</span>
-                    <button
-                        onClick={() => setToast({ show: false, message: '', type: 'success' })}
-                        className="ml-2 hover:opacity-75"
-                    >
-                        ×
-                    </button>
+        <div className="min-h-screen flex items-center justify-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+        </div>
+    );
+}
+
+return (
+    <div className="min-h-screen bg-gray-50 py-8">
+        {/* Toast Notification */}
+        {toast. show && (
+            <div className={`fixed top-4 right-4 z-50 px-6 py-4 rounded-xl shadow-lg flex items-center gap-3 transform transition-all duration-300 ${toast.type === 'success'
+                ? 'bg-green-600 text-white'
+                : 'bg-red-600 text-white'
+                }`}>
+                {toast.type === 'success' ?  (
+                    <CheckCircle className="h-5 w-5" />
+                ) : (
+                    <XCircle className="h-5 w-5" />
+                )}
+                <span className="font-medium">{toast.message}</span>
+                <button
+                    onClick={() => setToast({ show: false, message: '', type: 'success' })}
+                    className="ml-2 hover:opacity-75"
+                >
+                    ×
+                </button>
+            </div>
+        )}
+
+        <div className="max-w-7xl mx-auto px-4">
+            {/* Header */}
+            <div className="mb-8 flex items-center justify-between">
+                <div>
+                    <h1 className="text-3xl font-bold text-gray-900">Product Manager Dashboard</h1>
+                    <p className="text-gray-600 mt-2">Manage orders, deliveries, reviews, and products</p>
                 </div>
-            )}
-
-            <div className="max-w-7xl mx-auto px-4">
-                {/* Header */}
-                <div className="mb-8 flex items-center justify-between">
-                    <div>
-                        <h1 className="text-3xl font-bold text-gray-900">Product Manager Dashboard</h1>
-                        <p className="text-gray-600 mt-2">Manage orders, reviews, and products</p>
-                    </div>
-                    <button
-                        onClick={() => {
-                            logout();
-                            navigate('/login');
-                        }}
-                        className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
-                    >
-                        <LogOut className="h-4 w-4" />
-                        Logout
-                    </button>
-                </div>
-
-                {/* Stats */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-                    <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-200">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm text-gray-500">Total Orders</p>
-                                <p className="text-2xl font-bold">{orders.length}</p>
-                            </div>
-                            <Package className="h-8 w-8 text-gray-400" />
-                        </div>
-                    </div>
-                    <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-200">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm text-gray-500">Preparing</p>
-                                <p className="text-2xl font-bold text-yellow-600">
-                                    {orders.filter(o => o.status === 'PREPARING').length}
-                                </p>
-                            </div>
-                            <Clock className="h-8 w-8 text-yellow-400" />
-                        </div>
-                    </div>
-                    <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-200">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm text-gray-500">In Transit</p>
-                                <p className="text-2xl font-bold text-blue-600">
-                                    {orders.filter(o => o.status === 'IN_TRANSIT').length}
-                                </p>
-                            </div>
-                            <Truck className="h-8 w-8 text-blue-400" />
-                        </div>
-                    </div>
-                    <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-200">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm text-gray-500">Delivered</p>
-                                <p className="text-2xl font-bold text-green-600">
-                                    {orders.filter(o => o.status === 'DELIVERED').length}
-                                </p>
-                            </div>
-                            <CheckCircle className="h-8 w-8 text-green-400" />
-                        </div>
-                    </div>
-                </div>
-
-                {/* Tabs */}
-                <div className="flex gap-4 mb-6 flex-wrap">
-                    <button
-                        onClick={() => setActiveTab('orders')}
-                        className={`px-4 py-2 rounded-lg font-medium transition ${activeTab === 'orders'
-                            ? 'bg-gray-900 text-white'
-                            : 'bg-white text-gray-700 border border-gray-200'
-                            }`}
-                    >
-                        All Orders
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('pending')}
-                        className={`px-4 py-2 rounded-lg font-medium transition ${activeTab === 'pending'
-                            ? 'bg-gray-900 text-white'
-                            : 'bg-white text-gray-700 border border-gray-200'
-                            }`}
-                    >
-                        Pending Delivery
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('reviews')}
-                        className={`px-4 py-2 rounded-lg font-medium transition flex items-center gap-2 ${activeTab === 'reviews'
-                            ? 'bg-gray-900 text-white'
-                            : 'bg-white text-gray-700 border border-gray-200'
-                            }`}
-                    >
-                        <MessageSquare className="h-4 w-4" />
-                        Pending Reviews ({pendingReviews.length})
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('products')}
-                        className={`px-4 py-2 rounded-lg font-medium transition flex items-center gap-2 ${activeTab === 'products'
-                            ? 'bg-indigo-600 text-white'
-                            : 'bg-white text-gray-700 border border-indigo-300'
-                            }`}
-                    >
-                        <Box className="h-4 w-4" />
-                        Products ({products.length})
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('categories')}
-                        className={`px-4 py-2 rounded-lg font-medium transition flex items-center gap-2 ${activeTab === 'categories'
-                            ? 'bg-purple-600 text-white'
-                            : 'bg-white text-gray-700 border border-purple-300'
-                            }`}
-                    >
-                        <FolderPlus className="h-4 w-4" />
-                        Categories ({categories.length})
-                    </button>
-                </div>
-
-                {/* Orders List */}
-                {(activeTab === 'orders' || activeTab === 'pending') && (
-                    <div className="space-y-4">
-                        {orders
-                            .filter(order => activeTab === 'orders' || order.status !== 'DELIVERED')
-                            .sort((a, b) => b.id - a.id)
-                            .map(order => (
-                                <div
-                                    key={order.id}
-                                    className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
-                                >
-                                    {/* Order Header */}
-                                    <div
-                                        className="p-5 cursor-pointer hover:bg-gray-50 transition"
-                                        onClick={() => setExpandedOrderId(expandedOrderId === order.id ? null : order.id)}
-                                    >
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-4">
-                                                <ChevronDown
-                                                    className={`h-5 w-5 text-gray-400 transition-transform ${expandedOrderId === order.id ? 'rotate-180' : ''
-                                                        }`}
-                                                />
-                                                <div>
-                                                    <p className="font-bold">Order #{order.id}</p>
-                                                    <p className="text-sm text-gray-500">
-                                                        {userNames[order.userId] || `Customer #${order.userId}`} • {new Date(order.orderDate).toLocaleDateString()}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center gap-4">
-                                                <p className="font-bold">${order.totalPrice?.toFixed(2)}</p>
-                                                <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium ${getStatusColor(order.status)}`}>
-                                                    {getStatusIcon(order.status)}
-                                                    {order.status}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Order Details */}
-                                    {expandedOrderId === order.id && (
-                                        <div className="border-t border-gray-200 bg-gray-50 p-5">
-                                            {/* Delivery Address */}
-                                            <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
-                                                <h4 className="font-semibold mb-2 flex items-center gap-2 text-blue-800">
-                                                    <Truck className="h-4 w-4" />
-                                                    Delivery Information
-                                                </h4>
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                                                    <div>
-                                                        <p className="text-gray-500 text-xs uppercase">Customer Name</p>
-                                                        <p className="font-medium">{order.buyerName || userNames[order.userId] || `Customer #${order.userId}`}</p>
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-gray-500 text-xs uppercase">Delivery Address</p>
-                                                        <p className="font-medium">{order.buyerAddress || 'Address not provided'}</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {/* Order Items */}
-                                            <h4 className="font-semibold mb-3">Order Items</h4>
-                                            <div className="space-y-2 mb-4">
-                                                {order.items?.map((item, index) => (
-                                                    <div key={index} className="flex justify-between bg-white p-3 rounded-lg border border-gray-100">
-                                                        <div>
-                                                            <p className="font-medium">{productNames[item.productId] || `Product #${item.productId}`}</p>
-                                                            <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
-                                                        </div>
-                                                        <p className="font-medium">${item.price?.toFixed(2)}</p>
-                                                    </div>
-                                                ))}
-                                            </div>
-
-                                            {/* Status Update */}
-                                            <div className="border-t border-gray-200 pt-4 mt-4">
-                                                <h4 className="font-semibold mb-3">Update Status</h4>
-                                                <div className="flex gap-2 flex-wrap">
-                                                    {ORDER_STATUSES.map(status => (
-                                                        <button
-                                                            key={status}
-                                                            onClick={() => handleStatusUpdate(order.id, status)}
-                                                            disabled={order.status === status}
-                                                            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${order.status === status
-                                                                ? 'bg-gray-900 text-white cursor-default'
-                                                                : 'bg-white border border-gray-300 hover:bg-gray-100'
-                                                                }`}
-                                                        >
-                                                            {status.replace('_', ' ')}
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            ))}
-                    </div>
-                )}
-
-                {orders.length === 0 && (activeTab === 'orders' || activeTab === 'pending') && (
-                    <div className="bg-white rounded-xl p-12 text-center shadow-sm border border-gray-200">
-                        <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                        <p className="text-gray-600">No orders yet</p>
-                    </div>
-                )}
-
-                {/* Pending Reviews List */}
-                {activeTab === 'reviews' && (
-                    <div className="space-y-4">
-                        {pendingReviews.length === 0 ? (
-                            <div className="bg-white rounded-xl p-12 text-center shadow-sm border border-gray-200">
-                                <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                                <p className="text-gray-600">No pending reviews</p>
-                            </div>
-                        ) : (
-                            pendingReviews.map(review => (
-                                <div
-                                    key={review.id}
-                                    className="bg-white rounded-xl shadow-sm border border-gray-200 p-5"
-                                >
-                                    <div className="flex items-start justify-between">
-                                        <div className="flex-1">
-                                            <div className="flex items-center gap-3 mb-2">
-                                                <span className="font-semibold">{productNames[review.productId] || `Product #${review.productId}`}</span>
-                                                <span className="text-sm text-gray-500">
-                                                    by {userNames[review.userId] || review.userName || `User #${review.userId}`}
-                                                </span>
-                                            </div>
-                                            {review.rating != null && review.rating > 0 && (
-                                                <div className="flex items-center gap-1 mb-2">
-                                                    {[1, 2, 3, 4, 5].map(star => (
-                                                        <Star
-                                                            key={star}
-                                                            className={`h-4 w-4 ${star <= review.rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`}
-                                                        />
-                                                    ))}
-                                                </div>
-                                            )}
-                                            {review.comment && (
-                                                <p className="text-gray-700">{review.comment}</p>
-                                            )}
-                                            {!review.rating && !review.comment && (
-                                                <p className="text-gray-400 italic">No content</p>
-                                            )}
-                                            <p className="text-xs text-gray-400 mt-2">
-                                                {new Date(review.createdAt).toLocaleDateString()}
-                                            </p>
-                                        </div>
-                                        <div className="flex gap-2 ml-4">
-                                            <button
-                                                onClick={() => handleApproveReview(review.id)}
-                                                className="px-3 py-1.5 bg-green-500 text-white text-sm rounded-lg hover:bg-green-600 transition"
-                                            >
-                                                Approve
-                                            </button>
-                                            <button
-                                                onClick={() => handleDisapproveReview(review.id)}
-                                                className="px-3 py-1.5 bg-red-500 text-white text-sm rounded-lg hover:bg-red-600 transition"
-                                            >
-                                                Reject
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))
-                        )}
-                    </div>
-                )}
-
-                {/* Products Management Tab */}
-                {activeTab === 'products' && (
-                    <div className="space-y-4">
-                        <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-xl font-semibold">Product Management</h2>
-                            <button
-                                onClick={openAddProductModal}
-                                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
-                            >
-                                <Plus className="h-4 w-4" />
-                                Add Product
-                            </button>
-                        </div>
-
-                        {products.length === 0 ? (
-                            <div className="bg-white rounded-xl p-12 text-center shadow-sm border border-gray-200">
-                                <Box className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                                <p className="text-gray-600">No products yet</p>
-                            </div>
-                        ) : (
-                            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                                <table className="w-full">
-                                    <thead className="bg-gray-50 border-b border-gray-200">
-                                        <tr>
-                                            <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Product</th>
-                                            <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Category</th>
-                                            <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Price</th>
-                                            <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Stock</th>
-                                            <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-gray-100">
-                                        {products.map(product => (
-                                            <tr key={product.id} className="hover:bg-gray-50">
-                                                <td className="px-4 py-3">
-                                                    <div className="flex items-center gap-3">
-                                                        {product.images?.[0]?.url ? (
-                                                            <img src={product.images[0].url} alt={product.name} className="w-10 h-10 rounded object-cover" />
-                                                        ) : (
-                                                            <div className="w-10 h-10 bg-gray-100 rounded flex items-center justify-center">
-                                                                <Package className="h-5 w-5 text-gray-400" />
-                                                            </div>
-                                                        )}
-                                                        <div>
-                                                            <p className="font-medium">{product.name}</p>
-                                                            <p className="text-xs text-gray-500">{product.brand || 'No brand'}</p>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td className="px-4 py-3 text-sm text-gray-600">
-                                                    {product.productType?.replace('_', ' ')}
-                                                </td>
-                                                <td className="px-4 py-3">
-                                                    {product.discountedPrice ? (
-                                                        <div>
-                                                            <span className="font-medium text-green-600">${product.discountedPrice.toFixed(2)}</span>
-                                                            <span className="text-xs text-gray-400 line-through ml-1">${product.price?.toFixed(2)}</span>
-                                                        </div>
-                                                    ) : (
-                                                        <span className="font-medium">${product.price?.toFixed(2)}</span>
-                                                    )}
-                                                </td>
-                                                <td className="px-4 py-3">
-                                                    {stockEditId === product.id ? (
-                                                        <div className="flex items-center gap-2">
-                                                            <input
-                                                                type="number"
-                                                                value={stockEditValue}
-                                                                onChange={(e) => setStockEditValue(e.target.value)}
-                                                                className="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
-                                                                min="0"
-                                                            />
-                                                            <button
-                                                                onClick={() => handleStockUpdate(product.id)}
-                                                                className="px-2 py-1 bg-green-500 text-white text-xs rounded hover:bg-green-600"
-                                                            >
-                                                                Save
-                                                            </button>
-                                                            <button
-                                                                onClick={() => { setStockEditId(null); setStockEditValue(''); }}
-                                                                className="px-2 py-1 bg-gray-300 text-gray-700 text-xs rounded hover:bg-gray-400"
-                                                            >
-                                                                Cancel
-                                                            </button>
-                                                        </div>
-                                                    ) : (
-                                                        <button
-                                                            onClick={() => { setStockEditId(product.id); setStockEditValue(product.stock?.toString() || '0'); }}
-                                                            className={`px-2 py-1 rounded text-sm font-medium ${product.stock <= 0 ? 'bg-red-100 text-red-700' :
-                                                                product.stock <= 10 ? 'bg-yellow-100 text-yellow-700' :
-                                                                    'bg-green-100 text-green-700'
-                                                                } hover:opacity-80 transition`}
-                                                        >
-                                                            {product.stock} in stock
-                                                        </button>
-                                                    )}
-                                                </td>
-                                                <td className="px-4 py-3">
-                                                    <div className="flex gap-2">
-                                                        <button
-                                                            onClick={() => openEditProductModal(product)}
-                                                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
-                                                            title="Edit Product"
-                                                        >
-                                                            <Edit className="h-4 w-4" />
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleDeleteProduct(product.id)}
-                                                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
-                                                            title="Delete Product"
-                                                        >
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        )}
-                    </div>
-                )}
-
-                {/* Categories Tab Content */}
-                {activeTab === 'categories' && (
-                    <div className="space-y-6">
-                        <div className="bg-white rounded-xl shadow-sm border border-purple-200 overflow-hidden">
-                            <div className="p-6 border-b border-purple-100 flex justify-between items-center">
-                                <h3 className="font-bold text-lg text-gray-800">Category Management</h3>
-                                <button
-                                    onClick={() => setCategoryModalOpen(true)}
-                                    className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition flex items-center gap-2"
-                                >
-                                    <Plus className="h-4 w-4" />
-                                    Add New Category
-                                </button>
-                            </div>
-                            <div className="divide-y divide-gray-100">
-                                {categories.length === 0 ? (
-                                    <div className="p-12 text-center text-gray-500">
-                                        <FolderPlus className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                                        <p>No categories found. Start by adding one!</p>
-                                    </div>
-                                ) : (
-                                    categories.map((cat) => (
-                                        <div key={cat.id} className="p-4 flex items-center justify-between hover:bg-gray-50 transition">
-                                            <div className="flex items-center gap-3">
-                                                <div className="h-10 w-10 rounded-lg bg-purple-100 flex items-center justify-center text-purple-600">
-                                                    <Tag className="h-5 w-5" />
-                                                </div>
-                                                <span className="font-medium text-gray-700">{cat.name.replace('_', ' ')}</span>
-                                            </div>
-                                            <button
-                                                onClick={() => handleDeleteCategory(cat.id)}
-                                                className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition"
-                                                title="Delete Category"
-                                            >
-                                                <Trash2 className="h-5 w-5" />
-                                            </button>
-                                        </div>
-                                    ))
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                )}
+                <button
+                    onClick={() => {
+                        logout();
+                        navigate('/login');
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
+                >
+                    <LogOut className="h-4 w-4" />
+                    Logout
+                </button>
             </div>
 
-            {/* Product Add/Edit Modal */}
-            {productModalOpen && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-                    <div className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-xl my-8">
-                        <h3 className="text-xl font-bold mb-4">
-                            {editingProduct ? 'Edit Product' : 'Add New Product'}
-                        </h3>
+            {/* Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
+                <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-200">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-sm text-gray-500">Total Orders</p>
+                            <p className="text-2xl font-bold">{orders.length}</p>
+                        </div>
+                        <Package className="h-8 w-8 text-gray-400" />
+                    </div>
+                </div>
+                <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-200">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-sm text-gray-500">Preparing</p>
+                            <p className="text-2xl font-bold text-yellow-600">
+                                {orders.filter(o => o.status === 'PREPARING').length}
+                            </p>
+                        </div>
+                        <Clock className="h-8 w-8 text-yellow-400" />
+                    </div>
+                </div>
+                <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-200">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-sm text-gray-500">In Transit</p>
+                            <p className="text-2xl font-bold text-blue-600">
+                                {orders.filter(o => o. status === 'IN_TRANSIT').length}
+                            </p>
+                        </div>
+                        <Truck className="h-8 w-8 text-blue-400" />
+                    </div>
+                </div>
+                <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-200">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-sm text-gray-500">Delivered</p>
+                            <p className="text-2xl font-bold text-green-600">
+                                {orders.filter(o => o.status === 'DELIVERED').length}
+                            </p>
+                        </div>
+                        <CheckCircle className="h-8 w-8 text-green-400" />
+                    </div>
+                </div>
+                <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-200">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-sm text-gray-500">Cancelled/Refunded</p>
+                            <p className="text-2xl font-bold text-red-600">
+                                {orders. filter(o => o.status === 'CANCELLED' || o.status === 'REFUNDED').length}
+                            </p>
+                        </div>
+                        <XCircle className="h-8 w-8 text-red-400" />
+                    </div>
+                </div>
+            </div>
 
-                        <div className="grid grid-cols-2 gap-4 max-h-96 overflow-y-auto pr-2">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
-                                <input
-                                    type="text"
-                                    name="name"
-                                    value={productFormData.name}
-                                    onChange={handleProductFormChange}
-                                    className="w-full border border-gray-300 rounded-lg p-2 text-sm"
-                                    required
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Price *</label>
-                                <input
-                                    type="number"
-                                    name="price"
-                                    value={productFormData.price}
-                                    onChange={handleProductFormChange}
-                                    className="w-full border border-gray-300 rounded-lg p-2 text-sm"
-                                    min="0"
-                                    step="0.01"
-                                    required
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Stock *</label>
-                                <input
-                                    type="number"
-                                    name="stock"
-                                    value={productFormData.stock}
-                                    onChange={handleProductFormChange}
-                                    className="w-full border border-gray-300 rounded-lg p-2 text-sm"
-                                    min="0"
-                                    required
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Model *</label>
-                                <input
-                                    type="text"
-                                    name="model"
-                                    value={productFormData.model}
-                                    onChange={handleProductFormChange}
-                                    className="w-full border border-gray-300 rounded-lg p-2 text-sm"
-                                    required
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Serial Number *</label>
-                                <input
-                                    type="text"
-                                    name="serialNumber"
-                                    value={productFormData.serialNumber}
-                                    onChange={handleProductFormChange}
-                                    className="w-full border border-gray-300 rounded-lg p-2 text-sm"
-                                    required
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Brand</label>
-                                <input
-                                    type="text"
-                                    name="brand"
-                                    value={productFormData.brand}
-                                    onChange={handleProductFormChange}
-                                    className="w-full border border-gray-300 rounded-lg p-2 text-sm"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Category *</label>
-                                <div className="flex gap-2">
-                                    <select
-                                        name="productType"
-                                        value={productFormData.productType}
-                                        onChange={handleProductFormChange}
-                                        className="flex-1 border border-gray-300 rounded-lg p-2 text-sm"
-                                    >
-                                        {categories.map(cat => (
-                                            <option key={cat.id} value={cat.name}>{cat.name.replace('_', ' ')}</option>
-                                        ))}
-                                    </select>
-                                    <button
-                                        type="button"
-                                        onClick={() => setCategoryModalOpen(true)}
-                                        className="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-700 transition-colors"
-                                        title="Add New Category"
-                                    >
-                                        <FolderPlus className="h-5 w-5" />
-                                    </button>
+            {/* Tabs */}
+            <div className="flex gap-4 mb-6 flex-wrap">
+                <button
+                    onClick={() => setActiveTab('orders')}
+                    className={`px-4 py-2 rounded-lg font-medium transition ${activeTab === 'orders'
+                        ? 'bg-gray-900 text-white'
+                        : 'bg-white text-gray-700 border border-gray-200'
+                        }`}
+                >
+                    All Orders
+                </button>
+                <button
+                    onClick={() => setActiveTab('deliveries')}
+                    className={`px-4 py-2 rounded-lg font-medium transition flex items-center gap-2 ${activeTab === 'deliveries'
+                        ?  'bg-blue-600 text-white'
+                        : 'bg-white text-gray-700 border border-blue-300'
+                        }`}
+                >
+                    <Truck className="h-4 w-4" />
+                    Delivery List
+                </button>
+                <button
+                    onClick={() => setActiveTab('pending')}
+                    className={`px-4 py-2 rounded-lg font-medium transition ${activeTab === 'pending'
+                        ?  'bg-gray-900 text-white'
+                        : 'bg-white text-gray-700 border border-gray-200'
+                        }`}
+                >
+                    Pending Delivery
+                </button>
+                <button
+                    onClick={() => setActiveTab('reviews')}
+                    className={`px-4 py-2 rounded-lg font-medium transition flex items-center gap-2 ${activeTab === 'reviews'
+                        ? 'bg-gray-900 text-white'
+                        :  'bg-white text-gray-700 border border-gray-200'
+                        }`}
+                >
+                    <MessageSquare className="h-4 w-4" />
+                    Pending Reviews ({pendingReviews. length})
+                </button>
+                <button
+                    onClick={() => setActiveTab('products')}
+                    className={`px-4 py-2 rounded-lg font-medium transition flex items-center gap-2 ${activeTab === 'products'
+                        ? 'bg-indigo-600 text-white'
+                        : 'bg-white text-gray-700 border border-indigo-300'
+                        }`}
+                >
+                    <Box className="h-4 w-4" />
+                    Products ({products.length})
+                </button>
+                <button
+                    onClick={() => setActiveTab('categories')}
+                    className={`px-4 py-2 rounded-lg font-medium transition flex items-center gap-2 ${activeTab === 'categories'
+                        ? 'bg-purple-600 text-white'
+                        : 'bg-white text-gray-700 border border-purple-300'
+                        }`}
+                >
+                    <FolderPlus className="h-4 w-4" />
+                    Categories ({categories.length})
+                </button>
+            </div>
+
+            {/* ==================== DELIVERY LIST TAB ==================== */}
+{activeTab === 'deliveries' && (
+    <div className="space-y-6">
+        {/* Filter Controls */}
+        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
+            <div className="flex flex-wrap items-center gap-4">
+                <span className="text-sm font-medium text-gray-700">Filter by Status: </span>
+                <div className="flex flex-wrap gap-2">
+                    {['ALL', ... ORDER_STATUSES]. map(status => (
+                        <button
+                            key={status}
+                            onClick={() => setDeliveryStatusFilter(status)}
+                            className={`px-3 py-1. 5 rounded-lg text-sm font-medium transition ${
+                                deliveryStatusFilter === status
+                                    ? status === 'ALL'
+                                        ? 'bg-gray-900 text-white'
+                                        :  `${getStatusColor(status)} ring-2 ring-offset-1 ring-gray-400`
+                                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                            }`}
+                        >
+                            {status === 'ALL' ?  'All Deliveries' : status. replace('_', ' ')}
+                            <span className="ml-1 text-xs">
+                                ({status === 'ALL' 
+                                    ?  orders.length 
+                                    : orders.filter(o => o.status === status).length})
+                            </span>
+                        </button>
+                    ))}
+                </div>
+            </div>
+        </div>
+
+        {/* Delivery Table */}
+        {getFilteredDeliveries().length === 0 ?  (
+            <div className="bg-white rounded-xl p-12 text-center shadow-sm border border-gray-200">
+                <Truck className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-600">No deliveries found for the selected filter</p>
+            </div>
+        ) : (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div className="overflow-x-auto">
+                    <table className="w-full">
+                        <thead className="bg-gray-50 border-b border-gray-200">
+                            <tr>
+                                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                    <div className="flex items-center gap-1"><Hash className="h-3 w-3" />Delivery ID</div>
+                                </th>
+                                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                    <div className="flex items-center gap-1"><User className="h-3 w-3" />Customer</div>
+                                </th>
+                                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                    <div className="flex items-center gap-1"><ShoppingBag className="h-3 w-3" />Products</div>
+                                </th>
+                                <th className="text-center px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                    <div className="flex items-center justify-center gap-1"><Package className="h-3 w-3" />Qty</div>
+                                </th>
+                                <th className="text-right px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                    <div className="flex items-center justify-end gap-1"><DollarSign className="h-3 w-3" />Total Price</div>
+                                </th>
+                                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                    <div className="flex items-center gap-1"><MapPin className="h-3 w-3" />Delivery Address</div>
+                                </th>
+                                <th className="text-center px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
+                                <th className="text-center px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                            {getFilteredDeliveries().sort((a, b) => b.id - a. id).map(order => (
+                                <tr key={order.id} className="hover:bg-gray-50 transition-colors">
+                                    {/* Delivery ID */}
+                                    <td className="px-4 py-4">
+                                        <div className="flex flex-col">
+                                            <span className="font-bold text-gray-900">#{order.id}</span>
+                                            <span className="text-xs text-gray-500">{new Date(order.orderDate).toLocaleDateString()}</span>
+                                        </div>
+                                    </td>
+                                    
+                                    {/* Customer ID & Name */}
+                                    <td className="px-4 py-4">
+                                        <div className="flex flex-col">
+                                            <span className="font-medium text-gray-900">
+                                                {order.buyerName || userNames[order.userId] || 'Unknown'}
+                                            </span>
+                                            <span className="text-xs text-gray-500 flex items-center gap-1">
+                                                <User className="h-3 w-3" />
+                                                ID: {order.userId}
+                                            </span>
+                                        </div>
+                                    </td>
+                                    
+                                    {/* Product IDs */}
+                                    <td className="px-4 py-4">
+                                        <div className="flex flex-col gap-1 max-w-xs">
+                                            {order. items?. slice(0, 2).map((item, idx) => (
+                                                <div key={idx} className="flex items-center gap-2 text-sm">
+                                                    <span className="px-1. 5 py-0.5 bg-purple-100 text-purple-700 rounded text-xs font-mono">
+                                                        #{item.productId}
+                                                    </span>
+                                                    <span className="text-gray-600 truncate text-xs">
+                                                        {productNames[item.productId] || 'Loading...'}
+                                                    </span>
+                                                </div>
+                                            ))}
+                                            {order.items?. length > 2 && (
+                                                <span className="text-xs text-gray-400">
+                                                    +{order.items.length - 2} more items
+                                                </span>
+                                            )}
+                                        </div>
+                                    </td>
+                                    
+                                    {/* Quantity */}
+                                    <td className="px-4 py-4 text-center">
+                                        <span className="inline-flex items-center justify-center px-2.5 py-1 bg-orange-100 text-orange-700 rounded-full text-sm font-semibold">
+                                            {getTotalQuantity(order)}
+                                        </span>
+                                    </td>
+                                    
+                                    {/* Total Price */}
+                                    <td className="px-4 py-4 text-right">
+                                        <span className="font-bold text-emerald-600 text-lg">
+                                            ${order.totalPrice?. toFixed(2)}
+                                        </span>
+                                    </td>
+                                    
+                                    {/* Delivery Address */}
+                                    <td className="px-4 py-4">
+                                        <div className="max-w-xs">
+                                            {order.buyerAddress ?  (
+                                                <div className="flex items-start gap-1">
+                                                    <MapPin className="h-4 w-4 text-red-500 flex-shrink-0 mt-0.5" />
+                                                    <span className="text-sm text-gray-700 line-clamp-2">
+                                                        {order.buyerAddress}
+                                                    </span>
+                                                </div>
+                                            ) : (
+                                                <span className="text-sm text-gray-400 italic">
+                                                    No address provided
+                                                </span>
+                                            )}
+                                        </div>
+                                    </td>
+                                    
+                                    {/* Delivery Status */}
+                                    <td className="px-4 py-4 text-center">
+                                        <span className={`inline-flex items-center gap-1. 5 px-3 py-1.5 rounded-full text-xs font-semibold ${getStatusColor(order. status)}`}>
+                                            {getStatusIcon(order.status)}
+                                            {order.status?. replace('_', ' ')}
+                                        </span>
+                                    </td>
+                                    
+                                    {/* Actions */}
+                                    <td className="px-4 py-4 text-center">
+                                        <button
+                                            onClick={() => {
+                                                setActiveTab('orders');
+                                                setExpandedOrderId(order.id);
+                                            }}
+                                            className="px-3 py-1. 5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition text-sm font-medium"
+                                        >
+                                            View Details
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+                
+                {/* Table Footer with Summary */}
+                <div className="bg-gray-50 px-4 py-3 border-t border-gray-200">
+                    <div className="flex flex-wrap justify-between items-center gap-4 text-sm">
+                        <span className="text-gray-600">
+                            Showing <span className="font-semibold">{getFilteredDeliveries().length}</span> deliveries
+                        </span>
+                        <div className="flex items-center gap-4">
+                            <span className="text-gray-600">
+                                Total Items: <span className="font-semibold text-orange-600">
+                                    {getFilteredDeliveries().reduce((sum, order) => sum + getTotalQuantity(order), 0)}
+                                </span>
+                            </span>
+                            <span className="text-gray-600">
+                                Total Value: <span className="font-semibold text-emerald-600">
+                                    ${getFilteredDeliveries().reduce((sum, order) => sum + (order.totalPrice || 0), 0).toFixed(2)}
+                                </span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        )}
+    </div>
+)}
+
+            {/* Orders List */}
+            {(activeTab === 'orders' || activeTab === 'pending') && (
+                <div className="space-y-4">
+                    {orders
+                        .filter(order => activeTab === 'orders' || order.status !== 'DELIVERED')
+                        . sort((a, b) => b.id - a.id)
+                        .map(order => (
+                            <div
+                                key={order.id}
+                                className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
+                            >
+                                {/* Order Header */}
+                                <div
+                                    className="p-5 cursor-pointer hover:bg-gray-50 transition"
+                                    onClick={() => setExpandedOrderId(expandedOrderId === order.id ? null :  order.id)}
+                                >
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-4">
+                                            <ChevronDown
+                                                className={`h-5 w-5 text-gray-400 transition-transform ${expandedOrderId === order.id ? 'rotate-180' :  ''
+                                                    }`}
+                                            />
+                                            <div>
+                                                <p className="font-bold">Order #{order.id}</p>
+                                                <p className="text-sm text-gray-500">
+                                                    {userNames[order.userId] || `Customer #${order.userId}`} • {new Date(order. orderDate).toLocaleDateString()}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-4">
+                                            <p className="font-bold">${order.totalPrice?.toFixed(2)}</p>
+                                            <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium ${getStatusColor(order.status)}`}>
+                                                {getStatusIcon(order.status)}
+                                                {order.status}
+                                            </span>
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Target Audience *</label>
-                                <select
-                                    name="targetAudience"
-                                    value={productFormData.targetAudience}
-                                    onChange={handleProductFormChange}
-                                    className="w-full border border-gray-300 rounded-lg p-2 text-sm"
-                                >
-                                    {TARGET_AUDIENCES.map(aud => (
-                                        <option key={aud} value={aud}>{aud}</option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Warranty *</label>
-                                <select
-                                    name="warrantyStatus"
-                                    value={productFormData.warrantyStatus}
-                                    onChange={handleProductFormChange}
-                                    className="w-full border border-gray-300 rounded-lg p-2 text-sm"
-                                >
-                                    {WARRANTY_STATUSES.map(w => (
-                                        <option key={w} value={w}>{w.replace('_', ' ')}</option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Season</label>
-                                <select
-                                    name="season"
-                                    value={productFormData.season}
-                                    onChange={handleProductFormChange}
-                                    className="w-full border border-gray-300 rounded-lg p-2 text-sm"
-                                >
-                                    <option value="">Select season</option>
-                                    {SEASONS.map(s => (
-                                        <option key={s} value={s}>{s.replace('_', ' ')}</option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Fit</label>
-                                <select
-                                    name="fit"
-                                    value={productFormData.fit}
-                                    onChange={handleProductFormChange}
-                                    className="w-full border border-gray-300 rounded-lg p-2 text-sm"
-                                >
-                                    <option value="">Select fit</option>
-                                    {FITS.map(f => (
-                                        <option key={f} value={f}>{f}</option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Material</label>
-                                <input
-                                    type="text"
-                                    name="material"
-                                    value={productFormData.material}
-                                    onChange={handleProductFormChange}
-                                    className="w-full border border-gray-300 rounded-lg p-2 text-sm"
-                                />
-                            </div>
-                            <div className="col-span-2">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Distributor Info *</label>
-                                <input
-                                    type="text"
-                                    name="distributorInfo"
-                                    value={productFormData.distributorInfo}
-                                    onChange={handleProductFormChange}
-                                    className="w-full border border-gray-300 rounded-lg p-2 text-sm"
-                                    required
-                                />
-                            </div>
-                            <div className="col-span-2">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Description *</label>
-                                <textarea
-                                    name="description"
-                                    value={productFormData.description}
-                                    onChange={handleProductFormChange}
-                                    className="w-full border border-gray-300 rounded-lg p-2 text-sm"
-                                    rows={3}
-                                    required
-                                />
-                            </div>
-                            <div className="col-span-2">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Care Instructions</label>
-                                <textarea
-                                    name="careInstructions"
-                                    value={productFormData.careInstructions}
-                                    onChange={handleProductFormChange}
-                                    className="w-full border border-gray-300 rounded-lg p-2 text-sm"
-                                    rows={2}
-                                />
-                            </div>
-                            <div className="col-span-2">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Product Images</label>
-                                <div className="space-y-3">
-                                    {/* Existing images */}
-                                    {(productFormData.imageUrls || []).length > 0 && (
-                                        <div className="flex flex-wrap gap-2">
-                                            {productFormData.imageUrls.map((url, index) => (
-                                                <div key={index} className="relative group">
-                                                    <img
-                                                        src={url}
-                                                        alt={`Product ${index + 1}`}
-                                                        className="w-20 h-20 object-cover rounded-lg border"
-                                                    />
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => {
-                                                            const newUrls = productFormData.imageUrls.filter((_, i) => i !== index);
-                                                            setProductFormData(prev => ({ ...prev, imageUrls: newUrls }));
-                                                        }}
-                                                        className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full text-xs opacity-0 group-hover:opacity-100 transition"
-                                                    >
-                                                        ×
-                                                    </button>
+
+                                {/* Order Details */}
+                                {expandedOrderId === order.id && (
+                                    <div className="border-t border-gray-200 bg-gray-50 p-5">
+                                        {/* Delivery Address */}
+                                        <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                            <h4 className="font-semibold mb-2 flex items-center gap-2 text-blue-800">
+                                                <Truck className="h-4 w-4" />
+                                                Delivery Information
+                                            </h4>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                                                <div>
+                                                    <p className="text-gray-500 text-xs uppercase">Customer Name</p>
+                                                    <p className="font-medium">{order.buyerName || userNames[order. userId] || `Customer #${order. userId}`}</p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-gray-500 text-xs uppercase">Delivery Address</p>
+                                                    <p className="font-medium">{order.buyerAddress || 'Address not provided'}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Order Items */}
+                                        <h4 className="font-semibold mb-3">Order Items</h4>
+                                        <div className="space-y-2 mb-4">
+                                            {order.items?. map((item, index) => (
+                                                <div key={index} className="flex justify-between bg-white p-3 rounded-lg border border-gray-100">
+                                                    <div>
+                                                        <p className="font-medium">{productNames[item.productId] || `Product #${item.productId}`}</p>
+                                                        <p className="text-sm text-gray-500">Qty: {item. quantity}</p>
+                                                    </div>
+                                                    <p className="font-medium">${item.price?. toFixed(2)}</p>
                                                 </div>
                                             ))}
                                         </div>
-                                    )}
 
-                                    {/* File upload */}
-                                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-indigo-400 transition">
-                                        <input
-                                            type="file"
-                                            accept="image/*"
-                                            multiple
-                                            onChange={async (e) => {
-                                                const files = Array.from(e.target.files || []);
-                                                for (const file of files) {
-                                                    try {
-                                                        showToast(`Uploading ${file.name}...`, 'success');
-                                                        const result = await productService.uploadImage(file);
-                                                        if (result.url) {
-                                                            setProductFormData(prev => ({
-                                                                ...prev,
-                                                                imageUrls: [...(prev.imageUrls || []), result.url]
-                                                            }));
-                                                            showToast(`Image uploaded successfully!`, 'success');
-                                                        }
-                                                    } catch (error) {
-                                                        showToast(`Failed to upload ${file.name}`, 'error');
-                                                    }
-                                                }
-                                                e.target.value = '';
-                                            }}
-                                            className="hidden"
-                                            id="image-upload"
-                                        />
-                                        <label htmlFor="image-upload" className="cursor-pointer">
-                                            <div className="text-gray-500">
-                                                <svg className="mx-auto h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                </svg>
-                                                <p className="mt-1 text-sm">Click to upload images</p>
-                                                <p className="text-xs text-gray-400">PNG, JPG, GIF up to 10MB</p>
+                                        {/* Status Update */}
+                                        <div className="border-t border-gray-200 pt-4 mt-4">
+                                            <h4 className="font-semibold mb-3">Update Status</h4>
+                                            <div className="flex gap-2 flex-wrap">
+                                                {ORDER_STATUSES. map(status => (
+                                                    <button
+                                                        key={status}
+                                                        onClick={() => handleStatusUpdate(order.id, status)}
+                                                        disabled={order.status === status}
+                                                        className={`px-4 py-2 rounded-lg text-sm font-medium transition ${order.status === status
+                                                            ?  'bg-gray-900 text-white cursor-default'
+                                                            : 'bg-white border border-gray-300 hover:bg-gray-100'
+                                                            }`}
+                                                    >
+                                                        {status. replace('_', ' ')}
+                                                    </button>
+                                                ))}
                                             </div>
-                                        </label>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                </div>
+            )}
+
+            {orders.length === 0 && (activeTab === 'orders' || activeTab === 'pending') && (
+                <div className="bg-white rounded-xl p-12 text-center shadow-sm border border-gray-200">
+                    <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-600">No orders yet</p>
+                </div>
+            )}
+
+            {/* Pending Reviews List */}
+            {activeTab === 'reviews' && (
+                <div className="space-y-4">
+                    {pendingReviews. length === 0 ?  (
+                        <div className="bg-white rounded-xl p-12 text-center shadow-sm border border-gray-200">
+                            <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                            <p className="text-gray-600">No pending reviews</p>
+                        </div>
+                    ) : (
+                        pendingReviews. map(review => (
+                            <div
+                                key={review.id}
+                                className="bg-white rounded-xl shadow-sm border border-gray-200 p-5"
+                            >
+                                <div className="flex items-start justify-between">
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <span className="font-semibold">{productNames[review.productId] || `Product #${review.productId}`}</span>
+                                            <span className="text-sm text-gray-500">
+                                                by {userNames[review.userId] || review.userName || `User #${review.userId}`}
+                                            </span>
+                                        </div>
+                                        {review.rating != null && review.rating > 0 && (
+                                            <div className="flex items-center gap-1 mb-2">
+                                                {[1, 2, 3, 4, 5].map(star => (
+                                                    <Star
+                                                        key={star}
+                                                        className={`h-4 w-4 ${star <= review.rating ?  'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`}
+                                                    />
+                                                ))}
+                                            </div>
+                                        )}
+                                        {review.comment && (
+                                            <p className="text-gray-700">{review.comment}</p>
+                                        )}
+                                        {! review.rating && ! review.comment && (
+                                            <p className="text-gray-400 italic">No content</p>
+                                        )}
+                                        <p className="text-xs text-gray-400 mt-2">
+                                            {new Date(review.createdAt).toLocaleDateString()}
+                                        </p>
+                                    </div>
+                                    <div className="flex gap-2 ml-4">
+                                        <button
+                                            onClick={() => handleApproveReview(review. id)}
+                                            className="px-3 py-1. 5 bg-green-500 text-white text-sm rounded-lg hover:bg-green-600 transition"
+                                        >
+                                            Approve
+                                        </button>
+                                        <button
+                                            onClick={() => handleDisapproveReview(review.id)}
+                                            className="px-3 py-1.5 bg-red-500 text-white text-sm rounded-lg hover:bg-red-600 transition"
+                                        >
+                                            Reject
+                                        </button>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-
-                        <div className="flex gap-3 mt-6">
-                            <button
-                                onClick={handleSaveProduct}
-                                disabled={savingProduct}
-                                className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                {savingProduct ? 'Saving...' : (editingProduct ? 'Update Product' : 'Add Product')}
-                            </button>
-                            <button
-                                onClick={() => setProductModalOpen(false)}
-                                disabled={savingProduct}
-                                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition disabled:opacity-50"
-                            >
-                                Cancel
-                            </button>
-                        </div>
-                    </div>
+                        ))
+                    )}
                 </div>
             )}
 
-            {/* Delete Confirmation Modal */}
-            {deleteModalOpen && productToDelete && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm">
-                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden transform transition-all scale-100 p-6">
-                        <div className="flex flex-col items-center text-center">
-                            <div className="h-12 w-12 rounded-full bg-red-100 flex items-center justify-center mb-4">
-                                <AlertCircle className="h-6 w-6 text-red-600" />
-                            </div>
-                            <h3 className="text-lg font-bold text-gray-900 mb-2">Delete Product?</h3>
-                            <p className="text-sm text-gray-500 mb-6">
-                                Are you sure you want to delete <span className="font-semibold text-gray-800">"{productToDelete.name}"</span>?
-                                This action cannot be undone.
-                            </p>
-                            <div className="flex gap-3 w-full">
-                                <button
-                                    onClick={() => setDeleteModalOpen(false)}
-                                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={confirmDeleteProduct}
-                                    className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition"
-                                >
-                                    Delete
-                                </button>
-                            </div>
-                        </div>
+            {/* Products Management Tab */}
+            {activeTab === 'products' && (
+                <div className="space-y-4">
+                    <div className="flex justify-between items-center mb-4">
+                        <h2 className="text-xl font-semibold">Product Management</h2>
+                        <button
+                            onClick={openAddProductModal}
+                            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+                        >
+                            <Plus className="h-4 w-4" />
+                            Add Product
+                        </button>
                     </div>
-                </div>
-            )}
 
-            {/* Add Category Modal */}
-            {categoryModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-                    <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-xl">
-                        <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-                            <FolderPlus className="h-5 w-5 text-indigo-600" />
-                            Add New Category
-                        </h2>
-
-                        <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Category Name</label>
-                            <input
-                                type="text"
-                                value={newCategoryName}
-                                onChange={(e) => setNewCategoryName(e.target.value)}
-                                placeholder="e.g., POLO_SHIRT"
-                                className="w-full border border-gray-300 rounded-lg p-2 text-sm"
-                                onKeyDown={(e) => e.key === 'Enter' && handleAddCategory()}
-                            />
-                            <p className="text-xs text-gray-500 mt-1">
-                                Category will be converted to uppercase. Spaces will become underscores.
-                            </p>
+                    {products.length === 0 ? (
+                        <div className="bg-white rounded-xl p-12 text-center shadow-sm border border-gray-200">
+                            <Box className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                            <p className="text-gray-600">No products yet</p>
                         </div>
-
-                        <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Existing Categories ({categories.length})
-                            </label>
-                            <div className="max-h-32 overflow-y-auto border border-gray-200 rounded-lg p-2">
-                                <div className="flex flex-wrap gap-1">
-                                    {categories.map(cat => (
-                                        <span key={cat.id} className="px-2 py-1 bg-gray-100 rounded text-xs">
-                                            {cat.name.replace('_', ' ')}
-                                        </span>
+                    ) : (
+                        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                            <table className="w-full">
+                                <thead className="bg-gray-50 border-b border-gray-200">
+                                    <tr>
+                                        <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Product</th>
+                                        <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Category</th>
+                                        <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Price</th>
+                                        <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Stock</th>
+                                        <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-100">
+                                    {products.map(product => (
+                                        <tr key={product.id} className="hover:bg-gray-50">
+                                            <td className="px-4 py-3">
+                                                <div className="flex items-center gap-3">
+                                                    {product.images?.[0]?.url ?  (
+                                                        <img src={product.images[0].url} alt={product.name} className="w-10 h-10 rounded object-cover" />
+                                                    ) : (
+                                                        <div className="w-10 h-10 bg-gray-100 rounded flex items-center justify-center">
+                                                            <Package className="h-5 w-5 text-gray-400" />
+                                                        </div>
+                                                    )}
+                                                    <div>
+                                                        <p className="font-medium">{product.name}</p>
+                                                        <p className="text-xs text-gray-500">{product.brand || 'No brand'}</p>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="px-4 py-3 text-sm text-gray-600">
+                                                {product.productType?.replace('_', ' ')}
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                {product.discountedPrice ? (
+                                                    <div>
+                                                        <span className="font-medium text-green-600">${product.discountedPrice.toFixed(2)}</span>
+                                                        <span className="text-xs text-gray-400 line-through ml-1">${product.price?. toFixed(2)}</span>
+                                                    </div>
+                                                ) : (
+                                                    <span className="font-medium">${product.price?. toFixed(2)}</span>
+                                                )}
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                {stockEditId === product.id ?  (
+                                                    <div className="flex items-center gap-2">
+                                                        <input
+                                                            type="number"
+                                                            value={stockEditValue}
+                                                            onChange={(e) => setStockEditValue(e.target.value)}
+                                                            className="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
+                                                            min="0"
+                                                        />
+                                                        <button
+                                                            onClick={() => handleStockUpdate(product.id)}
+                                                            className="px-2 py-1 bg-green-500 text-white text-xs rounded hover:bg-green-600"
+                                                        >
+                                                            Save
+                                                        </button>
+                                                        <button
+                                                            onClick={() => { setStockEditId(null); setStockEditValue(''); }}
+                                                            className="px-2 py-1 bg-gray-300 text-gray-700 text-xs rounded hover: bg-gray-400"
+                                                        >
+                                                            Cancel
+                                                        </button>
+                                                    </div>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => { setStockEditId(product.id); setStockEditValue(product.stock?. toString() || '0'); }}
+                                                        className={`px-2 py-1 rounded text-sm font-medium ${product.stock <= 0 ? 'bg-red-100 text-red-700' : 
+                                                            product.stock <= 10 ? 'bg-yellow-100 text-yellow-700' :
+                                                                'bg-green-100 text-green-700'
+                                                            } hover:opacity-80 transition`}
+                                                    >
+                                                        {product.stock} in stock
+                                                    </button>
+                                                )}
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        onClick={() => openEditProductModal(product)}
+                                                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                                                        title="Edit Product"
+                                                    >
+                                                        <Edit className="h-4 w-4" />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDeleteProduct(product.id)}
+                                                        className="p-2 text-red-600 hover: bg-red-50 rounded-lg transition"
+                                                        title="Delete Product"
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
                                     ))}
-                                </div>
-                            </div>
+                                </tbody>
+                            </table>
                         </div>
+                    )}
+                </div>
+            )}
 
-                        <div className="flex gap-3">
+            {/* Categories Tab Content */}
+            {activeTab === 'categories' && (
+                <div className="space-y-6">
+                    <div className="bg-white rounded-xl shadow-sm border border-purple-200 overflow-hidden">
+                        <div className="p-6 border-b border-purple-100 flex justify-between items-center">
+                            <h3 className="font-bold text-lg text-gray-800">Category Management</h3>
                             <button
-                                onClick={handleAddCategory}
-                                className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-medium"
+                                onClick={() => setCategoryModalOpen(true)}
+                                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition flex items-center gap-2"
                             >
-                                Add Category
+                                <Plus className="h-4 w-4" />
+                                Add New Category
                             </button>
-                            <button
-                                onClick={() => {
-                                    setCategoryModalOpen(false);
-                                    setNewCategoryName('');
-                                }}
-                                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
-                            >
-                                Cancel
-                            </button>
+                        </div>
+                        <div className="divide-y divide-gray-100">
+                            {categories.length === 0 ?  (
+                                <div className="p-12 text-center text-gray-500">
+                                    <FolderPlus className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                                    <p>No categories found.  Start by adding one! </p>
+                                </div>
+                            ) : (
+                                categories.map((cat) => (
+                                    <div key={cat.id} className="p-4 flex items-center justify-between hover:bg-gray-50 transition">
+                                        <div className="flex items-center gap-3">
+                                            <div className="h-10 w-10 rounded-lg bg-purple-100 flex items-center justify-center text-purple-600">
+                                                <Tag className="h-5 w-5" />
+                                            </div>
+                                            <span className="font-medium text-gray-700">{cat.name. replace('_', ' ')}</span>
+                                        </div>
+                                        <button
+                                            onClick={() => handleDeleteCategory(cat. id)}
+                                            className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition"
+                                            title="Delete Category"
+                                        >
+                                            <Trash2 className="h-5 w-5" />
+                                        </button>
+                                    </div>
+                                ))
+                            )}
                         </div>
                     </div>
                 </div>
             )}
         </div>
-    );
+
+        {/* Product Add/Edit Modal */}
+        {productModalOpen && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+                <div className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-xl my-8">
+                    <h3 className="text-xl font-bold mb-4">
+                        {editingProduct ? 'Edit Product' : 'Add New Product'}
+                    </h3>
+
+                    <div className="grid grid-cols-2 gap-4 max-h-96 overflow-y-auto pr-2">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
+                            <input
+                                type="text"
+                                name="name"
+                                value={productFormData.name}
+                                onChange={handleProductFormChange}
+                                className="w-full border border-gray-300 rounded-lg p-2 text-sm"
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Price *</label>
+                            <input
+                                type="number"
+                                name="price"
+                                value={productFormData.price}
+                                onChange={handleProductFormChange}
+                                className="w-full border border-gray-300 rounded-lg p-2 text-sm"
+                                min="0"
+                                step="0.01"
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Stock *</label>
+                            <input
+                                type="number"
+                                name="stock"
+                                value={productFormData.stock}
+                                onChange={handleProductFormChange}
+                                className="w-full border border-gray-300 rounded-lg p-2 text-sm"
+                                min="0"
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Model *</label>
+                            <input
+                                type="text"
+                                name="model"
+                                value={productFormData.model}
+                                onChange={handleProductFormChange}
+                                className="w-full border border-gray-300 rounded-lg p-2 text-sm"
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Serial Number *</label>
+                            <input
+                                type="text"
+                                name="serialNumber"
+                                value={productFormData.serialNumber}
+                                onChange={handleProductFormChange}
+                                className="w-full border border-gray-300 rounded-lg p-2 text-sm"
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Brand</label>
+                            <input
+                                type="text"
+                                name="brand"
+                                value={productFormData. brand}
+                                onChange={handleProductFormChange}
+                                className="w-full border border-gray-300 rounded-lg p-2 text-sm"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Category *</label>
+                            <div className="flex gap-2">
+                                <select
+                                    name="productType"
+                                    value={productFormData.productType}
+                                    onChange={handleProductFormChange}
+                                    className="flex-1 border border-gray-300 rounded-lg p-2 text-sm"
+                                >
+                                    {categories.map(cat => (
+                                        <option key={cat.id} value={cat.name}>{cat.name. replace('_', ' ')}</option>
+                                    ))}
+                                </select>
+                                <button
+                                    type="button"
+                                    onClick={() => setCategoryModalOpen(true)}
+                                    className="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-700 transition-colors"
+                                    title="Add New Category"
+                                >
+                                    <FolderPlus className="h-5 w-5" />
+                                </button>
+                            </div>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Target Audience *</label>
+                            <select
+                                name="targetAudience"
+                                value={productFormData.targetAudience}
+                                onChange={handleProductFormChange}
+                                className="w-full border border-gray-300 rounded-lg p-2 text-sm"
+                            >
+                                {TARGET_AUDIENCES.map(aud => (
+                                    <option key={aud} value={aud}>{aud}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Warranty *</label>
+                            <select
+                                name="warrantyStatus"
+                                value={productFormData. warrantyStatus}
+                                onChange={handleProductFormChange}
+                                className="w-full border border-gray-300 rounded-lg p-2 text-sm"
+                            >
+                                {WARRANTY_STATUSES. map(w => (
+                                    <option key={w} value={w}>{w.replace('_', ' ')}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Season</label>
+                            <select
+                                name="season"
+                                value={productFormData.season}
+                                onChange={handleProductFormChange}
+                                className="w-full border border-gray-300 rounded-lg p-2 text-sm"
+                            >
+                                <option value="">Select season</option>
+                                {SEASONS.map(s => (
+                                    <option key={s} value={s}>{s.replace('_', ' ')}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Fit</label>
+                            <select
+                                name="fit"
+                                value={productFormData.fit}
+                                onChange={handleProductFormChange}
+                                className="w-full border border-gray-300 rounded-lg p-2 text-sm"
+                            >
+                                <option value="">Select fit</option>
+                                {FITS.map(f => (
+                                    <option key={f} value={f}>{f}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Material</label>
+                            <input
+                                type="text"
+                                name="material"
+                                value={productFormData.material}
+                                onChange={handleProductFormChange}
+                                className="w-full border border-gray-300 rounded-lg p-2 text-sm"
+                            />
+                        </div>
+                        <div className="col-span-2">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Distributor Info *</label>
+                            <input
+                                type="text"
+                                name="distributorInfo"
+                                value={productFormData. distributorInfo}
+                                onChange={handleProductFormChange}
+                                className="w-full border border-gray-300 rounded-lg p-2 text-sm"
+                                required
+                            />
+                        </div>
+                        <div className="col-span-2">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Description *</label>
+                            <textarea
+                                name="description"
+                                value={productFormData.description}
+                                onChange={handleProductFormChange}
+                                className="w-full border border-gray-300 rounded-lg p-2 text-sm"
+                                rows={3}
+                                required
+                            />
+                        </div>
+                        <div className="col-span-2">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Care Instructions</label>
+                            <textarea
+                                name="careInstructions"
+                                value={productFormData.careInstructions}
+                                onChange={handleProductFormChange}
+                                className="w-full border border-gray-300 rounded-lg p-2 text-sm"
+                                rows={2}
+                            />
+                        </div>
+                        <div className="col-span-2">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Product Images</label>
+                            <div className="space-y-3">
+                                {(productFormData.imageUrls || []).length > 0 && (
+                                    <div className="flex flex-wrap gap-2">
+                                        {productFormData. imageUrls.map((url, index) => (
+                                            <div key={index} className="relative group">
+                                                <img
+                                                    src={url}
+                                                    alt={`Product ${index + 1}`}
+                                                    className="w-20 h-20 object-cover rounded-lg border"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const newUrls = productFormData.imageUrls.filter((_, i) => i !== index);
+                                                        setProductFormData(prev => ({ ...prev, imageUrls: newUrls }));
+                                                    }}
+                                                    className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full text-xs opacity-0 group-hover:opacity-100 transition"
+                                                >
+                                                    ×
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
+                                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-indigo-400 transition">
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        multiple
+                                        onChange={async (e) => {
+                                            const files = Array.from(e.target. files || []);
+                                            for (const file of files) {
+                                                try {
+                                                    showToast(`Uploading ${file.name}...`, 'success');
+                                                    const result = await productService.uploadImage(file);
+                                                    if (result.url) {
+                                                        setProductFormData(prev => ({
+                                                            ...prev,
+                                                            imageUrls: [...(prev.imageUrls || []), result.url]
+                                                        }));
+                                                        showToast(`Image uploaded successfully!`, 'success');
+                                                    }
+                                                } catch (error) {
+                                                    showToast(`Failed to upload ${file.name}`, 'error');
+                                                }
+                                            }
+                                            e.target.value = '';
+                                        }}
+                                        className="hidden"
+                                        id="image-upload"
+                                    />
+                                    <label htmlFor="image-upload" className="cursor-pointer">
+                                        <div className="text-gray-500">
+                                            <svg className="mx-auto h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                            </svg>
+                                            <p className="mt-1 text-sm">Click to upload images</p>
+                                            <p className="text-xs text-gray-400">PNG, JPG, GIF up to 10MB</p>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex gap-3 mt-6">
+                        <button
+                            onClick={handleSaveProduct}
+                            disabled={savingProduct}
+                            className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {savingProduct ?  'Saving.. .' : (editingProduct ? 'Update Product' :  'Add Product')}
+                        </button>
+                        <button
+                            onClick={() => setProductModalOpen(false)}
+                            disabled={savingProduct}
+                            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition disabled: opacity-50"
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
+
+        {/* Delete Confirmation Modal */}
+        {deleteModalOpen && productToDelete && (
+            <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+                <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden transform transition-all scale-100 p-6">
+                    <div className="flex flex-col items-center text-center">
+                        <div className="h-12 w-12 rounded-full bg-red-100 flex items-center justify-center mb-4">
+                            <AlertCircle className="h-6 w-6 text-red-600" />
+                        </div>
+                        <h3 className="text-lg font-bold text-gray-900 mb-2">Delete Product? </h3>
+                        <p className="text-sm text-gray-500 mb-6">
+                            Are you sure you want to delete <span className="font-semibold text-gray-800">"{productToDelete. name}"</span>?
+                            This action cannot be undone.
+                        </p>
+                        <div className="flex gap-3 w-full">
+                            <button
+                                onClick={() => setDeleteModalOpen(false)}
+                                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={confirmDeleteProduct}
+                                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition"
+                            >
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        )}
+
+        {/* Add Category Modal */}
+        {categoryModalOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+                <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-xl">
+                    <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+                        <FolderPlus className="h-5 w-5 text-indigo-600" />
+                        Add New Category
+                    </h2>
+
+                    <div className="mb-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Category Name</label>
+                        <input
+                            type="text"
+                            value={newCategoryName}
+                            onChange={(e) => setNewCategoryName(e.target.value)}
+                            placeholder="e.g., POLO_SHIRT"
+                            className="w-full border border-gray-300 rounded-lg p-2 text-sm"
+                            onKeyDown={(e) => e.key === 'Enter' && handleAddCategory()}
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                            Category will be converted to uppercase.  Spaces will become underscores. 
+                        </p>
+                    </div>
+
+                    <div className="mb-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Existing Categories ({categories.length})
+                        </label>
+                        <div className="max-h-32 overflow-y-auto border border-gray-200 rounded-lg p-2">
+                            <div className="flex flex-wrap gap-1">
+                                {categories.map(cat => (
+                                    <span key={cat.id} className="px-2 py-1 bg-gray-100 rounded text-xs">
+                                        {cat.name.replace('_', ' ')}
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex gap-3">
+                        <button
+                            onClick={handleAddCategory}
+                            className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-medium"
+                        >
+                            Add Category
+                        </button>
+                        <button
+                            onClick={() => {
+                                setCategoryModalOpen(false);
+                                setNewCategoryName('');
+                            }}
+                            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
+    </div>
+);
 };
 
 export default PMDashboard;
