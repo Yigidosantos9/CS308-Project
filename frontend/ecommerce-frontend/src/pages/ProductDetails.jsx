@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useShop } from '../context/ShopContext';
 import { productService, reviewService, orderService, authService, wishlistService } from '../services/api';
@@ -17,9 +17,9 @@ const StarRating = ({ rating, onRate, interactive = false }) => {
           onClick={() => interactive && onRate?.(star)}
           onMouseEnter={() => interactive && setHover(star)}
           onMouseLeave={() => interactive && setHover(0)}
-          className={`text-2xl transition-colors ${interactive ? 'cursor-pointer hover:scale-110' : 'cursor-default'
-            } ${star <= (hover || rating) ? 'text-yellow-400' : 'text-gray-300'
-            }`}
+          className={`text-2xl transition-colors ${
+            interactive ? 'cursor-pointer hover:scale-110' : 'cursor-default'
+          } ${star <= (hover || rating) ? 'text-yellow-400' : 'text-gray-300'}`}
         >
           ★
         </button>
@@ -32,7 +32,7 @@ const ReviewCard = ({ review, reviewerNames }) => {
   const date = new Date(review.createdAt).toLocaleDateString('en-GB', {
     day: '2-digit',
     month: 'short',
-    year: 'numeric'
+    year: 'numeric',
   });
 
   const displayName =
@@ -42,6 +42,7 @@ const ReviewCard = ({ review, reviewerNames }) => {
     review.reviewerName ||
     review.reviewerFullName ||
     (review.userId ? `User #${review.userId}` : 'User');
+
   const initials = displayName.trim().charAt(0).toUpperCase() || 'U';
 
   return (
@@ -55,19 +56,20 @@ const ReviewCard = ({ review, reviewerNames }) => {
         </div>
         <span className="text-xs text-gray-500">{date}</span>
       </div>
-      {review.rating != null && review.rating > 0 && (
-        <StarRating rating={review.rating} />
-      )}
-      {review.comment && (
-        <p className="mt-2 text-sm text-gray-700">{review.comment}</p>
-      )}
+
+      {review.rating != null && review.rating > 0 && <StarRating rating={review.rating} />}
+
+      {review.comment && <p className="mt-2 text-sm text-gray-700">{review.comment}</p>}
     </div>
   );
 };
 
+const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
+
 const ProductDetails = () => {
   const { id } = useParams();
   const { addToCart, user, cart } = useShop();
+
   const [product, setProduct] = useState(null);
   const [selectedSize, setSelectedSize] = useState('');
   const [selectedImage, setSelectedImage] = useState('');
@@ -77,7 +79,7 @@ const ProductDetails = () => {
   // Calculate total quantity of this product already in cart (across all sizes)
   const getCartQuantityForProduct = (productId) => {
     return cart
-      .filter(item => item.id === productId)
+      .filter((item) => item.id === productId)
       .reduce((sum, item) => sum + (item.quantity || 1), 0);
   };
 
@@ -98,14 +100,25 @@ const ProductDetails = () => {
   const [isInWishlist, setIsInWishlist] = useState(false);
   const [wishlistLoading, setWishlistLoading] = useState(false);
 
+  // Lens (square zoom) state
+  const imgWrapRef = useRef(null);
+  const [lensVisible, setLensVisible] = useState(false);
+  const [lensStyle, setLensStyle] = useState({
+    left: 0,
+    top: 0,
+    backgroundSize: '0px 0px',
+    backgroundPosition: '0px 0px',
+  });
+
+  const LENS_SIZE = 170; // px (kare)
+  const ZOOM = 2.4; // büyütme oranı
+
   useEffect(() => {
     const fetchProduct = async () => {
       try {
         const data = await productService.getProductById(id);
         setProduct(data);
-        if (data?.images?.[0]?.url) {
-          setSelectedImage(data.images[0].url);
-        }
+        if (data?.images?.[0]?.url) setSelectedImage(data.images[0].url);
       } catch (error) {
         console.error('Error fetching product:', error);
       } finally {
@@ -114,75 +127,70 @@ const ProductDetails = () => {
     };
 
     const fetchReviews = async () => {
+      const safeFallback = [];
       try {
         const [reviewsData, statsData] = await Promise.all([
           reviewService.getProductReviews(id),
-          reviewService.getProductReviewStats(id)
+          reviewService.getProductReviewStats(id),
         ]);
+
         const safeReviews = reviewsData || [];
         setReviewStats(statsData || { averageRating: 0, reviewCount: 0 });
 
-        // Fetch reviewer names for display, but tolerate failures
-        const uniqueIds = Array.from(
-          new Set(safeReviews.map((r) => r.userId).filter(Boolean))
-        );
+        // Reviewer names/types (tolerate failures)
+        const uniqueIds = Array.from(new Set(safeReviews.map((r) => r.userId).filter(Boolean)));
+
         if (uniqueIds.length > 0) {
           const entries = await Promise.all(
             uniqueIds.map(async (uid) => {
               try {
-                const user = await authService.getUserById(uid);
-                const fullName = [user?.firstName, user?.lastName].filter(Boolean).join(' ').trim();
-                return [uid, fullName || user?.email || user?.username || `User #${uid}`, user?.userType];
+                const u = await authService.getUserById(uid);
+                const fullName = [u?.firstName, u?.lastName].filter(Boolean).join(' ').trim();
+                return [uid, fullName || u?.email || u?.username || `User #${uid}`, u?.userType];
               } catch {
                 return [uid, `User #${uid}`, null];
               }
             })
           );
+
           const nameMap = {};
           const typeMap = {};
           entries.forEach(([uid, name, type]) => {
             nameMap[uid] = name;
             typeMap[uid] = type;
           });
+
           setReviewerNames((prev) => ({ ...prev, ...nameMap }));
           setReviewerTypes((prev) => ({ ...prev, ...typeMap }));
-          const filteredReviews = safeReviews.filter((r) => typeMap[r.userId] !== 'PRODUCT_MANAGER');
-          setReviews(filteredReviews);
+
+          // Filter out PRODUCT_MANAGER reviews if you want
+          const filtered = safeReviews.filter((r) => typeMap[r.userId] !== 'PRODUCT_MANAGER');
+          setReviews(filtered);
         } else {
           setReviews(safeReviews);
         }
       } catch (error) {
         console.error('Error fetching reviews:', error);
-        setReviews(safeReviews || []);
+        setReviews(safeFallback);
       }
     };
 
     // Check if user can review (has DELIVERED order with this product)
     const checkCanReview = async () => {
-      console.log('checkCanReview called, user:', user);
       if (!user?.userId || isProductManager) {
-        console.log('No userId, setting canReview to false');
         setCanReview(false);
         return;
       }
       try {
-        console.log('Fetching orders for userId:', user.userId);
         const orders = await orderService.getOrders(user.userId);
-        console.log('Orders received:', orders);
-        console.log('Looking for productId:', parseInt(id));
+        const targetId = parseInt(id);
 
-        // Check if any DELIVERED order contains this product
-        const hasDeliveredProduct = orders.some(
-          (order) => {
-            console.log('Checking order:', order.id, 'status:', order.status, 'items:', order.items);
-            return order.status === 'DELIVERED' &&
-              order.items?.some((item) => {
-                console.log('Checking item productId:', item.productId, 'vs target:', parseInt(id));
-                return item.productId === parseInt(id);
-              });
-          }
+        const hasDeliveredProduct = (orders || []).some(
+          (order) =>
+            order.status === 'DELIVERED' &&
+            order.items?.some((item) => item.productId === targetId)
         );
-        console.log('hasDeliveredProduct:', hasDeliveredProduct);
+
         setCanReview(hasDeliveredProduct);
       } catch (error) {
         console.error('Error checking order status:', error);
@@ -198,8 +206,8 @@ const ProductDetails = () => {
       }
       try {
         const wishlist = await wishlistService.getWishlist();
-        const inWishlist = wishlist?.items?.some(item => item.product?.id === parseInt(id));
-        setIsInWishlist(inWishlist);
+        const inWishlist = wishlist?.items?.some((item) => item.product?.id === parseInt(id));
+        setIsInWishlist(!!inWishlist);
       } catch (error) {
         console.error('Error checking wishlist:', error);
         setIsInWishlist(false);
@@ -213,6 +221,40 @@ const ProductDetails = () => {
       checkWishlist();
     }
   }, [id, user, isProductManager]);
+
+  // Lens handlers (kare büyüteç)
+  const handleLensMove = (e, currentImageUrl) => {
+    const wrap = imgWrapRef.current;
+    if (!wrap) return;
+
+    const rect = wrap.getBoundingClientRect();
+    const w = rect.width;
+    const h = rect.height;
+
+    // cursor position inside image container (px)
+    let x = e.clientX - rect.left;
+    let y = e.clientY - rect.top;
+
+    // clamp so lens stays inside
+    const half = LENS_SIZE / 2;
+    x = clamp(x, half, w - half);
+    y = clamp(y, half, h - half);
+
+    const bgW = w * ZOOM;
+    const bgH = h * ZOOM;
+
+    // background position (px) so the hovered point is centered in the lens
+    const bgX = -(x * ZOOM - half);
+    const bgY = -(y * ZOOM - half);
+
+    setLensStyle({
+      left: x,
+      top: y,
+      backgroundSize: `${bgW}px ${bgH}px`,
+      backgroundPosition: `${bgX}px ${bgY}px`,
+      backgroundImage: `url(${currentImageUrl})`,
+    });
+  };
 
   // Handle wishlist toggle
   const handleWishlistToggle = async () => {
@@ -257,7 +299,6 @@ const ProductDetails = () => {
       return;
     }
 
-    // At least one of rating or comment must be provided
     const hasRating = newReview.rating > 0;
     const hasComment = newReview.comment.trim().length > 0;
 
@@ -270,37 +311,33 @@ const ProductDetails = () => {
     setReviewError('');
 
     try {
-      // Build request - send null for empty fields
       const reviewRequest = {
         productId: parseInt(id),
         rating: hasRating ? newReview.rating : null,
-        comment: hasComment ? newReview.comment.trim() : null
+        comment: hasComment ? newReview.comment.trim() : null,
       };
 
       await reviewService.addReview(reviewRequest);
 
-      // Show success message based on what was submitted
       let successMessage = '';
-      if (hasRating && hasComment) {
-        successMessage = 'Rating submitted! Your comment is pending approval.';
-      } else if (hasRating) {
-        successMessage = 'Rating submitted successfully!';
-      } else {
-        successMessage = 'Comment submitted! Pending Product Manager approval.';
-      }
-      setReviewSuccess(successMessage);
-      setTimeout(() => setReviewSuccess(''), 5000); // Auto-hide after 5 seconds
+      if (hasRating && hasComment) successMessage = 'Rating submitted! Your comment is pending approval.';
+      else if (hasRating) successMessage = 'Rating submitted successfully!';
+      else successMessage = 'Comment submitted! Pending Product Manager approval.';
 
-      // Refresh reviews after submission
+      setReviewSuccess(successMessage);
+      setTimeout(() => setReviewSuccess(''), 5000);
+
       const [reviewsData, statsData] = await Promise.all([
         reviewService.getProductReviews(id),
-        reviewService.getProductReviewStats(id)
+        reviewService.getProductReviewStats(id),
       ]);
 
-      // Add current user's name to reviewerNames cache so it shows immediately
       if (user?.userId) {
-        const currentUserName = [user.firstName, user.lastName].filter(Boolean).join(' ').trim() || user.email || `User #${user.userId}`;
-        setReviewerNames(prev => ({ ...prev, [user.userId]: currentUserName }));
+        const currentUserName =
+          [user.firstName, user.lastName].filter(Boolean).join(' ').trim() ||
+          user.email ||
+          `User #${user.userId}`;
+        setReviewerNames((prev) => ({ ...prev, [user.userId]: currentUserName }));
       }
 
       setReviews(reviewsData || []);
@@ -312,7 +349,7 @@ const ProductDetails = () => {
       console.error('Error submitting review:', error);
       setReviewError(
         error.response?.data?.message ||
-        'Failed to submit review. Please ensure you have purchased and received this product.'
+          'Failed to submit review. Please ensure you have purchased and received this product.'
       );
     } finally {
       setReviewLoading(false);
@@ -320,7 +357,7 @@ const ProductDetails = () => {
   };
 
   const defaultImages = [
-    { url: "https://placehold.co/600x800/f5f5f5/a3a3a3?text=No+Image", alt: "No Image Available" }
+    { url: 'https://placehold.co/600x800/f5f5f5/a3a3a3?text=No+Image', alt: 'No Image Available' },
   ];
 
   if (loading) {
@@ -337,14 +374,14 @@ const ProductDetails = () => {
     price: 0,
     description: 'Loading...',
     stock: 0,
-    sizes: ["S", "M", "L", "XL"],
-    images: []
+    sizes: ['S', 'M', 'L', 'XL'],
+    images: [],
   };
 
   const images = displayProduct.images?.length > 0 ? displayProduct.images : defaultImages;
   const currentImage = selectedImage || images[0]?.url;
 
-  // 🔥 Low-stock message logic
+  // Low-stock message logic
   const stock = displayProduct.stock ?? 0;
   let stockMessage = '';
   let stockClass = '';
@@ -373,8 +410,9 @@ const ProductDetails = () => {
                 <button
                   key={index}
                   onClick={() => setSelectedImage(img.url)}
-                  className={`w-full aspect-[3/4] overflow-hidden border-2 transition-all ${currentImage === img.url ? 'border-black' : 'border-transparent'
-                    }`}
+                  className={`w-full aspect-[3/4] overflow-hidden border-2 transition-all ${
+                    currentImage === img.url ? 'border-black' : 'border-transparent'
+                  }`}
                 >
                   <img
                     src={img.url}
@@ -385,13 +423,40 @@ const ProductDetails = () => {
               ))}
             </div>
 
-            {/* Main Large Image */}
-            <div className="flex-1 aspect-[3/4] bg-gray-100 relative overflow-hidden">
+            {/* Main Large Image + Lens (ONLY lens kare) */}
+            <div
+              ref={imgWrapRef}
+              className="flex-1 aspect-[3/4] bg-gray-100 relative overflow-hidden select-none cursor-zoom-in"
+              onMouseEnter={() => setLensVisible(true)}
+              onMouseLeave={() => setLensVisible(false)}
+              onMouseMove={(e) => handleLensMove(e, currentImage)}
+            >
               <img
                 src={currentImage}
                 alt={displayProduct.name}
                 className="w-full h-full object-cover object-center"
+                draggable={false}
               />
+
+              {/* Lens square */}
+              {lensVisible && (
+                <div
+                  className="absolute pointer-events-none border-2 border-black shadow-lg"
+                  style={{
+                    width: `${LENS_SIZE}px`,
+                    height: `${LENS_SIZE}px`,
+                    left: `${lensStyle.left}px`,
+                    top: `${lensStyle.top}px`,
+                    transform: 'translate(-50%, -50%)',
+                    backgroundRepeat: 'no-repeat',
+                    backgroundImage: lensStyle.backgroundImage,
+                    backgroundSize: lensStyle.backgroundSize,
+                    backgroundPosition: lensStyle.backgroundPosition,
+                    // küçük cam efekti (istersen kaldır)
+                    boxShadow: '0 10px 30px rgba(0,0,0,0.18)',
+                  }}
+                />
+              )}
             </div>
           </div>
 
@@ -434,10 +499,8 @@ const ProductDetails = () => {
               <span className="text-xs text-gray-500 font-light">(Tax Included)</span>
             </div>
 
-            {/* Stock Status with low-stock handling */}
-            <div className={`text-sm font-semibold ${stockClass}`}>
-              {stockMessage}
-            </div>
+            {/* Stock Status */}
+            <div className={`text-sm font-semibold ${stockClass}`}>{stockMessage}</div>
 
             {/* Sizes */}
             <div>
@@ -446,10 +509,11 @@ const ProductDetails = () => {
                   <button
                     key={size}
                     onClick={() => setSelectedSize(size)}
-                    className={`w-12 h-12 flex items-center justify-center border border-black text-sm font-medium transition-colors ${selectedSize === size
-                      ? 'bg-black text-white'
-                      : 'bg-transparent text-black hover:bg-gray-100'
-                      }`}
+                    className={`w-12 h-12 flex items-center justify-center border border-black text-sm font-medium transition-colors ${
+                      selectedSize === size
+                        ? 'bg-black text-white'
+                        : 'bg-transparent text-black hover:bg-gray-100'
+                    }`}
                   >
                     {size}
                   </button>
@@ -458,98 +522,107 @@ const ProductDetails = () => {
             </div>
 
             {/* Quantity Selector - Hidden for Product Manager, Sales Manager, and Support Agent */}
-            {user?.userType !== 'PRODUCT_MANAGER' && user?.userType !== 'SALES_MANAGER' && user?.userType !== 'SUPPORT_AGENT' && displayProduct.stock > 0 && (() => {
-              const inCartQuantity = getCartQuantityForProduct(displayProduct.id);
-              const availableToAdd = displayProduct.stock - inCartQuantity;
-              const maxQuantity = Math.max(0, availableToAdd);
+            {user?.userType !== 'PRODUCT_MANAGER' &&
+              user?.userType !== 'SALES_MANAGER' &&
+              user?.userType !== 'SUPPORT_AGENT' &&
+              displayProduct.stock > 0 &&
+              (() => {
+                const inCartQuantity = getCartQuantityForProduct(displayProduct.id);
+                const availableToAdd = displayProduct.stock - inCartQuantity;
+                const maxQuantity = Math.max(0, availableToAdd);
 
-              if (maxQuantity <= 0) {
+                if (maxQuantity <= 0) {
+                  return <div className="text-sm text-red-600 font-medium">All available stock is in your cart</div>;
+                }
+
                 return (
-                  <div className="text-sm text-red-600 font-medium">
-                    All available stock is in your cart
+                  <div className="flex items-center gap-4">
+                    <span className="text-sm font-medium text-gray-700">Quantity:</span>
+                    <div className="flex items-center border border-black rounded-lg">
+                      <button
+                        onClick={() => setSelectedQuantity(Math.max(1, selectedQuantity - 1))}
+                        disabled={selectedQuantity <= 1}
+                        className="w-10 h-10 flex items-center justify-center hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-lg font-bold"
+                      >
+                        −
+                      </button>
+                      <span className="w-12 text-center font-semibold text-lg">
+                        {Math.min(selectedQuantity, maxQuantity)}
+                      </span>
+                      <button
+                        onClick={() => setSelectedQuantity(Math.min(maxQuantity, selectedQuantity + 1))}
+                        disabled={selectedQuantity >= maxQuantity}
+                        className="w-10 h-10 flex items-center justify-center hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-lg font-bold"
+                      >
+                        +
+                      </button>
+                    </div>
+                    <span className="text-xs text-gray-400">
+                      ({inCartQuantity > 0 ? `${inCartQuantity} in cart, ` : ''}
+                      {maxQuantity} available)
+                    </span>
                   </div>
                 );
-              }
-
-              return (
-                <div className="flex items-center gap-4">
-                  <span className="text-sm font-medium text-gray-700">Quantity:</span>
-                  <div className="flex items-center border border-black rounded-lg">
-                    <button
-                      onClick={() => setSelectedQuantity(Math.max(1, selectedQuantity - 1))}
-                      disabled={selectedQuantity <= 1}
-                      className="w-10 h-10 flex items-center justify-center hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-lg font-bold"
-                    >
-                      −
-                    </button>
-                    <span className="w-12 text-center font-semibold text-lg">
-                      {Math.min(selectedQuantity, maxQuantity)}
-                    </span>
-                    <button
-                      onClick={() => setSelectedQuantity(Math.min(maxQuantity, selectedQuantity + 1))}
-                      disabled={selectedQuantity >= maxQuantity}
-                      className="w-10 h-10 flex items-center justify-center hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-lg font-bold"
-                    >
-                      +
-                    </button>
-                  </div>
-                  <span className="text-xs text-gray-400">
-                    ({inCartQuantity > 0 ? `${inCartQuantity} in cart, ` : ''}{maxQuantity} available)
-                  </span>
-                </div>
-              );
-            })()}
+              })()}
 
             {/* Add to Cart Button - Hidden for Product Manager, Sales Manager, and Support Agent */}
-            {user?.userType !== 'PRODUCT_MANAGER' && user?.userType !== 'SALES_MANAGER' && user?.userType !== 'SUPPORT_AGENT' && (() => {
-              const inCartQuantity = getCartQuantityForProduct(displayProduct.id);
-              const availableToAdd = displayProduct.stock - inCartQuantity;
-              const isDisabled = displayProduct.stock === 0 || availableToAdd <= 0;
+            {user?.userType !== 'PRODUCT_MANAGER' &&
+              user?.userType !== 'SALES_MANAGER' &&
+              user?.userType !== 'SUPPORT_AGENT' &&
+              (() => {
+                const inCartQuantity = getCartQuantityForProduct(displayProduct.id);
+                const availableToAdd = displayProduct.stock - inCartQuantity;
+                const isDisabled = displayProduct.stock === 0 || availableToAdd <= 0;
 
-              return (
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => {
-                      const actualQty = Math.min(selectedQuantity, availableToAdd);
-                      if (actualQty > 0) {
-                        addToCart({ ...displayProduct, selectedSize }, actualQty);
-                        setSelectedQuantity(1);
-                      }
-                    }}
-                    disabled={isDisabled}
-                    className={`w-48 py-3 px-8 text-sm font-bold uppercase tracking-wider shadow-lg transition-colors ${isDisabled
-                      ? 'bg-gray-400 text-gray-700 cursor-not-allowed'
-                      : 'bg-black text-white hover:bg-gray-800'
+                return (
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => {
+                        const actualQty = Math.min(selectedQuantity, availableToAdd);
+                        if (actualQty > 0) {
+                          addToCart({ ...displayProduct, selectedSize }, actualQty);
+                          setSelectedQuantity(1);
+                        }
+                      }}
+                      disabled={isDisabled}
+                      className={`w-48 py-3 px-8 text-sm font-bold uppercase tracking-wider shadow-lg transition-colors ${
+                        isDisabled ? 'bg-gray-400 text-gray-700 cursor-not-allowed' : 'bg-black text-white hover:bg-gray-800'
                       }`}
-                  >
-                    {displayProduct.stock === 0 ? 'Out of Stock' : availableToAdd <= 0 ? 'Max in Cart' : `Add to Cart${selectedQuantity > 1 ? ` (${Math.min(selectedQuantity, availableToAdd)})` : ''}`}
-                  </button>
+                    >
+                      {displayProduct.stock === 0
+                        ? 'Out of Stock'
+                        : availableToAdd <= 0
+                        ? 'Max in Cart'
+                        : `Add to Cart${
+                            selectedQuantity > 1 ? ` (${Math.min(selectedQuantity, availableToAdd)})` : ''
+                          }`}
+                    </button>
 
-                  {/* Wishlist Heart Button */}
-                  <button
-                    onClick={handleWishlistToggle}
-                    disabled={wishlistLoading}
-                    className={`w-12 h-12 flex items-center justify-center border-2 rounded-lg transition-all ${isInWishlist
-                      ? 'bg-red-50 border-red-500 text-red-500 hover:bg-red-100'
-                      : 'border-gray-300 text-gray-400 hover:border-red-500 hover:text-red-500'
+                    {/* Wishlist Heart Button */}
+                    <button
+                      onClick={handleWishlistToggle}
+                      disabled={wishlistLoading}
+                      className={`w-12 h-12 flex items-center justify-center border-2 rounded-lg transition-all ${
+                        isInWishlist
+                          ? 'bg-red-50 border-red-500 text-red-500 hover:bg-red-100'
+                          : 'border-gray-300 text-gray-400 hover:border-red-500 hover:text-red-500'
                       } ${wishlistLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    title={isInWishlist ? 'Remove from Wishlist' : 'Add to Wishlist'}
-                  >
-                    <Heart
-                      className={`w-6 h-6 transition-all ${isInWishlist ? 'fill-current' : ''}`}
-                    />
-                  </button>
-                </div>
-              );
-            })()}
+                      title={isInWishlist ? 'Remove from Wishlist' : 'Add to Wishlist'}
+                    >
+                      <Heart className={`w-6 h-6 transition-all ${isInWishlist ? 'fill-current' : ''}`} />
+                    </button>
+                  </div>
+                );
+              })()}
+
             {/* Description */}
-            <p className="text-gray-600 text-sm leading-relaxed mt-4">
-              {displayProduct.description}
-            </p>
+            <p className="text-gray-600 text-sm leading-relaxed mt-4">{displayProduct.description}</p>
 
             {/* Product Specifications */}
             <div className="mt-6 pt-4 border-t border-gray-200">
-              <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-3">Product Specifications</h3>
+              <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-3">
+                Product Specifications
+              </h3>
               <div className="flex flex-col gap-2 text-xs text-gray-600">
                 <div className="flex justify-between border-b border-gray-100 pb-1.5">
                   <span className="text-gray-400">Product ID:</span>
@@ -585,9 +658,8 @@ const ProductDetails = () => {
         {/* REVIEWS SECTION */}
         <div className="max-w-7xl mx-auto mt-16 border-t border-gray-300 pt-10">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold tracking-tight">
-              Customer Reviews
-            </h2>
+            <h2 className="text-2xl font-bold tracking-tight">Customer Reviews</h2>
+
             {canReview ? (
               <button
                 onClick={() => setShowReviewForm(!showReviewForm)}
@@ -597,15 +669,14 @@ const ProductDetails = () => {
               </button>
             ) : (
               user && (
-               <span className="text-sm text-gray-500">
-                {user?.userType === 'PRODUCT_MANAGER'
-                   ? 'Product Managers cannot submit reviews.'
-                   : user?.userType === 'SALES_MANAGER'
-                  ? 'Sales Managers cannot submit reviews.'
-                  : 'You can review after ordering this product.'}
-               </span>
+                <span className="text-sm text-gray-500">
+                  {user?.userType === 'PRODUCT_MANAGER'
+                    ? 'Product Managers cannot submit reviews.'
+                    : user?.userType === 'SALES_MANAGER'
+                    ? 'Sales Managers cannot submit reviews.'
+                    : 'You can review after ordering this product.'}
+                </span>
               )
-
             )}
           </div>
 
@@ -616,10 +687,7 @@ const ProductDetails = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
               <span className="text-green-800 font-medium">{reviewSuccess}</span>
-              <button
-                onClick={() => setReviewSuccess('')}
-                className="ml-auto text-green-600 hover:text-green-800"
-              >
+              <button onClick={() => setReviewSuccess('')} className="ml-auto text-green-600 hover:text-green-800">
                 ✕
               </button>
             </div>
@@ -627,10 +695,7 @@ const ProductDetails = () => {
 
           {/* Review Form */}
           {showReviewForm && (
-            <form
-              onSubmit={handleSubmitReview}
-              className="bg-white rounded-xl p-6 mb-6 shadow-sm border border-gray-200"
-            >
+            <form onSubmit={handleSubmitReview} className="bg-white rounded-xl p-6 mb-6 shadow-sm border border-gray-200">
               <h3 className="font-semibold mb-4">Your Review</h3>
 
               <div className="mb-4">
@@ -653,9 +718,7 @@ const ProductDetails = () => {
                     </button>
                   )}
                 </div>
-                <p className="text-xs text-gray-400 mt-1">
-                  Rating submissions are displayed immediately.
-                </p>
+                <p className="text-xs text-gray-400 mt-1">Rating submissions are displayed immediately.</p>
               </div>
 
               <div className="mb-4">
@@ -664,21 +727,15 @@ const ProductDetails = () => {
                 </label>
                 <textarea
                   value={newReview.comment}
-                  onChange={(e) =>
-                    setNewReview({ ...newReview, comment: e.target.value })
-                  }
+                  onChange={(e) => setNewReview({ ...newReview, comment: e.target.value })}
                   className="w-full p-3 border border-gray-200 rounded-lg text-sm resize-none focus:outline-none focus:border-black"
                   rows={4}
                   placeholder="Share your thoughts about this product..."
                 />
-                <p className="text-xs text-gray-400 mt-1">
-                  Comments require Product Manager approval before being displayed.
-                </p>
+                <p className="text-xs text-gray-400 mt-1">Comments require Product Manager approval before being displayed.</p>
               </div>
 
-              {reviewError && (
-                <p className="text-red-500 text-sm mb-4">{reviewError}</p>
-              )}
+              {reviewError && <p className="text-red-500 text-sm mb-4">{reviewError}</p>}
 
               <div className="flex items-center gap-4">
                 <button
@@ -692,16 +749,14 @@ const ProductDetails = () => {
                   {newReview.rating > 0 && newReview.comment.trim()
                     ? 'Rating + Comment (comment needs approval)'
                     : newReview.rating > 0
-                      ? 'Rating only (instant)'
-                      : newReview.comment.trim()
-                        ? 'Comment only (needs approval)'
-                        : 'Enter rating or comment'}
+                    ? 'Rating only (instant)'
+                    : newReview.comment.trim()
+                    ? 'Comment only (needs approval)'
+                    : 'Enter rating or comment'}
                 </span>
               </div>
 
-              <p className="text-xs text-gray-500 mt-4">
-                Note: You can only review products you have purchased and received.
-              </p>
+              <p className="text-xs text-gray-500 mt-4">Note: You can only review products you have purchased and received.</p>
             </form>
           )}
 
@@ -714,9 +769,7 @@ const ProductDetails = () => {
                 ))}
               </div>
             ) : (
-              <p className="text-gray-500 text-center py-8">
-                No reviews yet. Be the first to review this product!
-              </p>
+              <p className="text-gray-500 text-center py-8">No reviews yet. Be the first to review this product!</p>
             )}
           </div>
         </div>
