@@ -34,11 +34,10 @@ const Cart = () => {
 
   // Get remaining stock for a product
   const getRemainingStock = (item) => {
-    const totalInCart = getTotalProductQuantity(item.id);
-    const currentItemQty = item.quantity || 1;
-    // Remaining = stock - (total in cart - this item's quantity)
-    return item.stock - (totalInCart - currentItemQty);
+  const totalInCart = getTotalProductQuantity(item.id);
+  return Math.max(Number(item.stock) - totalInCart, 0);
   };
+
 
   const handleQuantityChange = (item, delta) => {
     const newQuantity = (item.quantity || 1) + delta;
