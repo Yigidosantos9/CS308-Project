@@ -749,6 +749,22 @@ export const salesManagerService = {
     }
   },
 
+/**
+ * Set price on a product (Sales Manager action)
+ * @param {number} productId - The product ID
+ * @param {number} price - The new price
+ */
+setProductPrice:  async (productId, price) => {
+  try {
+    const response = await api.put(`/sales/products/${productId}/price`, null, {
+      params: { price }
+    });
+    return response. data;
+  } catch (error) {
+    console.error('Error setting product price:', error);
+    throw error;
+  }
+},
   /**
    * Download invoice PDF for a specific order (Sales Manager endpoint)
    * Uses POST /api/sales/invoices/pdf with InvoiceRequest body
